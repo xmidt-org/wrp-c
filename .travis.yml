@@ -15,7 +15,7 @@ addons:
     notification_email: weston_schmidt@alumni.purdue.edu
     build_command_prepend: "mkdir build && cd build && cmake .."
     build_command:   "make"
-    branch_pattern: coverity_scan
+    branch_pattern: master
 
 before_install:
     - sudo pip install codecov
