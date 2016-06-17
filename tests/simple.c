@@ -24,13 +24,7 @@
 
 void test_1()
 {
-    example();
-    example();
-    example();
-    example();
-    example();
-    example();
-    example();
+    wrp_struct_to_string( NULL );
 }
 
 void add_suites( CU_pSuite *suite )
