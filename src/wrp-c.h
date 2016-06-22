@@ -45,8 +45,8 @@ struct wrp_auth_msg {
 
 struct wrp_timing_value {
     char *name;
-    struct timespec start;
-    struct timespec end;
+    struct timeval start;
+    struct timeval end;
 };
 
 struct wrp_req_msg {
