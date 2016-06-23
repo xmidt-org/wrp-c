@@ -15,7 +15,7 @@
  *
  */
 #include <sys/types.h>
-#include <stdint.h>
+#include <sys/time.h>
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -26,11 +26,17 @@
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
 enum wrp_msg_type {
-    WRP_MSG_TYPE__AUTH  = 2,
-    WRP_MSG_TYPE__REQ   = 3,
-    WRP_MSG_TYPE__EVENT = 4,
+    WRP_MSG_TYPE__AUTH    = 2,
+    WRP_MSG_TYPE__REQ     = 3,
+    WRP_MSG_TYPE__EVENT   = 4,
 
     WRP_MSG_TYPE__UNKNOWN = 200
+};
+
+enum wrp_format {
+    WRP_BYTES,
+    WRP_BASE64,
+    WRP_STRING
 };
 
 struct wrp_auth_msg {
@@ -39,8 +45,8 @@ struct wrp_auth_msg {
 
 struct wrp_timing_value {
     char *name;
-    uint64_t start;
-    uint64_t duration;
+    struct timeval start;
+    struct timeval end;
 };
 
 struct wrp_req_msg {
@@ -48,7 +54,8 @@ struct wrp_req_msg {
     char *source;
     char *dest;
     char **headers;                         /* NULL terminated list */
-    struct wrp_timing_value *timing_values; /* NULL terminated list */
+    struct wrp_timing_value *timing_values;
+    size_t timing_values_count;
     void *payload;
     size_t payload_size;
 };
@@ -93,11 +100,14 @@ typedef struct {
  *        bytes must be freed using free() by the caller.
  *
  *  @param msg   [in]  the wrp_msg_t structure to convert
- *  @param bytes [out] the resulting bytes
+ *  @param fmt   [in]  the format the output should be converted into
+ *  @param bytes [out] the resulting bytes (not changed on error)
  *
  *  @return the length of the bytes if successful or less than 1 otherwise
  */
-ssize_t wrp_struct_to_bytes( const wrp_msg_t *msg, void **bytes );
+ssize_t wrp_struct_to( const wrp_msg_t *msg, const enum wrp_format fmt,
+                       void **bytes );
+
 
 /**
  *  Converts a sequence of bytes into a wrp_msg_t if possible.
@@ -105,15 +115,21 @@ ssize_t wrp_struct_to_bytes( const wrp_msg_t *msg, void **bytes );
  *  @note If the value returned is not NULL, the resulting structure must
  *        be freed using the wrp_free_struct() function.
  *
+ *  @note fmt may only be: WRP_BYTES or WRP_BASE64.
+ *
  *  @param bytes  [in]  the sequence of bytes to process
  *  @param length [in]  the length of the bytes passed in
+ *  @param fmt    [in]  the format the input should be converted from
  *  @param msg    [out] the resulting wrp_msg_t structure if successful
- *                      unchanged otherwise
+ *                      unchanged otherwise (not changed on error)
  *
  *  @return the number of bytes 'consumed' by making this transformation if
  *          successful, less than 1 otherwise
  */
-ssize_t wrp_bytes_to_struct( const void *bytes, size_t length, wrp_msg_t **msg );
+ssize_t wrp_to_struct( const void *bytes, const size_t length,
+                       const enum wrp_format fmt,
+                       wrp_msg_t **msg );
+
 
 /**
  *  Converts a wrp_msg_t structure into a printable string.
@@ -125,8 +141,9 @@ ssize_t wrp_bytes_to_struct( const void *bytes, size_t length, wrp_msg_t **msg )
  */
 char* wrp_struct_to_string( const wrp_msg_t *msg );
 
+
 /**
- *  Frees the wrp_msg_t structure if allocated by the wrp-c library.
+ *  Free the wrp_msg_t structure if allocated by the wrp-c library.
  *
  *  @note Do not call this function on the wrp_msg_t structure if the wrp-c
  *        library did not create the structure!
@@ -134,8 +151,6 @@ char* wrp_struct_to_string( const wrp_msg_t *msg );
  *  @param msg [in] the wrp_msg_t structure to free
  */
 void wrp_free_struct( wrp_msg_t *msg );
-
-void example();
 
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
