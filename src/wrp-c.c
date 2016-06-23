@@ -206,12 +206,11 @@ static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth, cha
 
 
     length = snprintf( NULL, 0, auth_fmt, auth->status );
-    length++;   /* For trailing '\0' */
 
     if( NULL != bytes ) {
-        data = (char*) malloc( sizeof(char) * length );
+        data = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
         if( NULL != data ) {
-            snprintf( data, length, auth_fmt, auth->status );
+            sprintf( data, auth_fmt, auth->status );
             data[length] = '\0';
             *bytes = data;
         } else {
@@ -254,16 +253,15 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
     length = snprintf( NULL, 0, req_fmt, req->transaction_uuid,
                        req->source, req->dest, headers, timing_values,
                        req->timing_values_count, req->payload_size );
-    length++;   /* For trailing '\0' */
 
     if( NULL != bytes ) {
         char *data;
 
-        data = (char*) malloc( sizeof(char) * length );
+        data = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
         if( NULL != data ) {
-            snprintf( data, length, req_fmt, req->transaction_uuid,
-                      req->source, req->dest, headers, timing_values,
-                      req->timing_values_count, req->payload_size );
+            sprintf( data, req_fmt, req->transaction_uuid,
+                     req->source, req->dest, headers, timing_values,
+                     req->timing_values_count, req->payload_size );
             data[length] = '\0';
 
             *bytes = data;
@@ -330,9 +328,8 @@ static char* __get_header_string( char **headers )
             length += strlen( headers[i] );
             comma = 2;
         }
-        length++; /* For the trailing '\0' */
 
-        rv = (char*) malloc( sizeof(char) * length );
+        rv = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
         if( NULL != rv ) {
             char *tmp;
             const char *comma;
@@ -383,9 +380,8 @@ static char* __get_timing_string( const struct wrp_timing_value *timing_values,
                                 p->name, p->start.tv_sec, p->start.tv_usec,
                                 p->end.tv_sec, p->end.tv_usec );
         }
-        length++; /* For the trailing '\0' */
     
-        rv = (char*) malloc( sizeof(char) * length );
+        rv = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
         if( NULL != rv ) {
             char *tmp;
 

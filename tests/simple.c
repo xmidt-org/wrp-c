@@ -136,7 +136,14 @@ void test_to_string()
             expected_length = strlen( test[i].expected );
         }
 
+        if( (NULL != out) && (0 != strcmp(out, test[i].expected)) ) {
+            printf( "\n\nGot: |%s| Expected: |%s|\n\n", out, test[i].expected );
+        }
         CU_ASSERT_STRING_EQUAL( out, test[i].expected );
+
+        if( rv != expected_length ) {
+            printf( "\n\nGot: %zd Expected: %zd\n\n", rv, expected_length );
+        }
         CU_ASSERT_EQUAL( rv, expected_length );
     }
 }
