@@ -25,6 +25,7 @@
 struct test_to_string {
     const wrp_msg_t in;
     const char *expected;
+    const ssize_t expected_length;
 };
 
 void test_to_string()
@@ -43,6 +44,7 @@ void test_to_string()
         { .in.msg_type = WRP_MSG_TYPE__AUTH,
           .in.u.auth.status = 123,
           
+          .expected_length = 0,
           .expected = "wrp_auth_msg {\n"
                       "    .status = 123\n"
                       "}\n" },
@@ -57,6 +59,8 @@ void test_to_string()
           .in.u.req.timing_values_count = 0,
           .in.u.req.payload = "123",
           .in.u.req.payload_size = 3,
+
+          .expected_length = 0,
           .expected = "wrp_req_msg {\n"
                       "    .transaction_uuid    = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
                       "    .source              = source-address\n"
@@ -77,6 +81,8 @@ void test_to_string()
           .in.u.req.timing_values_count = 0,
           .in.u.req.payload = "123",
           .in.u.req.payload_size = 3,
+
+          .expected_length = 0,
           .expected = "wrp_req_msg {\n"
                       "    .transaction_uuid    = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
                       "    .source              = source-address\n"
@@ -97,6 +103,8 @@ void test_to_string()
           .in.u.req.timing_values_count = sizeof(timing)/sizeof(struct wrp_timing_value),
           .in.u.req.payload = "123",
           .in.u.req.payload_size = 3,
+
+          .expected_length = 0,
           .expected = "wrp_req_msg {\n"
                       "    .transaction_uuid    = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
                       "    .source              = source-address\n"
@@ -112,6 +120,7 @@ void test_to_string()
 
     for( i = 0; i < sizeof(test)/sizeof(struct test_to_string); i++ ) {
         char *out;
+        ssize_t rv, expected_length;
 
         out = wrp_struct_to_string( &test[i].in );
 
@@ -119,6 +128,16 @@ void test_to_string()
             printf( "\n\nGot: |%s| Expected: |%s|\n\n", out, test[i].expected );
         }
         CU_ASSERT_STRING_EQUAL( out, test[i].expected );
+
+        rv = wrp_struct_to( &test[i].in, WRP_STRING, (void**) &out );
+
+        expected_length = test[i].expected_length;
+        if( 0 == expected_length ) {
+            expected_length = strlen( test[i].expected );
+        }
+
+        CU_ASSERT_STRING_EQUAL( out, test[i].expected );
+        CU_ASSERT_EQUAL( rv, expected_length );
     }
 }
 
