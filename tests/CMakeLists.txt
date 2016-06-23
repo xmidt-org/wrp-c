@@ -20,6 +20,7 @@ set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-cov
 
 add_executable(simple simple.c ../src/wrp-c.c ../src/wrp-c.c)
 
+target_link_libraries (simple -lmsgpackc -ltrower-base64)
 target_link_libraries (simple gcov)
 target_link_libraries (simple cunit)
 

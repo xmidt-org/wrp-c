@@ -34,7 +34,7 @@
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
-static const char const *empty_list = "''";
+static const char const *__empty_list = "''";
 /* none */
 
 /*----------------------------------------------------------------------------*/
@@ -43,11 +43,12 @@ static const char const *empty_list = "''";
 static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes );
 static ssize_t __wrp_struct_to_base64( const wrp_msg_t *msg, char **bytes );
 static ssize_t __wrp_struct_to_string( const wrp_msg_t *msg, char **bytes );
-static ssize_t __wrp_auth_struct_to_string( const wrp_msg_t *msg, char **bytes );
-static ssize_t __wrp_req_struct_to_string( const wrp_msg_t *msg, char **bytes );
-static ssize_t __wrp_event_struct_to_string( const wrp_msg_t *msg, char **bytes );
-static size_t __get_header_string( const char **headers );
-static char* __get_timing_string( const struct wrp_timing_value *timing_values );
+static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth, char **bytes );
+static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char **bytes );
+static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event, char **bytes );
+static char* __get_header_string( char **headers );
+static char* __get_timing_string( const struct wrp_timing_value *timing_values,
+                                  size_t count );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -108,6 +109,9 @@ char* wrp_struct_to_string( const wrp_msg_t *msg )
 /*----------------------------------------------------------------------------*/
 static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 {
+    (void) msg;
+    (void) bytes;
+
     return -1;
 }
 
@@ -158,15 +162,23 @@ static ssize_t __wrp_struct_to_base64( const wrp_msg_t *msg, char **bytes )
 }
 
 
+/**
+ *  Split out the different types to different functions.
+ *
+ *  @param msg   [in]  the message to convert
+ *  @param bytes [out] the output of the conversion
+ *
+ *  @return the number of bytes in the string or less then 1 on error
+ */
 static ssize_t __wrp_struct_to_string( const wrp_msg_t *msg, char **bytes )
 {
     switch( msg->msg_type ) {
         case WRP_MSG_TYPE__AUTH:
-            return __wrp_auth_struct_to_string( msg, bytes );
+            return __wrp_auth_struct_to_string( &msg->u.auth, bytes );
         case WRP_MSG_TYPE__REQ:
-            return __wrp_req_struct_to_string( msg, bytes );
+            return __wrp_req_struct_to_string( &msg->u.req, bytes );
         case WRP_MSG_TYPE__EVENT:
-            return __wrp_event_struct_to_string( msg, bytes );
+            return __wrp_event_struct_to_string( &msg->u.event, bytes );
         default:
             break;
     }
@@ -174,101 +186,200 @@ static ssize_t __wrp_struct_to_string( const wrp_msg_t *msg, char **bytes )
     return -1;
 }
 
-static ssize_t __wrp_auth_struct_to_string( const wrp_msg_t *msg, char **bytes )
+
+/**
+ *  Convert the auth structure to a string.
+ *
+ *  @param auth  [in]  the message to convert
+ *  @param bytes [out] the output of the conversion
+ *
+ *  @return the number of bytes in the string or less then 1 on error
+ */
+static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth, char **bytes )
 {
     const char const *auth_fmt = "wrp_auth_msg {\n"
                                  "    .status = %d\n"
                                  "}\n";
 
-    const struct wrp_auth_msg *auth;
     char *data;
     size_t length;
 
-
-    auth = &msg->u.auth;
 
     length = snprintf( NULL, 0, auth_fmt, auth->status );
     length++;   /* For trailing '\0' */
 
-    data = (char*) malloc( sizeof(char) * length );
-    if( NULL != *bytes ) {
-        snprintf( data, length, auth_fmt, auth->status );
+    if( NULL != bytes ) {
+        data = (char*) malloc( sizeof(char) * length );
+        if( NULL != data ) {
+            snprintf( data, length, auth_fmt, auth->status );
+            data[length] = '\0';
+            *bytes = data;
+        } else {
+            return -1;
+        }
     }
-    data[length] = '\0';
 
     return length;
 }
 
 
-static ssize_t __wrp_req_struct_to_string( const wrp_msg_t *msg, char **bytes )
+/**
+ *  Convert the req structure to a string.
+ *
+ *  @param msg   [in]  the message to convert
+ *  @param bytes [out] the output of the conversion
+ *
+ *  @return the number of bytes in the string or less then 1 on error
+ */
+static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char **bytes )
 {
     const char const *req_fmt = "wrp_req_msg {\n"
-                                "    .transaction_uuid = %s\n"
-                                "    .source           = %s\n"
-                                "    .dest             = %s\n"
-                                "    .headers          = %s\n"
-                                "    .timing_values    = %s\n"
-                                "    .payload_size     = %zd\n"
+                                "    .transaction_uuid    = %s\n"
+                                "    .source              = %s\n"
+                                "    .dest                = %s\n"
+                                "    .headers             = %s\n"
+                                "    .timing_values       = %s\n"
+                                "    .timing_values_count = %zd\n"
+                                "    .payload_size        = %zd\n"
                                 "}\n";
 
-    const struct wrp_req_msg *req;
-    char *data;
     size_t length;
+    char *headers;
+    char *timing_values;
 
 
-    req = &msg->u.req;
+    headers = __get_header_string( req->headers );
+    timing_values = __get_timing_string( req->timing_values, req->timing_values_count );
 
     length = snprintf( NULL, 0, req_fmt, req->transaction_uuid,
-                       req->source, req->dest, "", "", req->payload_size );
+                       req->source, req->dest, headers, timing_values,
+                       req->timing_values_count, req->payload_size );
     length++;   /* For trailing '\0' */
 
-    data = (char*) malloc( sizeof(char) * length );
-    if( NULL != *bytes ) {
-        snprintf( data, length, req_fmt, req->transaction_uuid,
-                  req->source, req->dest, "", "", req->payload_size );
+    if( NULL != bytes ) {
+        char *data;
+
+        data = (char*) malloc( sizeof(char) * length );
+        if( NULL != data ) {
+            snprintf( data, length, req_fmt, req->transaction_uuid,
+                      req->source, req->dest, headers, timing_values,
+                      req->timing_values_count, req->payload_size );
+            data[length] = '\0';
+
+            *bytes = data;
+        } else {
+            length = -1;
+        }
     }
-    data[length] = '\0';
+
+    if( __empty_list != headers ) {
+        free( headers );
+    }
+    if( __empty_list != timing_values ) {
+        free( timing_values );
+    }
 
     return length;
 
 }
 
-static ssize_t __wrp_event_struct_to_string( const wrp_msg_t *msg, char **bytes )
+
+/**
+ *  Convert the event structure to a string.
+ *
+ *  @param event [in]  the message to convert
+ *  @param bytes [out] the output of the conversion
+ *
+ *  @return the number of bytes in the string or less then 1 on error
+ */
+static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
+                                             char **bytes )
 {
+    (void) event;
+    (void) bytes;
+
     return -1;
 }
 
 
-static size_t __get_header_string( const char **headers )
+/**
+ *  Converts the list of headers into a string to print.
+ *
+ *  @note The caller must check to see if the value is equal to __empty_list
+ *        and not free it if equal.  If not equal it must be freed.
+ *  @note This function never returns NULL.
+ *
+ *  @param headers [in] the headers to make into a string
+ *
+ *  @return The string representation of the headers.
+ */
+static char* __get_header_string( char **headers )
 {
-    if( headers ) {
-        const char *p;
-        int comma = 0;
+    char *rv;
 
-        rv = 0;
-        for( p = *headers; NULL != p; p++ ) {
-            rv += comma;
-            rv += strlen( p );
+    rv = (char*) __empty_list;
+    if( headers ) {
+        size_t i;
+        int comma;
+        size_t length;
+
+        comma = 0;
+        length = 2; /* For ' characters. */
+        for( i = 0; NULL != headers[i]; i++ ) {
+            length += comma;
+            length += strlen( headers[i] );
             comma = 2;
         }
+        length++; /* For the trailing '\0' */
 
-        return NULL;
+        rv = (char*) malloc( sizeof(char) * length );
+        if( NULL != rv ) {
+            char *tmp;
+            const char *comma;
+
+            comma = "";
+            tmp = rv;
+            tmp = strcat( tmp, "'" );
+            for( i = 0; NULL != headers[i]; i++ ) {
+                tmp = strcat( tmp, comma );
+                tmp = strcat( tmp, headers[i] );
+                comma = ", ";
+            }
+            tmp = strcat( tmp, "'" );
+        } else {
+            rv = (char*) __empty_list;
+        }
     }
 
-    return (char*) empty_list;
+    return rv;
 }
 
 
-static char* __get_timing_string( const struct wrp_timing_value *timing_values )
+/**
+ *  Converts the list of times into a string to print.
+ *
+ *  @note The caller must check to see if the value is equal to __empty_list
+ *        and not free it if equal.  If not equal it must be freed.
+ *  @note This function never returns NULL.
+ *
+ *  @param timing_values [in] the timing_values to make into a string
+ *  @param count         [in] the number of timing values in the list
+ *
+ *  @return The string representation of the times.
+ */
+static char* __get_timing_string( const struct wrp_timing_value *timing_values,
+                                  size_t count )
 {
+    char *rv;
+            rv = (char*) __empty_list;
     if( timing_values ) {
-        size_t length;
-        char *rv;
+        size_t length, i;
         const struct wrp_timing_value *p;
 
         length = 0;
-        for( p = timing_values; NULL != p; p++ ) {
-            length += snprintf( NULL, 0, "        %s: %ld.%.06ld - %ld.%.06ld\n",
+        p = timing_values;
+        for( i = 0; i < count; i++, p++ ) {
+            length += snprintf( NULL, 0, "\n        %s: %ld.%.06ld - %ld.%.06ld",
                                 p->name, p->start.tv_sec, p->start.tv_usec,
                                 p->end.tv_sec, p->end.tv_usec );
         }
@@ -279,14 +390,17 @@ static char* __get_timing_string( const struct wrp_timing_value *timing_values )
             char *tmp;
 
             tmp = rv;
-            for( p = timing_values; NULL != p; p++ ) {
-                tmp += snprintf( tmp, "        %s: %ld.%.06ld - %ld.%.06ld\n",
+            p = timing_values;
+            for( i = 0; i < count; i++, p++ ) {
+                tmp += sprintf( tmp, "\n        %s: %ld.%.06ld - %ld.%.06ld",
                                 p->name, p->start.tv_sec, p->start.tv_usec,
                                 p->end.tv_sec, p->end.tv_usec );
             }
             *tmp = '\0';
+        } else {
+            rv = (char*) __empty_list;
         }
     }
 
-    return (char*) empty_list;
+    return rv;
 }

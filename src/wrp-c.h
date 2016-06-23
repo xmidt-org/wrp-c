@@ -54,7 +54,8 @@ struct wrp_req_msg {
     char *source;
     char *dest;
     char **headers;                         /* NULL terminated list */
-    struct wrp_timing_value *timing_values; /* NULL terminated list */
+    struct wrp_timing_value *timing_values;
+    size_t timing_values_count;
     void *payload;
     size_t payload_size;
 };

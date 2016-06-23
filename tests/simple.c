@@ -22,15 +22,110 @@
 
 #include "../src/wrp-c.h"
 
-void test_1()
+struct test_to_string {
+    const wrp_msg_t in;
+    const char *expected;
+};
+
+void test_to_string()
 {
-    wrp_struct_to_string( NULL );
+    const char *headers[] = { "Header 1", "Header 2", NULL };
+    const struct wrp_timing_value timing[] = {
+        { .name = "hop-1",
+          .start.tv_sec = 123,
+          .start.tv_usec = 44,
+          .end.tv_sec = 124,
+          .end.tv_usec = 55 },
+    };
+
+    const struct test_to_string test[] = {
+        /*--------------------------------------------------------------------*/
+        { .in.msg_type = WRP_MSG_TYPE__AUTH,
+          .in.u.auth.status = 123,
+          
+          .expected = "wrp_auth_msg {\n"
+                      "    .status = 123\n"
+                      "}\n" },
+
+        /*--------------------------------------------------------------------*/
+        { .in.msg_type = WRP_MSG_TYPE__REQ,
+          .in.u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+          .in.u.req.source = "source-address",
+          .in.u.req.dest = "dest-address",
+          .in.u.req.headers = NULL,
+          .in.u.req.timing_values = NULL,
+          .in.u.req.timing_values_count = 0,
+          .in.u.req.payload = "123",
+          .in.u.req.payload_size = 3,
+          .expected = "wrp_req_msg {\n"
+                      "    .transaction_uuid    = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
+                      "    .source              = source-address\n"
+                      "    .dest                = dest-address\n"
+                      "    .headers             = ''\n"
+                      "    .timing_values       = ''\n"
+                      "    .timing_values_count = 0\n"
+                      "    .payload_size        = 3\n"
+                      "}\n" },
+
+        /*--------------------------------------------------------------------*/
+        { .in.msg_type = WRP_MSG_TYPE__REQ,
+          .in.u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+          .in.u.req.source = "source-address",
+          .in.u.req.dest = "dest-address",
+          .in.u.req.headers = (char**) headers,
+          .in.u.req.timing_values = NULL,
+          .in.u.req.timing_values_count = 0,
+          .in.u.req.payload = "123",
+          .in.u.req.payload_size = 3,
+          .expected = "wrp_req_msg {\n"
+                      "    .transaction_uuid    = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
+                      "    .source              = source-address\n"
+                      "    .dest                = dest-address\n"
+                      "    .headers             = 'Header 1, Header 2'\n"
+                      "    .timing_values       = ''\n"
+                      "    .timing_values_count = 0\n"
+                      "    .payload_size        = 3\n"
+                      "}\n" },
+
+        /*--------------------------------------------------------------------*/
+        { .in.msg_type = WRP_MSG_TYPE__REQ,
+          .in.u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+          .in.u.req.source = "source-address",
+          .in.u.req.dest = "dest-address",
+          .in.u.req.headers = (char**) headers,
+          .in.u.req.timing_values = (struct wrp_timing_value*) timing,
+          .in.u.req.timing_values_count = sizeof(timing)/sizeof(struct wrp_timing_value),
+          .in.u.req.payload = "123",
+          .in.u.req.payload_size = 3,
+          .expected = "wrp_req_msg {\n"
+                      "    .transaction_uuid    = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
+                      "    .source              = source-address\n"
+                      "    .dest                = dest-address\n"
+                      "    .headers             = 'Header 1, Header 2'\n"
+                      "    .timing_values       = \n"
+                      "        hop-1: 123.000044 - 124.000055\n"
+                      "    .timing_values_count = 1\n"
+                      "    .payload_size        = 3\n"
+                      "}\n" },
+    };
+    size_t i;
+
+    for( i = 0; i < sizeof(test)/sizeof(struct test_to_string); i++ ) {
+        char *out;
+
+        out = wrp_struct_to_string( &test[i].in );
+
+        if( (NULL != out) && (0 != strcmp(out, test[i].expected)) ) {
+            printf( "\n\nGot: |%s| Expected: |%s|\n\n", out, test[i].expected );
+        }
+        CU_ASSERT_STRING_EQUAL( out, test[i].expected );
+    }
 }
 
 void add_suites( CU_pSuite *suite )
 {
     *suite = CU_add_suite( "wrp-c encoding tests", NULL, NULL );
-    CU_add_test( *suite, "Test 1", test_1 );
+    CU_add_test( *suite, "Test struct_to_string()", test_to_string );
 }
 
 /*----------------------------------------------------------------------------*/
