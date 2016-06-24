@@ -49,12 +49,17 @@ struct money_trace_span {
     uint32_t duration;  /* Duration in microseconds from the start time. */
 };
 
+struct money_trace_spans {
+    struct money_trace_span *spans;
+    size_t count;
+};
+
 struct wrp_req_msg {
     char *transaction_uuid;
     char *source;
     char *dest;
     char **headers;                         /* NULL terminated list */
-    struct money_trace_span *spans;
+    struct money_trace_spans spans;
     size_t span_count;
     void *payload;
     size_t payload_size;

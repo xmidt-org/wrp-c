@@ -53,8 +53,8 @@ void test_to_string()
           .in.u.req.source = "source-address",
           .in.u.req.dest = "dest-address",
           .in.u.req.headers = NULL,
-          .in.u.req.spans = NULL,
-          .in.u.req.span_count = 0,
+          .in.u.req.spans.spans = NULL,
+          .in.u.req.spans.count = 0,
           .in.u.req.payload = "123",
           .in.u.req.payload_size = 3,
 
@@ -65,7 +65,6 @@ void test_to_string()
                       "    .dest             = dest-address\n"
                       "    .headers          = ''\n"
                       "    .spans            = ''\n"
-                      "    .span_count       = 0\n"
                       "    .payload_size     = 3\n"
                       "}\n" },
 
@@ -75,8 +74,8 @@ void test_to_string()
           .in.u.req.source = "source-address",
           .in.u.req.dest = "dest-address",
           .in.u.req.headers = (char**) headers,
-          .in.u.req.spans = NULL,
-          .in.u.req.span_count = 0,
+          .in.u.req.spans.spans = NULL,
+          .in.u.req.spans.count = 0,
           .in.u.req.payload = "123",
           .in.u.req.payload_size = 3,
 
@@ -87,7 +86,6 @@ void test_to_string()
                       "    .dest             = dest-address\n"
                       "    .headers          = 'Header 1, Header 2'\n"
                       "    .spans            = ''\n"
-                      "    .span_count       = 0\n"
                       "    .payload_size     = 3\n"
                       "}\n" },
 
@@ -97,8 +95,8 @@ void test_to_string()
           .in.u.req.source = "source-address",
           .in.u.req.dest = "dest-address",
           .in.u.req.headers = (char**) headers,
-          .in.u.req.spans = (struct money_trace_span*) spans,
-          .in.u.req.span_count = sizeof(spans)/sizeof(struct money_trace_span),
+          .in.u.req.spans.spans = (struct money_trace_span*) spans,
+          .in.u.req.spans.count = sizeof(spans)/sizeof(struct money_trace_span),
           .in.u.req.payload = "123",
           .in.u.req.payload_size = 3,
 
@@ -110,7 +108,6 @@ void test_to_string()
                       "    .headers          = 'Header 1, Header 2'\n"
                       "    .spans            = \n"
                       "        hop-1: 123000044 - 11\n"
-                      "    .span_count       = 1\n"
                       "    .payload_size     = 3\n"
                       "}\n" },
     };

@@ -50,7 +50,7 @@ static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth, cha
 static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char **bytes );
 static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event, char **bytes );
 static char* __get_header_string( char **headers );
-static char* __get_span_string( const struct money_trace_span *spans, size_t count );
+static char* __get_spans_string( const struct money_trace_spans *spans );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -240,7 +240,6 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
                                 "    .dest             = %s\n"
                                 "    .headers          = %s\n"
                                 "    .spans            = %s\n"
-                                "    .span_count       = %zd\n"
                                 "    .payload_size     = %zd\n"
                                 "}\n";
 
@@ -250,20 +249,18 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
 
 
     headers = __get_header_string( req->headers );
-    spans = __get_span_string( req->spans, req->span_count );
+    spans = __get_spans_string( &req->spans );
 
-    length = snprintf( NULL, 0, req_fmt, req->transaction_uuid,
-                       req->source, req->dest, headers, spans,
-                       req->span_count, req->payload_size );
+    length = snprintf( NULL, 0, req_fmt, req->transaction_uuid, req->source,
+                       req->dest, headers, spans, req->payload_size );
 
     if( NULL != bytes ) {
         char *data;
 
         data = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
         if( NULL != data ) {
-            sprintf( data, req_fmt, req->transaction_uuid,
-                     req->source, req->dest, headers, spans,
-                     req->span_count, req->payload_size );
+            sprintf( data, req_fmt, req->transaction_uuid, req->source,
+                     req->dest, headers, spans, req->payload_size );
             data[length] = '\0';
 
             *bytes = data;
@@ -362,38 +359,39 @@ static char* __get_header_string( char **headers )
  *  @note This function never returns NULL.
  *
  *  @param spans [in] the spans to make into a string
- *  @param count [in] the number of spans in the list
  *
  *  @return The string representation of the times.
  */
-static char* __get_span_string( const struct money_trace_span *spans, size_t count )
+static char* __get_spans_string( const struct money_trace_spans *spans )
 {
     char *rv;
-            rv = (char*) __empty_list;
-    if( spans ) {
+    size_t count;
+
+    count = spans->count;
+    rv = (char*) __empty_list;
+
+    if( 0 < count ) {
+        char *buffer;
         size_t length, i;
         const struct money_trace_span *p;
 
         length = 0;
-        p = spans;
+        p = spans->spans;
         for( i = 0; i < count; i++, p++ ) {
             length += snprintf( NULL, 0, "\n        %s: %" PRIu64 " - %" PRIu32,
                                 p->name, p->start, p->duration );
         }
     
-        rv = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
-        if( NULL != rv ) {
-            char *tmp;
+        buffer = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
+        if( NULL != buffer ) {
+            rv = buffer;
 
-            tmp = rv;
-            p = spans;
+            p = spans->spans;
             for( i = 0; i < count; i++, p++ ) {
-                tmp += sprintf( tmp, "\n        %s: %" PRIu64 " - %" PRIu32,
-                                p->name, p->start, p->duration );
+                buffer += sprintf( buffer, "\n        %s: %" PRIu64 " - %" PRIu32,
+                                   p->name, p->start, p->duration );
             }
-            *tmp = '\0';
-        } else {
-            rv = (char*) __empty_list;
+            *buffer = '\0';
         }
     }
 
