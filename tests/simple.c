@@ -110,6 +110,38 @@ void test_to_string()
                       "        hop-1: 123000044 - 11\n"
                       "    .payload_size     = 3\n"
                       "}\n" },
+
+        /*--------------------------------------------------------------------*/
+        { .in.msg_type = WRP_MSG_TYPE__EVENT,
+          .in.u.event.source = "source-address",
+          .in.u.event.dest = "dest-address",
+          .in.u.event.headers = NULL,
+          .in.u.event.payload = "123",
+          .in.u.event.payload_size = 3,
+
+          .expected_length = 0,
+          .expected = "wrp_event_msg {\n"
+                      "    .source           = source-address\n"
+                      "    .dest             = dest-address\n"
+                      "    .headers          = ''\n"
+                      "    .payload_size     = 3\n"
+                      "}\n" },
+
+        /*--------------------------------------------------------------------*/
+        { .in.msg_type = WRP_MSG_TYPE__EVENT,
+          .in.u.event.source = "source-address",
+          .in.u.event.dest = "dest-address",
+          .in.u.event.headers = (char**) headers,
+          .in.u.event.payload = "123",
+          .in.u.event.payload_size = 3,
+
+          .expected_length = 0,
+          .expected = "wrp_event_msg {\n"
+                      "    .source           = source-address\n"
+                      "    .dest             = dest-address\n"
+                      "    .headers          = 'Header 1, Header 2'\n"
+                      "    .payload_size     = 3\n"
+                      "}\n" },
     };
     size_t i;
 
