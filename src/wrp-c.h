@@ -15,7 +15,7 @@
  *
  */
 #include <sys/types.h>
-#include <sys/time.h>
+#include <stdint.h>
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -43,10 +43,10 @@ struct wrp_auth_msg {
     int status;
 };
 
-struct wrp_timing_value {
+struct money_trace_span {
     char *name;
-    struct timeval start;
-    struct timeval end;
+    uint64_t start;     /* Start time in microseconds from 1/1/1970. */
+    uint32_t duration;  /* Duration in microseconds from the start time. */
 };
 
 struct wrp_req_msg {
@@ -54,8 +54,8 @@ struct wrp_req_msg {
     char *source;
     char *dest;
     char **headers;                         /* NULL terminated list */
-    struct wrp_timing_value *timing_values;
-    size_t timing_values_count;
+    struct money_trace_span *spans;
+    size_t span_count;
     void *payload;
     size_t payload_size;
 };

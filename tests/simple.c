@@ -31,12 +31,10 @@ struct test_to_string {
 void test_to_string()
 {
     const char *headers[] = { "Header 1", "Header 2", NULL };
-    const struct wrp_timing_value timing[] = {
+    const struct money_trace_span spans[] = {
         { .name = "hop-1",
-          .start.tv_sec = 123,
-          .start.tv_usec = 44,
-          .end.tv_sec = 124,
-          .end.tv_usec = 55 },
+          .start = 123000044,
+          .duration = 11 },
     };
 
     const struct test_to_string test[] = {
@@ -55,20 +53,20 @@ void test_to_string()
           .in.u.req.source = "source-address",
           .in.u.req.dest = "dest-address",
           .in.u.req.headers = NULL,
-          .in.u.req.timing_values = NULL,
-          .in.u.req.timing_values_count = 0,
+          .in.u.req.spans = NULL,
+          .in.u.req.span_count = 0,
           .in.u.req.payload = "123",
           .in.u.req.payload_size = 3,
 
           .expected_length = 0,
           .expected = "wrp_req_msg {\n"
-                      "    .transaction_uuid    = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
-                      "    .source              = source-address\n"
-                      "    .dest                = dest-address\n"
-                      "    .headers             = ''\n"
-                      "    .timing_values       = ''\n"
-                      "    .timing_values_count = 0\n"
-                      "    .payload_size        = 3\n"
+                      "    .transaction_uuid = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
+                      "    .source           = source-address\n"
+                      "    .dest             = dest-address\n"
+                      "    .headers          = ''\n"
+                      "    .spans            = ''\n"
+                      "    .span_count       = 0\n"
+                      "    .payload_size     = 3\n"
                       "}\n" },
 
         /*--------------------------------------------------------------------*/
@@ -77,20 +75,20 @@ void test_to_string()
           .in.u.req.source = "source-address",
           .in.u.req.dest = "dest-address",
           .in.u.req.headers = (char**) headers,
-          .in.u.req.timing_values = NULL,
-          .in.u.req.timing_values_count = 0,
+          .in.u.req.spans = NULL,
+          .in.u.req.span_count = 0,
           .in.u.req.payload = "123",
           .in.u.req.payload_size = 3,
 
           .expected_length = 0,
           .expected = "wrp_req_msg {\n"
-                      "    .transaction_uuid    = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
-                      "    .source              = source-address\n"
-                      "    .dest                = dest-address\n"
-                      "    .headers             = 'Header 1, Header 2'\n"
-                      "    .timing_values       = ''\n"
-                      "    .timing_values_count = 0\n"
-                      "    .payload_size        = 3\n"
+                      "    .transaction_uuid = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
+                      "    .source           = source-address\n"
+                      "    .dest             = dest-address\n"
+                      "    .headers          = 'Header 1, Header 2'\n"
+                      "    .spans            = ''\n"
+                      "    .span_count       = 0\n"
+                      "    .payload_size     = 3\n"
                       "}\n" },
 
         /*--------------------------------------------------------------------*/
@@ -99,21 +97,21 @@ void test_to_string()
           .in.u.req.source = "source-address",
           .in.u.req.dest = "dest-address",
           .in.u.req.headers = (char**) headers,
-          .in.u.req.timing_values = (struct wrp_timing_value*) timing,
-          .in.u.req.timing_values_count = sizeof(timing)/sizeof(struct wrp_timing_value),
+          .in.u.req.spans = (struct money_trace_span*) spans,
+          .in.u.req.span_count = sizeof(spans)/sizeof(struct money_trace_span),
           .in.u.req.payload = "123",
           .in.u.req.payload_size = 3,
 
           .expected_length = 0,
           .expected = "wrp_req_msg {\n"
-                      "    .transaction_uuid    = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
-                      "    .source              = source-address\n"
-                      "    .dest                = dest-address\n"
-                      "    .headers             = 'Header 1, Header 2'\n"
-                      "    .timing_values       = \n"
-                      "        hop-1: 123.000044 - 124.000055\n"
-                      "    .timing_values_count = 1\n"
-                      "    .payload_size        = 3\n"
+                      "    .transaction_uuid = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
+                      "    .source           = source-address\n"
+                      "    .dest             = dest-address\n"
+                      "    .headers          = 'Header 1, Header 2'\n"
+                      "    .spans            = \n"
+                      "        hop-1: 123000044 - 11\n"
+                      "    .span_count       = 1\n"
+                      "    .payload_size     = 3\n"
                       "}\n" },
     };
     size_t i;
