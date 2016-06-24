@@ -14,11 +14,14 @@
  * limitations under the License.
  *
  */
-#include <trower-base64/base64.h>
-#include <stdlib.h>
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#include <trower-base64/base64.h>
+
 #include "wrp-c.h"
 
 /*----------------------------------------------------------------------------*/
@@ -47,8 +50,7 @@ static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth, cha
 static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char **bytes );
 static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event, char **bytes );
 static char* __get_header_string( char **headers );
-static char* __get_timing_string( const struct wrp_timing_value *timing_values,
-                                  size_t count );
+static char* __get_spans_string( const struct money_trace_spans *spans );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -233,35 +235,32 @@ static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth, cha
 static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char **bytes )
 {
     const char const *req_fmt = "wrp_req_msg {\n"
-                                "    .transaction_uuid    = %s\n"
-                                "    .source              = %s\n"
-                                "    .dest                = %s\n"
-                                "    .headers             = %s\n"
-                                "    .timing_values       = %s\n"
-                                "    .timing_values_count = %zd\n"
-                                "    .payload_size        = %zd\n"
+                                "    .transaction_uuid = %s\n"
+                                "    .source           = %s\n"
+                                "    .dest             = %s\n"
+                                "    .headers          = %s\n"
+                                "    .spans            = %s\n"
+                                "    .payload_size     = %zd\n"
                                 "}\n";
 
     size_t length;
     char *headers;
-    char *timing_values;
+    char *spans;
 
 
     headers = __get_header_string( req->headers );
-    timing_values = __get_timing_string( req->timing_values, req->timing_values_count );
+    spans = __get_spans_string( &req->spans );
 
-    length = snprintf( NULL, 0, req_fmt, req->transaction_uuid,
-                       req->source, req->dest, headers, timing_values,
-                       req->timing_values_count, req->payload_size );
+    length = snprintf( NULL, 0, req_fmt, req->transaction_uuid, req->source,
+                       req->dest, headers, spans, req->payload_size );
 
     if( NULL != bytes ) {
         char *data;
 
         data = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
         if( NULL != data ) {
-            sprintf( data, req_fmt, req->transaction_uuid,
-                     req->source, req->dest, headers, timing_values,
-                     req->timing_values_count, req->payload_size );
+            sprintf( data, req_fmt, req->transaction_uuid, req->source,
+                     req->dest, headers, spans, req->payload_size );
             data[length] = '\0';
 
             *bytes = data;
@@ -273,8 +272,8 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
     if( __empty_list != headers ) {
         free( headers );
     }
-    if( __empty_list != timing_values ) {
-        free( timing_values );
+    if( __empty_list != spans ) {
+        free( spans );
     }
 
     return length;
@@ -359,42 +358,40 @@ static char* __get_header_string( char **headers )
  *        and not free it if equal.  If not equal it must be freed.
  *  @note This function never returns NULL.
  *
- *  @param timing_values [in] the timing_values to make into a string
- *  @param count         [in] the number of timing values in the list
+ *  @param spans [in] the spans to make into a string
  *
  *  @return The string representation of the times.
  */
-static char* __get_timing_string( const struct wrp_timing_value *timing_values,
-                                  size_t count )
+static char* __get_spans_string( const struct money_trace_spans *spans )
 {
     char *rv;
-            rv = (char*) __empty_list;
-    if( timing_values ) {
+    size_t count;
+
+    count = spans->count;
+    rv = (char*) __empty_list;
+
+    if( 0 < count ) {
+        char *buffer;
         size_t length, i;
-        const struct wrp_timing_value *p;
+        const struct money_trace_span *p;
 
         length = 0;
-        p = timing_values;
+        p = spans->spans;
         for( i = 0; i < count; i++, p++ ) {
-            length += snprintf( NULL, 0, "\n        %s: %ld.%.06ld - %ld.%.06ld",
-                                p->name, p->start.tv_sec, p->start.tv_usec,
-                                p->end.tv_sec, p->end.tv_usec );
+            length += snprintf( NULL, 0, "\n        %s: %" PRIu64 " - %" PRIu32,
+                                p->name, p->start, p->duration );
         }
     
-        rv = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
-        if( NULL != rv ) {
-            char *tmp;
+        buffer = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
+        if( NULL != buffer ) {
+            rv = buffer;
 
-            tmp = rv;
-            p = timing_values;
+            p = spans->spans;
             for( i = 0; i < count; i++, p++ ) {
-                tmp += sprintf( tmp, "\n        %s: %ld.%.06ld - %ld.%.06ld",
-                                p->name, p->start.tv_sec, p->start.tv_usec,
-                                p->end.tv_sec, p->end.tv_usec );
+                buffer += sprintf( buffer, "\n        %s: %" PRIu64 " - %" PRIu32,
+                                   p->name, p->start, p->duration );
             }
-            *tmp = '\0';
-        } else {
-            rv = (char*) __empty_list;
+            *buffer = '\0';
         }
     }
 
