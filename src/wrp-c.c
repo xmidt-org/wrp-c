@@ -247,7 +247,6 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
     char *headers;
     char *spans;
 
-
     headers = __get_header_string( req->headers );
     spans = __get_spans_string( &req->spans );
 
@@ -277,7 +276,6 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
     }
 
     return length;
-
 }
 
 
@@ -292,10 +290,41 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
 static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
                                              char **bytes )
 {
-    (void) event;
-    (void) bytes;
+    const char const *event_fmt = "wrp_event_msg {\n"
+                                "    .source           = %s\n"
+                                "    .dest             = %s\n"
+                                "    .headers          = %s\n"
+                                "    .payload_size     = %zd\n"
+                                "}\n";
 
-    return -1;
+    size_t length;
+    char *headers;
+
+    headers = __get_header_string( event->headers );
+
+    length = snprintf( NULL, 0, event_fmt, event->source, event->dest,
+                       headers, event->payload_size );
+
+    if( NULL != bytes ) {
+        char *data;
+
+        data = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
+        if( NULL != data ) {
+            sprintf( data, event_fmt, event->source, event->dest, headers,
+                     event->payload_size );
+            data[length] = '\0';
+
+            *bytes = data;
+        } else {
+            length = -1;
+        }
+    }
+
+    if( __empty_list != headers ) {
+        free( headers );
+    }
+
+    return length;
 }
 
 
@@ -316,6 +345,7 @@ static char* __get_header_string( char **headers )
 
     rv = (char*) __empty_list;
     if( headers ) {
+        char *tmp;
         size_t i;
         int comma;
         size_t length;
@@ -328,13 +358,13 @@ static char* __get_header_string( char **headers )
             comma = 2;
         }
 
-        rv = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
-        if( NULL != rv ) {
-            char *tmp;
+        tmp = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
+        if( NULL != tmp ) {
             const char *comma;
 
+            rv = tmp;
+
             comma = "";
-            tmp = rv;
             tmp = strcat( tmp, "'" );
             for( i = 0; NULL != headers[i]; i++ ) {
                 tmp = strcat( tmp, comma );
@@ -342,8 +372,6 @@ static char* __get_header_string( char **headers )
                 comma = ", ";
             }
             tmp = strcat( tmp, "'" );
-        } else {
-            rv = (char*) __empty_list;
         }
     }
 
