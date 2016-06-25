@@ -239,6 +239,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
                                 "    .source           = %s\n"
                                 "    .dest             = %s\n"
                                 "    .headers          = %s\n"
+                                "    .include_spans    = %s\n"
                                 "    .spans            = %s\n"
                                 "    .payload_size     = %zd\n"
                                 "}\n";
@@ -251,7 +252,8 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
     spans = __get_spans_string( &req->spans );
 
     length = snprintf( NULL, 0, req_fmt, req->transaction_uuid, req->source,
-                       req->dest, headers, spans, req->payload_size );
+                       req->dest, headers, (req->include_spans ? "true" : "false"),
+                       spans, req->payload_size );
 
     if( NULL != bytes ) {
         char *data;
@@ -259,7 +261,8 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
         data = (char*) malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
         if( NULL != data ) {
             sprintf( data, req_fmt, req->transaction_uuid, req->source,
-                     req->dest, headers, spans, req->payload_size );
+                     req->dest, headers, (req->include_spans ? "true" : "false"),
+                     spans, req->payload_size );
             data[length] = '\0';
 
             *bytes = data;

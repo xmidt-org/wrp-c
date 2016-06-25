@@ -14,8 +14,9 @@
  * limitations under the License.
  *
  */
-#include <sys/types.h>
+#include <stdbool.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -59,8 +60,8 @@ struct wrp_req_msg {
     char *source;
     char *dest;
     char **headers;                         /* NULL terminated list */
+    bool include_spans;
     struct money_trace_spans spans;
-    size_t span_count;
     void *payload;
     size_t payload_size;
 };
