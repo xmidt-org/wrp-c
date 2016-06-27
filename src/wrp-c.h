@@ -14,8 +14,9 @@
  * limitations under the License.
  *
  */
+#include <stdbool.h>
+#include <stdint.h>
 #include <sys/types.h>
-#include <sys/time.h>
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -43,10 +44,15 @@ struct wrp_auth_msg {
     int status;
 };
 
-struct wrp_timing_value {
+struct money_trace_span {
     char *name;
-    struct timeval start;
-    struct timeval end;
+    uint64_t start;     /* Start time in microseconds from 1/1/1970. */
+    uint32_t duration;  /* Duration in microseconds from the start time. */
+};
+
+struct money_trace_spans {
+    struct money_trace_span *spans;
+    size_t count;
 };
 
 struct wrp_req_msg {
@@ -54,8 +60,8 @@ struct wrp_req_msg {
     char *source;
     char *dest;
     char **headers;                         /* NULL terminated list */
-    struct wrp_timing_value *timing_values;
-    size_t timing_values_count;
+    bool include_spans;
+    struct money_trace_spans spans;
     void *payload;
     size_t payload_size;
 };
