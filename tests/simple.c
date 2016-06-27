@@ -53,6 +53,7 @@ void test_to_string()
           .in.u.req.source = "source-address",
           .in.u.req.dest = "dest-address",
           .in.u.req.headers = NULL,
+          .in.u.req.include_spans = false,
           .in.u.req.spans.spans = NULL,
           .in.u.req.spans.count = 0,
           .in.u.req.payload = "123",
@@ -64,6 +65,7 @@ void test_to_string()
                       "    .source           = source-address\n"
                       "    .dest             = dest-address\n"
                       "    .headers          = ''\n"
+                      "    .include_spans    = false\n"
                       "    .spans            = ''\n"
                       "    .payload_size     = 3\n"
                       "}\n" },
@@ -74,6 +76,7 @@ void test_to_string()
           .in.u.req.source = "source-address",
           .in.u.req.dest = "dest-address",
           .in.u.req.headers = (char**) headers,
+          .in.u.req.include_spans = false,
           .in.u.req.spans.spans = NULL,
           .in.u.req.spans.count = 0,
           .in.u.req.payload = "123",
@@ -85,6 +88,7 @@ void test_to_string()
                       "    .source           = source-address\n"
                       "    .dest             = dest-address\n"
                       "    .headers          = 'Header 1, Header 2'\n"
+                      "    .include_spans    = false\n"
                       "    .spans            = ''\n"
                       "    .payload_size     = 3\n"
                       "}\n" },
@@ -95,6 +99,7 @@ void test_to_string()
           .in.u.req.source = "source-address",
           .in.u.req.dest = "dest-address",
           .in.u.req.headers = (char**) headers,
+          .in.u.req.include_spans = true,
           .in.u.req.spans.spans = (struct money_trace_span*) spans,
           .in.u.req.spans.count = sizeof(spans)/sizeof(struct money_trace_span),
           .in.u.req.payload = "123",
@@ -106,6 +111,7 @@ void test_to_string()
                       "    .source           = source-address\n"
                       "    .dest             = dest-address\n"
                       "    .headers          = 'Header 1, Header 2'\n"
+                      "    .include_spans    = true\n"
                       "    .spans            = \n"
                       "        hop-1: 123000044 - 11\n"
                       "    .payload_size     = 3\n"
