@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <msgpack.h>
 #include <trower-base64/base64.h>
 
 #include "wrp-c.h"
@@ -51,6 +51,8 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
 static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event, char **bytes );
 static char* __get_header_string( char **headers );
 static char* __get_spans_string( const struct money_trace_spans *spans );
+static ssize_t __wrp_pack_structure(int msg_type, char* source, char* dest, char* transaction_uuid, bool includeTimingValues, const struct money_trace_spans *timeSpan, char* payload, size_t payload_size, char **headers, char **data);
+
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -109,12 +111,48 @@ char* wrp_struct_to_string( const wrp_msg_t *msg )
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
+/**
+ *  Do the work of converting into msgpack binary format.
+ *
+ *  @param msg   [in]  the message to convert
+ *  @param bytes [out] the place to put the output (never NULL)
+ *
+ *  @return size of buffer (in bytes) on success or less then 1 on error
+ */
+
 static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 {
-    (void) msg;
-    (void) bytes;
+	ssize_t rv;
+	const struct wrp_req_msg *req = &(msg->u.req);
+	const struct wrp_event_msg *event = &(msg->u.event);
+	const struct money_trace_spans *time_spans = NULL;
+	
+	if( NULL == msg ) {
+        	return -1;
+    	}
+	
+	//convert to binary bytes using msgpack
+	switch( msg->msg_type ) {
+        case WRP_MSG_TYPE__AUTH:
+            return -1;
+        case WRP_MSG_TYPE__REQ:
+	    time_spans = &(req->spans);	    
+            rv = __wrp_pack_structure(msg->msg_type, req->source, req->dest, req->transaction_uuid, req->include_spans, time_spans, req->payload, req->payload_size, req->headers, bytes);
+	    break;
+        case WRP_MSG_TYPE__EVENT:
+            rv = __wrp_pack_structure(msg->msg_type, event->source, event->dest, NULL, false, NULL, event->payload, event->payload_size, event->headers, bytes);
+	    break;
+        default:
+            break;
+	}
 
-    return -1;
+	return rv;
+     	
+     	if(rv < 1)
+     	{
+     		return -1;
+     	}
+	return -1;
 }
 
 
@@ -381,6 +419,113 @@ static char* __get_header_string( char **headers )
     return rv;
 }
 
+/**
+ *  Encode/Pack the wrp message structure using msgpack
+ *
+ *  @param  [in]  the messages to convert
+ *  @param data [out] the encoded output
+ *
+ *  @return the number of bytes in the string or less then 1 on error*/
+
+static ssize_t __wrp_pack_structure(int msg_type, char *source, char* dest, char* transaction_uuid, bool includeTimingValues, const struct money_trace_spans *timeSpan, char* payload, size_t payload_size, char **headers, char **data)
+{
+	msgpack_sbuffer sbuf;
+	msgpack_packer pk;  
+	ssize_t rv;
+	unsigned int cnt=0;
+	
+	/***   Start of Msgpack Encoding  ***/
+	
+	msgpack_sbuffer_init(&sbuf);
+	msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
+	msgpack_pack_map(&pk, WRP_MAP_SIZE);
+
+	printf("msg_type %d\n",msg_type);
+	msgpack_pack_str(&pk, strlen(WRP_MSG_TYPE));
+	msgpack_pack_str_body(&pk, WRP_MSG_TYPE,strlen(WRP_MSG_TYPE));
+	msgpack_pack_int(&pk, msg_type);   
+    
+	if(source != NULL) {
+		msgpack_pack_str(&pk, strlen(WRP_SOURCE));
+		msgpack_pack_str_body(&pk, WRP_SOURCE,strlen(WRP_SOURCE));
+		msgpack_pack_str(&pk, strlen(source));
+		msgpack_pack_str_body(&pk, source,strlen(source));
+	}
+    
+	if(dest != NULL) {
+		msgpack_pack_str(&pk, strlen(WRP_DESTINATION));
+		msgpack_pack_str_body(&pk, WRP_DESTINATION,strlen(WRP_DESTINATION));       
+		msgpack_pack_str(&pk, strlen(dest));
+		msgpack_pack_str_body(&pk, dest,strlen(dest));
+	}
+    
+	if(transaction_uuid != NULL) {	
+		msgpack_pack_str(&pk, strlen(WRP_TRANSACTION_ID));
+		msgpack_pack_str_body(&pk, WRP_TRANSACTION_ID,strlen(WRP_TRANSACTION_ID));
+		msgpack_pack_str(&pk, strlen(transaction_uuid));
+		msgpack_pack_str_body(&pk, transaction_uuid,strlen(transaction_uuid));
+	}
+	
+	if(headers != NULL) {
+		msgpack_pack_str(&pk, strlen(WRP_HEADERS));
+		msgpack_pack_str_body(&pk, WRP_HEADERS,strlen(WRP_HEADERS));
+		msgpack_pack_str(&pk, strlen(headers[0]));
+		msgpack_pack_str_body(&pk, headers,strlen(headers[0]));
+	}
+	
+	//timing values available only for msg req not for msg event	
+	if(msg_type == WRP_MSG_TYPE__REQ)
+	{
+		if(includeTimingValues)
+		{
+			msgpack_pack_str(&pk, strlen(WRP_INCLUDE_TIMING_VALUES));
+			msgpack_pack_str_body(&pk, WRP_INCLUDE_TIMING_VALUES,strlen(WRP_INCLUDE_TIMING_VALUES));		
+			msgpack_pack_true(&pk);
+	
+			msgpack_pack_str(&pk, strlen(WRP_TIMING_VALUES));
+			msgpack_pack_str_body(&pk, WRP_TIMING_VALUES,strlen(WRP_TIMING_VALUES));
+		
+			if(timeSpan != NULL) {
+				if(timeSpan->spans != NULL)
+				{								
+					msgpack_pack_array(&pk, timeSpan->count);			
+			
+					for(cnt = 0; cnt < timeSpan->count; cnt++)
+					{
+						msgpack_pack_array(&pk, 3);				
+						msgpack_pack_str(&pk, strlen(timeSpan->spans[cnt].name));
+						msgpack_pack_str_body(&pk, timeSpan->spans[cnt].name,strlen(timeSpan->spans[cnt].name));
+								
+						msgpack_pack_uint64(&pk, timeSpan->spans[cnt].start);
+				
+						msgpack_pack_uint32(&pk, timeSpan->spans[cnt].duration);
+					}			
+				}
+			}		
+		}
+	}
+     
+	if(payload != NULL) {
+		msgpack_pack_str(&pk, strlen(WRP_PAYLOAD));
+		msgpack_pack_str_body(&pk, WRP_PAYLOAD,strlen(WRP_PAYLOAD));
+		msgpack_pack_bin(&pk, payload_size);
+		msgpack_pack_bin_body(&pk, payload, payload_size);
+	}
+
+	if(data != NULL && sbuf.data != NULL) {
+		*data = (char *) malloc(sizeof(char) * (sbuf.size + 1)); 
+		strncpy(*data, sbuf.data, sbuf.size + 1);
+		rv = sbuf.size;
+	}
+	msgpack_sbuffer_destroy(&sbuf);
+	
+	/***   End of Msgpack Encoding   ***/
+	if(data == NULL)
+	{
+		return -1;	//failure in packing 
+	}
+	return rv;
+}
 
 /**
  *  Converts the list of times into a string to print.

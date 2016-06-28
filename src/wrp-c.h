@@ -84,6 +84,18 @@ typedef struct {
     } u;
 } wrp_msg_t;
 
+/* WRP Macros */
+#define WRP_MSG_TYPE                                "msg_type"
+#define WRP_SOURCE                                  "source"
+#define WRP_DESTINATION                             "dest"
+#define WRP_TRANSACTION_ID                          "transaction_uuid"
+#define WRP_HEADERS				    "headers"
+#define WRP_PAYLOAD                                 "payload"
+#define WRP_TIMING_VALUES                           "timing_values"
+#define WRP_INCLUDE_TIMING_VALUES                   "include_timing_values"
+#define WRP_MAP_SIZE				    8
+
+
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
