@@ -38,7 +38,16 @@
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
 static const char const *__empty_list = "''";
-/* none */
+static const char const * WRP_MSG_TYPE			= "msg_type";
+static const char const * WRP_SOURCE			= "source";
+static const char const * WRP_DESTINATION 		= "dest";
+static const char const * WRP_TRANSACTION_ID		= "transaction_uuid";
+static const char const * WRP_HEADERS			= "headers";
+static const char const * WRP_PAYLOAD			= "payload";
+static const char const * WRP_TIMING_VALUES		= "timing_values";
+static const char const * WRP_INCLUDE_TIMING_VALUES	= "include_timing_values";
+static const int const WRP_MAP_SIZE			= 8;
+
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
