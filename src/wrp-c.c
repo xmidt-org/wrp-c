@@ -46,7 +46,9 @@ static const char const * WRP_HEADERS			= "headers";
 static const char const * WRP_PAYLOAD			= "payload";
 static const char const * WRP_TIMING_VALUES		= "timing_values";
 static const char const * WRP_INCLUDE_TIMING_VALUES	= "include_timing_values";
-static const int const WRP_MAP_SIZE			= 8;
+static const char const * WRP_STATUS			= "status";
+                                 
+static const int const WRP_MAP_SIZE			=  6;
 
 
 /*----------------------------------------------------------------------------*/
@@ -61,6 +63,11 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event, 
 static char* __get_header_string( char **headers );
 static char* __get_spans_string( const struct money_trace_spans *spans );
 static ssize_t __wrp_pack_structure(int msg_type, char* source, char* dest, char* transaction_uuid, bool includeTimingValues, const struct money_trace_spans *timeSpan, char* payload, size_t payload_size, char **headers, char **data);
+
+wrp_msg_t* __unpack_wrp_msg(const char *msgpack_encoded_data, int size );
+static void decodeRequest(msgpack_object deserialized,int *msgType, char** source_ptr,char** dest_ptr,char** transaction_id_ptr,char*** headers, int *statusValue,char** payload_ptr, bool *includeTimingValues);
+static char* getKey_MsgtypeStr(const msgpack_object key, const size_t keySize, char* keyString);
+static char* getKey_MsgtypeBin(const msgpack_object key, const size_t binSize, char* keyBin);
 
 
 /*----------------------------------------------------------------------------*/
@@ -447,7 +454,15 @@ static ssize_t __wrp_pack_structure(int msg_type, char *source, char* dest, char
 	
 	msgpack_sbuffer_init(&sbuf);
 	msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
-	msgpack_pack_map(&pk, WRP_MAP_SIZE);
+	
+	if(timeSpan != NULL)
+	{
+		msgpack_pack_map(&pk, WRP_MAP_SIZE+2);
+	}
+	else
+	{
+		msgpack_pack_map(&pk, WRP_MAP_SIZE);
+	}
 
 	printf("msg_type %d\n",msg_type);
 	msgpack_pack_str(&pk, strlen(WRP_MSG_TYPE));
@@ -582,3 +597,292 @@ static char* __get_spans_string( const struct money_trace_spans *spans )
 
     return rv;
 }
+
+
+
+/*
+**
+ *  Decode msgpack encoded data and converting to wrp struct
+ *
+ *  @param  [in]  msgpack encoded message
+ *  @param data [in] size of encoded message
+ *
+ *  @return the wrp struct with decoded elements*/
+
+
+wrp_msg_t* __unpack_wrp_msg(const char *msgpack_encoded_data, int size )
+{
+	
+	msgpack_zone mempool;
+    	msgpack_object deserialized;
+    	msgpack_unpack_return unpack_ret;
+    	
+    	struct wrp_req_msg *req =NULL;
+    	struct wrp_event_msg *event =NULL;
+
+    	int msgType = -1;
+    	int statusValue=-1;
+    	
+    	char* source = NULL;
+	char* dest = NULL;
+	char* transaction_uuid = NULL;
+	char** headers = NULL;
+	char *payload = NULL;
+	bool includeTimingValues = false;
+	
+	wrp_msg_t *msg = NULL;
+	
+
+    	if(msgpack_encoded_data != NULL) 
+	{
+		printf("unpacking encoded data\n");	
+		
+		msgpack_zone_init(&mempool, 2048);
+		unpack_ret = msgpack_unpack(msgpack_encoded_data, size, NULL, &mempool, &deserialized);
+		printf("unpack_ret:%d\n", unpack_ret);
+		
+		switch(unpack_ret)
+		{
+			case MSGPACK_UNPACK_SUCCESS:
+			
+				msgpack_object_print(stdout, deserialized);
+
+				if(deserialized.via.map.size != 0) 
+				{
+					
+					decodeRequest(deserialized,&msgType,&source,&dest,&transaction_uuid,&headers, &statusValue,&payload,&includeTimingValues);
+					
+				}
+				
+				msgpack_zone_destroy(&mempool);
+				
+				switch( msgType ) 
+				{
+					msg = (wrp_msg_t *)malloc(sizeof(wrp_msg_t));
+					
+					    	
+				        case WRP_MSG_TYPE__AUTH:
+					    return NULL;
+					    
+					case WRP_MSG_TYPE__REQ:
+					
+						req =(struct wrp_req_msg*)malloc(sizeof(struct wrp_req_msg));
+						req =  &(msg->u.req);
+						
+					    	msg->msg_type = msgType; 
+						req->source = source;
+						req->dest = dest;
+						req->transaction_uuid = transaction_uuid;
+						req->headers = headers;
+						req ->include_spans = includeTimingValues;
+						req->payload = payload;  
+						return msg;
+					
+					    
+					case WRP_MSG_TYPE__EVENT:
+					
+						event = (struct wrp_event_msg*)malloc(sizeof(struct wrp_event_msg));
+						event = &(msg->u.event);
+						
+						msg->msg_type = msgType; 
+						event->source = source;
+						event->dest = dest;
+						event->payload = payload;  
+						return msg;
+					  
+					  default:
+					  break;
+				}
+				
+				
+				
+			case MSGPACK_UNPACK_EXTRA_BYTES: {printf("MSGPACK_UNPACK_EXTRA_BYTES\n"); return NULL;}
+			case MSGPACK_UNPACK_CONTINUE: {printf("MSGPACK_UNPACK_CONTINUE\n"); return NULL;}
+			case MSGPACK_UNPACK_PARSE_ERROR: {printf("MSGPACK_UNPACK_PARSE_ERROR\n"); return NULL;}
+			case MSGPACK_UNPACK_NOMEM_ERROR: {printf("MSGPACK_UNPACK_NOMEM_ERROR\n"); return NULL;}
+			default:
+				return NULL;
+		}
+	
+	}
+				printf("msgpack_encoded_data is NULL\n");
+				return NULL;
+}
+
+/**
+ * @brief decodeRequest function to unpack the request received from server.
+ *
+ * @param[in] deserialized msgpack object to deserialize
+ * @param[in] msg_type type of the message
+ * @param[in] source_ptr source from which the response is generated
+ * @param[in] dest_ptr Destination to which it has to be sent
+ * @param[in] transaction_uuid_ptr Id 
+ * @param[in] statusValue status value of authorization request
+ * @param[in] payload_ptr bin payload to be extracted from request
+ * @param[in] includeTimingValues to include timing values
+ */
+static void decodeRequest(msgpack_object deserialized,int *msgType, char** source_ptr,char** dest_ptr,char** transaction_uuid_ptr,char ***headers_ptr, int *statusValue,char** payload_ptr, bool *includeTimingValues)
+{
+
+	unsigned int i=0;
+	int keySize =0;
+	char* keyString =NULL;
+	char* keyName =NULL;
+	int sLen=0;
+	int binValueSize=0,StringValueSize = 0;
+	char* NewStringVal, *StringValue;
+	char* keyValue =NULL;
+	
+	char *transaction_uuid = NULL;
+	char **headers = NULL;
+	char *source=NULL;
+	char *dest=NULL;
+	char *payload=NULL;
+	
+	**headers_ptr = NULL;
+	*source_ptr=NULL;
+	*dest_ptr=NULL;
+	*payload_ptr=NULL;
+	
+	msgpack_object_kv* p = deserialized.via.map.ptr;
+	while(i<deserialized.via.map.size) 
+	{
+		sLen =0;
+		msgpack_object keyType=p->key;
+		msgpack_object ValueType=p->val;
+		keySize = keyType.via.str.size;
+		keyString = (char*)malloc(keySize+1);
+		keyName = NULL;
+		keyName = getKey_MsgtypeStr(keyType, keySize, keyString);
+		if(keyName!=NULL) 
+		{
+			switch(ValueType.type) 
+			{ 
+				case MSGPACK_OBJECT_POSITIVE_INTEGER:
+				{ 
+					if(strcmp(keyName,WRP_MSG_TYPE)==0)
+					{
+						*msgType=ValueType.via.i64;
+					}
+					else if(strcmp(keyName,WRP_STATUS)==0)
+					{
+						*statusValue=ValueType.via.i64;
+					}
+				}
+				break;
+				case MSGPACK_OBJECT_BOOLEAN:
+				{
+					if(strcmp(keyName,WRP_INCLUDE_TIMING_VALUES)==0)
+					{
+						*includeTimingValues=ValueType.via.boolean ? true : false;
+					}
+				}
+				break;
+				case MSGPACK_OBJECT_STR:
+				{
+					
+					StringValueSize = ValueType.via.str.size;
+					NewStringVal = (char*)malloc(StringValueSize+1);
+					StringValue = getKey_MsgtypeStr(ValueType,StringValueSize,NewStringVal);
+
+					if(strcmp(keyName,WRP_SOURCE) == 0) 
+					{
+						sLen=strlen(StringValue);
+						source=(char *)malloc(sLen+1);
+						strncpy(source,StringValue,sLen);
+						source[sLen] = '\0';
+						*source_ptr = source;
+					}
+					
+										
+					else if(strcmp(keyName,WRP_DESTINATION) == 0) 
+					{
+						sLen=strlen(StringValue);
+						dest=(char *)malloc(sLen+1);
+						strncpy(dest,StringValue,sLen);
+						dest[sLen] = '\0';
+						*dest_ptr = dest;
+					}
+					
+					else if(strcmp(keyName,WRP_TRANSACTION_ID) == 0)
+					{
+						sLen=strlen(StringValue);
+						transaction_uuid=(char *)malloc(sLen+1);
+						strncpy(transaction_uuid,StringValue,sLen);
+						transaction_uuid[sLen] = '\0';
+						*transaction_uuid_ptr = transaction_uuid;
+					}
+					
+					else if(strcmp(keyName,WRP_HEADERS) == 0)
+					{
+						sLen=strlen(StringValue);
+						*headers=(char *)malloc(sLen+1);
+						strncpy(*headers,StringValue,sLen);
+						*headers[sLen] = '\0';
+						**headers_ptr = *headers;
+					}
+					
+					if(NewStringVal != NULL)
+					{
+						free(NewStringVal);
+						NewStringVal = NULL;
+					}
+				}
+				break;
+
+				case MSGPACK_OBJECT_BIN:
+				{
+					if(strcmp(keyName,WRP_PAYLOAD) == 0) 
+					{
+						binValueSize = ValueType.via.bin.size;
+						payload = (char*)malloc(binValueSize+1);
+						keyValue = NULL;
+						keyValue = getKey_MsgtypeBin(ValueType, binValueSize, payload); 
+						if(keyValue!=NULL)
+						{ 
+							printf("Binary payload %s\n",keyValue);	
+						}
+						*payload_ptr = keyValue;
+					}
+				}
+				break;
+
+				default:
+					printf("Unknown Data Type");
+			}
+		}
+		p++;
+		i++;
+		if(keyString != NULL)
+		{
+			free(keyString);
+			keyString = NULL;
+		}
+	}
+}
+
+/*
+* @brief Returns the value of a given key.
+* @param[in] key key name with message type string.
+*/
+char* getKey_MsgtypeStr(const msgpack_object key, const size_t keySize, char* keyString)
+{
+	const char* keyName = key.via.str.ptr;
+	strncpy(keyString, keyName, keySize);
+	keyString[keySize] = '\0';
+	return keyString;
+}
+
+
+/*
+ * @brief Returns the value of a given key.
+ * @param[in] key key name with message type binary.
+ */
+char* getKey_MsgtypeBin(const msgpack_object key, const size_t binSize, char* keyBin)
+{
+	const char* keyName = key.via.bin.ptr;
+	memcpy(keyBin, keyName, binSize);
+	keyBin[binSize] = '\0';
+	return keyBin;
+}
+

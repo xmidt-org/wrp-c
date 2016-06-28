@@ -159,6 +159,13 @@ char* wrp_struct_to_string( const wrp_msg_t *msg );
  */
 void wrp_free_struct( wrp_msg_t *msg );
 
+wrp_msg_t* __unpack_wrp_msg(const char *msgpack_encoded_data, int size );
+
+/**
+ *  Free only if allocated .
+ */
+#define WRP_FREE(__x__) if(__x__ != NULL) { free((void*)(__x__)); __x__ = NULL;} else {printf("Trying to free null pointer\n");}
+
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
