@@ -181,10 +181,133 @@ void test_to_string()
     }
 }
 
+void _internal_tva_xxd( const void *buffer, const size_t length, size_t line )
+{
+    const char hex[17] = "0123456789abcdef";
+    const char *data = (char *) buffer;
+    const char *end = &data[length];
+    char output[70];
+
+    if( (NULL == buffer) || (0 == length) ) {
+        return;
+    }
+
+    while( data < end ) {
+        int shiftCount;
+        size_t i;
+        char *text_ptr = &output[51];
+        char *ptr = output;
+
+        /* Output the '00000000:' portion */
+        for (shiftCount=28; shiftCount >= 0; shiftCount -= 4) {
+            *ptr++ = hex[(line >> shiftCount) & 0x0F];
+        }
+        *ptr++ = ':';
+        *ptr++ = ' ';
+
+        for( i = 0; i < 16; i++ ) {
+            if( data < end ) {
+                *ptr++ = hex[(0x0f & (*data >> 4))];
+                *ptr++ = hex[(0x0f & (*data))];
+                if( (' ' <= *data) && (*data <= '~') ) {
+                    *text_ptr++ = *data;
+                } else {
+                    *text_ptr++ = '.';
+                }
+                data++;
+            } else {
+                *ptr++ = ' ';
+                *ptr++ = ' ';
+                *text_ptr++ = ' ';
+            }
+            if( 0x01 == (0x01 & i) ) {
+                *ptr++ = ' ';
+            }
+        }
+        line += 16;
+        *ptr = ' ';
+
+        *text_ptr = '\0';
+
+        puts( output );
+    }
+}
+
+void test_to_bytes()
+{
+	ssize_t size;
+	void *bytes;
+	printf("\nInside test_to_bytes()....\n");
+	
+	const wrp_msg_t msg = { .msg_type = WRP_MSG_TYPE__REQ,
+          .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+          .u.req.source = "source-address",
+          .u.req.dest = "dest-address",
+          .u.req.headers = NULL,
+          .u.req.include_spans = false,
+          .u.req.spans.spans = NULL,
+          .u.req.spans.count = 0,
+          .u.req.payload = "123",
+          .u.req.payload_size = 3 };
+
+	size = wrp_struct_to( &msg, WRP_BYTES, &bytes );
+	/* print the encoded message */
+	_internal_tva_xxd( bytes, size, 0 );
+	free(bytes);
+}
+
+
+void test_encode_decode()
+{
+	ssize_t size, rv;
+	void *bytes;
+	wrp_msg_t *message;
+
+	printf("\nInside test_encode_decode()....\n");
+	
+	const wrp_msg_t msg = { .msg_type = WRP_MSG_TYPE__REQ,
+          .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+          .u.req.source = "source-address",
+          .u.req.dest = "dest-address",
+          .u.req.headers = NULL,
+          .u.req.include_spans = false,
+          .u.req.spans.spans = NULL,
+          .u.req.spans.count = 0,
+          .u.req.payload = "123",
+          .u.req.payload_size = 3 };
+
+	// msgpack encode
+	size = wrp_struct_to( &msg, WRP_BYTES, &bytes );
+	/* print the encoded message */
+	_internal_tva_xxd( bytes, size, 0 );
+
+	// msgpck decode
+	rv = wrp_to_struct(bytes, size, WRP_BYTES, &message);
+	
+	CU_ASSERT_EQUAL( rv, size );
+	CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
+	CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
+	CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
+	CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg.u.req.transaction_uuid );
+	CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg.u.req.payload );
+	
+	printf("decoded msgType:%d\n", message->msg_type);
+	printf("decoded source:%s\n", message->u.req.source);
+	printf("decoded dest:%s\n", message->u.req.dest);
+	printf("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid);
+	printf("decoded payload:%s\n", (char*)message->u.req.payload);
+
+	wrp_free_struct(message);
+	free(bytes);
+}
+
 void add_suites( CU_pSuite *suite )
 {
     *suite = CU_add_suite( "wrp-c encoding tests", NULL, NULL );
     CU_add_test( *suite, "Test struct_to_string()", test_to_string );
+    CU_add_test( *suite, "Test struct_to_bytes()", test_to_bytes );
+    CU_add_test( *suite, "Test encode_decode()", test_encode_decode );
+    
 }
 
 /*----------------------------------------------------------------------------*/
