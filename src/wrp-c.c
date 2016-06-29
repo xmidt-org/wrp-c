@@ -46,9 +46,8 @@ static const char const * WRP_HEADERS			= "headers";
 static const char const * WRP_PAYLOAD			= "payload";
 static const char const * WRP_TIMING_VALUES		= "timing_values";
 static const char const * WRP_INCLUDE_TIMING_VALUES	= "include_timing_values";
-static const char const * WRP_STATUS			= "status";
-                                 
-static const int const WRP_MAP_SIZE			=  6;
+static const char const * WRP_STATUS			= "status";                                 
+static const int const WRP_MAP_SIZE			=  5;
 
 
 /*----------------------------------------------------------------------------*/
@@ -63,8 +62,8 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event, 
 static char* __get_header_string( char **headers );
 static char* __get_spans_string( const struct money_trace_spans *spans );
 static ssize_t __wrp_pack_structure(int msg_type, char* source, char* dest, char* transaction_uuid, bool includeTimingValues, const struct money_trace_spans *timeSpan, char* payload, size_t payload_size, char **headers, char **data);
-
-wrp_msg_t* __unpack_wrp_msg(const char *msgpack_encoded_data, int size );
+static ssize_t __wrp_base64_to_struct( const void *base64_data, const size_t base64_size, wrp_msg_t **msg_ptr );
+static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length, wrp_msg_t **msg_ptr );
 static void decodeRequest(msgpack_object deserialized,int *msgType, char** source_ptr,char** dest_ptr,char** transaction_id_ptr,char*** headers, int *statusValue,char** payload_ptr, bool *includeTimingValues);
 static char* getKey_MsgtypeStr(const msgpack_object key, const size_t keySize, char* keyString);
 static char* getKey_MsgtypeBin(const msgpack_object key, const size_t binSize, char* keyBin);
@@ -123,6 +122,41 @@ char* wrp_struct_to_string( const wrp_msg_t *msg )
     return string;
 }
 
+/* See wrp-c.h for details. */
+ssize_t wrp_to_struct( const void *bytes, const size_t length,
+                       const enum wrp_format fmt, wrp_msg_t **msg )
+{
+    ssize_t rv;
+
+    if( NULL == bytes || length <= 0 ) {
+        return -1;
+    }
+
+    switch( fmt ) {
+        case WRP_BYTES:
+            rv = __wrp_bytes_to_struct( bytes, length, msg );
+            break;
+        case WRP_BASE64:
+            rv = __wrp_base64_to_struct( bytes, length, msg );
+            break;
+        default:
+            return -2;
+    }
+
+    return rv;
+}
+
+/* See wrp-c.h for details. */
+void wrp_free_struct( wrp_msg_t *msg )
+{
+	WRP_FREE(msg->u.req.transaction_uuid);
+	WRP_FREE(msg->u.req.source);
+	WRP_FREE(msg->u.req.dest);
+	WRP_FREE(msg->u.req.payload);
+	WRP_FREE(msg->u.req.headers);
+
+	WRP_FREE(msg);
+}
 
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
@@ -163,12 +197,6 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 	}
 
 	return rv;
-     	
-     	if(rv < 1)
-     	{
-     		return -1;
-     	}
-	return -1;
 }
 
 
@@ -457,7 +485,7 @@ static ssize_t __wrp_pack_structure(int msg_type, char *source, char* dest, char
 	
 	if(timeSpan != NULL)
 	{
-		msgpack_pack_map(&pk, WRP_MAP_SIZE+2);
+		msgpack_pack_map(&pk, WRP_MAP_SIZE+1);
 	}
 	else
 	{
@@ -598,117 +626,6 @@ static char* __get_spans_string( const struct money_trace_spans *spans )
     return rv;
 }
 
-
-
-/*
-**
- *  Decode msgpack encoded data and converting to wrp struct
- *
- *  @param  [in]  msgpack encoded message
- *  @param data [in] size of encoded message
- *
- *  @return the wrp struct with decoded elements*/
-
-
-wrp_msg_t* __unpack_wrp_msg(const char *msgpack_encoded_data, int size )
-{
-	
-	msgpack_zone mempool;
-    	msgpack_object deserialized;
-    	msgpack_unpack_return unpack_ret;
-    	
-    	struct wrp_req_msg *req =NULL;
-    	struct wrp_event_msg *event =NULL;
-
-    	int msgType = -1;
-    	int statusValue=-1;
-    	
-    	char* source = NULL;
-	char* dest = NULL;
-	char* transaction_uuid = NULL;
-	char** headers = NULL;
-	char *payload = NULL;
-	bool includeTimingValues = false;
-	
-	wrp_msg_t *msg = NULL;
-	
-
-    	if(msgpack_encoded_data != NULL) 
-	{
-		printf("unpacking encoded data\n");	
-		
-		msgpack_zone_init(&mempool, 2048);
-		unpack_ret = msgpack_unpack(msgpack_encoded_data, size, NULL, &mempool, &deserialized);
-		printf("unpack_ret:%d\n", unpack_ret);
-		
-		switch(unpack_ret)
-		{
-			case MSGPACK_UNPACK_SUCCESS:
-			
-				msgpack_object_print(stdout, deserialized);
-
-				if(deserialized.via.map.size != 0) 
-				{
-					
-					decodeRequest(deserialized,&msgType,&source,&dest,&transaction_uuid,&headers, &statusValue,&payload,&includeTimingValues);
-					
-				}
-				
-				msgpack_zone_destroy(&mempool);
-				
-				switch( msgType ) 
-				{
-					msg = (wrp_msg_t *)malloc(sizeof(wrp_msg_t));
-					
-					    	
-				        case WRP_MSG_TYPE__AUTH:
-					    return NULL;
-					    
-					case WRP_MSG_TYPE__REQ:
-					
-						req =(struct wrp_req_msg*)malloc(sizeof(struct wrp_req_msg));
-						req =  &(msg->u.req);
-						
-					    	msg->msg_type = msgType; 
-						req->source = source;
-						req->dest = dest;
-						req->transaction_uuid = transaction_uuid;
-						req->headers = headers;
-						req ->include_spans = includeTimingValues;
-						req->payload = payload;  
-						return msg;
-					
-					    
-					case WRP_MSG_TYPE__EVENT:
-					
-						event = (struct wrp_event_msg*)malloc(sizeof(struct wrp_event_msg));
-						event = &(msg->u.event);
-						
-						msg->msg_type = msgType; 
-						event->source = source;
-						event->dest = dest;
-						event->payload = payload;  
-						return msg;
-					  
-					  default:
-					  break;
-				}
-				
-				
-				
-			case MSGPACK_UNPACK_EXTRA_BYTES: {printf("MSGPACK_UNPACK_EXTRA_BYTES\n"); return NULL;}
-			case MSGPACK_UNPACK_CONTINUE: {printf("MSGPACK_UNPACK_CONTINUE\n"); return NULL;}
-			case MSGPACK_UNPACK_PARSE_ERROR: {printf("MSGPACK_UNPACK_PARSE_ERROR\n"); return NULL;}
-			case MSGPACK_UNPACK_NOMEM_ERROR: {printf("MSGPACK_UNPACK_NOMEM_ERROR\n"); return NULL;}
-			default:
-				return NULL;
-		}
-	
-	}
-				printf("msgpack_encoded_data is NULL\n");
-				return NULL;
-}
-
 /**
  * @brief decodeRequest function to unpack the request received from server.
  *
@@ -723,7 +640,6 @@ wrp_msg_t* __unpack_wrp_msg(const char *msgpack_encoded_data, int size )
  */
 static void decodeRequest(msgpack_object deserialized,int *msgType, char** source_ptr,char** dest_ptr,char** transaction_uuid_ptr,char ***headers_ptr, int *statusValue,char** payload_ptr, bool *includeTimingValues)
 {
-
 	unsigned int i=0;
 	int keySize =0;
 	char* keyString =NULL;
@@ -865,7 +781,7 @@ static void decodeRequest(msgpack_object deserialized,int *msgType, char** sourc
 * @brief Returns the value of a given key.
 * @param[in] key key name with message type string.
 */
-char* getKey_MsgtypeStr(const msgpack_object key, const size_t keySize, char* keyString)
+static char* getKey_MsgtypeStr(const msgpack_object key, const size_t keySize, char* keyString)
 {
 	const char* keyName = key.via.str.ptr;
 	strncpy(keyString, keyName, keySize);
@@ -878,11 +794,146 @@ char* getKey_MsgtypeStr(const msgpack_object key, const size_t keySize, char* ke
  * @brief Returns the value of a given key.
  * @param[in] key key name with message type binary.
  */
-char* getKey_MsgtypeBin(const msgpack_object key, const size_t binSize, char* keyBin)
+static char* getKey_MsgtypeBin(const msgpack_object key, const size_t binSize, char* keyBin)
 {
 	const char* keyName = key.via.bin.ptr;
 	memcpy(keyBin, keyName, binSize);
 	keyBin[binSize] = '\0';
 	return keyBin;
 }
+
+/*
+**
+ *  Decode msgpack encoded data in bytes and convert to wrp struct
+ *
+ *  @param bytes [in]  msgpack encoded message in bytes
+ *  @param length [in] length of encoded message
+ *  @param msg_ptr [inout] wrp_msg_t struct initialized using bytes
+ *
+ *  @return the number of bytes 'consumed' by making this transformation if
+ *          successful, less than 1 otherwise
+ */
+
+static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length, wrp_msg_t **msg_ptr )
+{
+	msgpack_zone mempool;
+    	msgpack_object deserialized;
+    	msgpack_unpack_return unpack_ret;
+    	
+    	int msgType = -1;
+    	int statusValue=-1;
+    	
+    	char* source = NULL;
+	char* dest = NULL;
+	char* transaction_uuid = NULL;
+	char** headers = NULL;
+	char *payload = NULL;
+	bool includeTimingValues = false;
+	
+	wrp_msg_t *msg = NULL;
+	
+
+    	if(bytes != NULL) 
+	{
+		printf("unpacking encoded data\n");	
+		
+		msgpack_zone_init(&mempool, 2048);
+		unpack_ret = msgpack_unpack(bytes, length, NULL, &mempool, &deserialized);
+		printf("unpack_ret:%d\n", unpack_ret);
+		
+		switch(unpack_ret)
+		{
+			case MSGPACK_UNPACK_SUCCESS:
+			
+				msgpack_object_print(stdout, deserialized);
+
+				if(deserialized.via.map.size != 0) 
+				{					
+					decodeRequest(deserialized,&msgType,&source,&dest,&transaction_uuid,&headers, &statusValue,&payload,&includeTimingValues);					
+				}
+				
+				msgpack_zone_destroy(&mempool);
+				
+				switch( msgType ) 
+				{
+					msg = (wrp_msg_t *)malloc(sizeof(wrp_msg_t));					
+					    	
+				        case WRP_MSG_TYPE__AUTH:
+
+						msg->msg_type = msgType;
+						msg->u.auth.status = statusValue;
+						return length;
+					    
+					case WRP_MSG_TYPE__REQ:
+															
+					    	msg->msg_type = msgType; 
+						msg->u.req.source = source;
+						msg->u.req.dest = dest;
+						msg->u.req.transaction_uuid = transaction_uuid;
+						msg->u.req.headers = headers;
+						msg->u.req.include_spans = includeTimingValues;
+						msg->u.req.payload = payload;  
+						
+						*msg_ptr = msg;
+						return length;
+					    
+					case WRP_MSG_TYPE__EVENT:
+											
+						msg->msg_type = msgType; 
+						msg->u.event.source = source;
+						msg->u.event.dest = dest;
+						msg->u.event.payload = payload;  
+						
+						*msg_ptr = msg;
+						return length;
+					  
+					  default:
+					  	return -1;
+				}				
+				
+			case MSGPACK_UNPACK_EXTRA_BYTES: {printf("MSGPACK_UNPACK_EXTRA_BYTES\n"); return -1;}
+			case MSGPACK_UNPACK_CONTINUE: {printf("MSGPACK_UNPACK_CONTINUE\n"); return -1;}
+			case MSGPACK_UNPACK_PARSE_ERROR: {printf("MSGPACK_UNPACK_PARSE_ERROR\n"); return -1;}
+			case MSGPACK_UNPACK_NOMEM_ERROR: {printf("MSGPACK_UNPACK_NOMEM_ERROR\n"); return -1;}
+			default:
+				return -1;
+		}
+	
+	}
+	printf("bytes is NULL\n");
+	return -1;
+
+}
+
+/*
+**
+ *  Decode base64 encoded msgpack encoded data in bytes and convert to wrp struct
+ *
+ *  @param bytes [in]  base64 encoded msgpack encoded message in bytes
+ *  @param length [in] length of base64 encoded message
+ *  @param msg_ptr [inout] wrp_msg_t struct initialized
+ *  
+ *  @return the number of bytes 'consumed' by making this transformation if
+ *          successful, less than 1 otherwise
+ */
+
+static ssize_t __wrp_base64_to_struct( const void *base64_data, const size_t base64_size, wrp_msg_t **msg_ptr )
+{
+	ssize_t rv;
+	size_t length, decodeMsgSize;
+	char *bytes;
+	
+	decodeMsgSize = b64_get_decoded_buffer_size(base64_size);
+    	   		
+	bytes = (char *) malloc(sizeof(char) * decodeMsgSize);
+				
+    	length = b64_decode( (uint8_t *)base64_data, base64_size, (uint8_t *)bytes );
+
+	rv = __wrp_bytes_to_struct(bytes, length, msg_ptr);
+
+	free(bytes);
+
+	return rv;
+}
+
 

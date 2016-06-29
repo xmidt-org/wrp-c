@@ -258,30 +258,61 @@ void test_to_bytes()
 
 void test_to_decode()
 {
-	
-	wrp_msg_t *msg = NULL;
-	msg = (wrp_msg_t *)malloc(sizeof(wrp_msg_t));
-	
+	ssize_t rv;
+	wrp_msg_t *msg;	
 
 	printf("\nInside test_to_decode()....\n");
 	
-	msg = __unpack_wrp_msg("88a8 6d73 675f 7479 7065 03a6 736f 7572 6365 ae73 6f75 7263 652d 6164 6472 6573 73a4 6465 7374 ac64 6573 742d 6164 6472 6573 73b0 7472 616e 7361 6374 696f 6e5f 7575 6964 d924 6330 3765 6535 6531 2d37 3062 652d 3434 3463 2d61 3135 362d 3039  3763 3736 3761 6438 6161 a770 6179 6c6f 6164 c403 3132", 295);
-	
+	rv = wrp_to_struct("88a8 6d73 675f 7479 7065 03a6 736f 7572 6365 ae73 6f75 7263 652d 6164 6472 6573 73a4 6465 7374 ac64 6573 742d 6164 6472 6573 73b0 7472 616e 7361 6374 696f 6e5f 7575 6964 d924 6330 3765 6535 6531 2d37 3062 652d 3434 3463 2d61 3135 362d 3039  3763 3736 3761 6438 6161 a770 6179 6c6f 6164 c403 3132", 295, WRP_BYTES, &msg);	
 
+	CU_ASSERT_EQUAL( rv, 295 );
 	if(msg !=NULL)
 	{
 		printf("msgType:%d\n", msg->msg_type);
 	}
-	
+	wrp_free_struct(msg);	
 }
 
+void test_encode_decode()
+{
+	ssize_t size, rv;
+	void *bytes;
+	wrp_msg_t *message;
+
+	printf("\nInside test_encode_decode()....\n");
+	
+	const wrp_msg_t msg = { .msg_type = WRP_MSG_TYPE__REQ,
+          .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+          .u.req.source = "source-address",
+          .u.req.dest = "dest-address",
+          .u.req.headers = NULL,
+          .u.req.include_spans = false,
+          .u.req.spans.spans = NULL,
+          .u.req.spans.count = 0,
+          .u.req.payload = "123",
+          .u.req.payload_size = 3 };
+
+	// msgpack encode
+	size = wrp_struct_to( &msg, WRP_BYTES, &bytes );
+	/* print the encoded message */
+	_internal_tva_xxd( bytes, size, 0 );
+
+	// msgpck decode
+	rv = wrp_to_struct(bytes, size, WRP_BYTES, &message);
+	
+	CU_ASSERT_EQUAL( rv, size );
+	CU_ASSERT_EQUAL( message->msg_type, message->msg_type );
+
+	wrp_free_struct(message);
+	free(bytes);
+}
 
 void add_suites( CU_pSuite *suite )
 {
     *suite = CU_add_suite( "wrp-c encoding tests", NULL, NULL );
     CU_add_test( *suite, "Test struct_to_string()", test_to_string );
     CU_add_test( *suite, "Test struct_to_bytes()", test_to_bytes );
-    CU_add_test( *suite, "Test struct_to_decode()", test_to_decode );
+    CU_add_test( *suite, "Test encode_decode()", test_encode_decode );
     
 }
 
