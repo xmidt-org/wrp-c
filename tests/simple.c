@@ -256,22 +256,6 @@ void test_to_bytes()
 	free(bytes);
 }
 
-void test_to_decode()
-{
-	ssize_t rv;
-	wrp_msg_t *msg;	
-
-	printf("\nInside test_to_decode()....\n");
-	
-	rv = wrp_to_struct("88a8 6d73 675f 7479 7065 03a6 736f 7572 6365 ae73 6f75 7263 652d 6164 6472 6573 73a4 6465 7374 ac64 6573 742d 6164 6472 6573 73b0 7472 616e 7361 6374 696f 6e5f 7575 6964 d924 6330 3765 6535 6531 2d37 3062 652d 3434 3463 2d61 3135 362d 3039  3763 3736 3761 6438 6161 a770 6179 6c6f 6164 c403 3132", 295, WRP_BYTES, &msg);	
-
-	CU_ASSERT_EQUAL( rv, 295 );
-	if(msg !=NULL)
-	{
-		printf("msgType:%d\n", msg->msg_type);
-	}
-	wrp_free_struct(msg);	
-}
 
 void test_encode_decode()
 {
@@ -301,7 +285,17 @@ void test_encode_decode()
 	rv = wrp_to_struct(bytes, size, WRP_BYTES, &message);
 	
 	CU_ASSERT_EQUAL( rv, size );
-	CU_ASSERT_EQUAL( message->msg_type, message->msg_type );
+	CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
+	CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
+	CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
+	CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg.u.req.transaction_uuid );
+	CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg.u.req.payload );
+	
+	printf("decoded msgType:%d\n", message->msg_type);
+	printf("decoded source:%s\n", message->u.req.source);
+	printf("decoded dest:%s\n", message->u.req.dest);
+	printf("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid);
+	printf("decoded payload:%s\n", (char*)message->u.req.payload);
 
 	wrp_free_struct(message);
 	free(bytes);

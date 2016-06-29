@@ -27,6 +27,10 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
+/**
+ *  Free only if allocated .
+ */
+#define WRP_FREE(__x__) if(__x__ != NULL) { free((void*)(__x__)); __x__ = NULL;} else {printf("Trying to free null pointer\n");}
 /* none */
 
 /*----------------------------------------------------------------------------*/
@@ -47,7 +51,7 @@ static const char const * WRP_PAYLOAD			= "payload";
 static const char const * WRP_TIMING_VALUES		= "timing_values";
 static const char const * WRP_INCLUDE_TIMING_VALUES	= "include_timing_values";
 static const char const * WRP_STATUS			= "status";                                 
-static const int const WRP_MAP_SIZE			=  5;
+static const int const WRP_MAP_SIZE			=  4; // mandatory msg_type,source,dest,payload
 
 
 /*----------------------------------------------------------------------------*/
@@ -186,7 +190,18 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
         case WRP_MSG_TYPE__AUTH:
             return -1;
         case WRP_MSG_TYPE__REQ:
-	    time_spans = &(req->spans);	    
+        
+	    //spans allocation is required only when include timing spans is enabled
+	    
+	    if(req->include_spans == false)
+	    {
+	    	time_spans =NULL;
+	    }
+	    else
+	    {
+	    	 time_spans = &(req->spans);	
+	    }
+	    
             rv = __wrp_pack_structure(msg->msg_type, req->source, req->dest, req->transaction_uuid, req->include_spans, time_spans, req->payload, req->payload_size, req->headers, bytes);
 	    break;
         case WRP_MSG_TYPE__EVENT:
@@ -477,20 +492,29 @@ static ssize_t __wrp_pack_structure(int msg_type, char *source, char* dest, char
 	msgpack_packer pk;  
 	ssize_t rv;
 	unsigned int cnt=0;
+	int wrp_map_size = WRP_MAP_SIZE;
 	
 	/***   Start of Msgpack Encoding  ***/
 	
 	msgpack_sbuffer_init(&sbuf);
 	msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
 	
+	// Change wrp_map_size value depending on if optional fields timeSpan and headers are present
+	if(transaction_uuid != NULL)
+	{
+		wrp_map_size++;
+	}	
 	if(timeSpan != NULL)
 	{
-		msgpack_pack_map(&pk, WRP_MAP_SIZE+1);
+		wrp_map_size = wrp_map_size + 2;
 	}
-	else
+	if(headers != NULL)
 	{
-		msgpack_pack_map(&pk, WRP_MAP_SIZE);
+		wrp_map_size++;
 	}
+	
+	printf("wrp size is:%d\n",wrp_map_size);
+	msgpack_pack_map(&pk, wrp_map_size);
 
 	printf("msg_type %d\n",msg_type);
 	msgpack_pack_str(&pk, strlen(WRP_MSG_TYPE));
@@ -537,7 +561,8 @@ static ssize_t __wrp_pack_structure(int msg_type, char *source, char* dest, char
 			msgpack_pack_str(&pk, strlen(WRP_TIMING_VALUES));
 			msgpack_pack_str_body(&pk, WRP_TIMING_VALUES,strlen(WRP_TIMING_VALUES));
 		
-			if(timeSpan != NULL) {
+			if(timeSpan != NULL) 
+			{
 				if(timeSpan->spans != NULL)
 				{								
 					msgpack_pack_array(&pk, timeSpan->count);			
@@ -655,7 +680,6 @@ static void decodeRequest(msgpack_object deserialized,int *msgType, char** sourc
 	char *dest=NULL;
 	char *payload=NULL;
 	
-	**headers_ptr = NULL;
 	*source_ptr=NULL;
 	*dest_ptr=NULL;
 	*payload_ptr=NULL;
@@ -738,11 +762,7 @@ static void decodeRequest(msgpack_object deserialized,int *msgType, char** sourc
 						**headers_ptr = *headers;
 					}
 					
-					if(NewStringVal != NULL)
-					{
-						free(NewStringVal);
-						NewStringVal = NULL;
-					}
+					WRP_FREE(NewStringVal);
 				}
 				break;
 
@@ -769,11 +789,8 @@ static void decodeRequest(msgpack_object deserialized,int *msgType, char** sourc
 		}
 		p++;
 		i++;
-		if(keyString != NULL)
-		{
-			free(keyString);
-			keyString = NULL;
-		}
+		
+		WRP_FREE(keyString);
 	}
 }
 
@@ -853,11 +870,10 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length, wr
 				}
 				
 				msgpack_zone_destroy(&mempool);
+				msg = (wrp_msg_t *)malloc(sizeof(wrp_msg_t));
 				
 				switch( msgType ) 
-				{
-					msg = (wrp_msg_t *)malloc(sizeof(wrp_msg_t));					
-					    	
+				{ 	
 				        case WRP_MSG_TYPE__AUTH:
 
 						msg->msg_type = msgType;
@@ -866,7 +882,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length, wr
 					    
 					case WRP_MSG_TYPE__REQ:
 															
-					    	msg->msg_type = msgType; 
+						msg->msg_type = msgType;
 						msg->u.req.source = source;
 						msg->u.req.dest = dest;
 						msg->u.req.transaction_uuid = transaction_uuid;
