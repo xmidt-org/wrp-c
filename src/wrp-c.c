@@ -27,10 +27,8 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-/**
- *  Free only if allocated .
- */
-#define WRP_FREE(__x__) if(__x__ != NULL) { free((void*)(__x__)); __x__ = NULL;} else {printf("Trying to free null pointer\n");}
+
+
 /* none */
 
 /*----------------------------------------------------------------------------*/
@@ -170,7 +168,7 @@ ssize_t wrp_to_struct( const void *bytes, const size_t length,
 /* See wrp-c.h for details. */
 void wrp_free_struct( wrp_msg_t *msg )
 {
-    switch( mst->msg_type ) {
+    switch( msg->msg_type ) {
         case WRP_MSG_TYPE__REQ:
             free( msg->u.req.transaction_uuid );
             free( msg->u.req.source );
@@ -815,7 +813,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                         **headers_ptr = *headers;
                     }
 
-                    WRP_FREE( NewStringVal );
+                    free( NewStringVal );
                 }
                 break;
 
@@ -843,7 +841,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
         p++;
         i++;
 
-        WRP_FREE( keyString );
+        free( keyString );
     }
 }
 
