@@ -170,7 +170,7 @@ ssize_t wrp_to_struct( const void *bytes, const size_t length,
 /* See wrp-c.h for details. */
 void wrp_free_struct( wrp_msg_t *msg )
 {
-    switch( mst->msg_type ) {
+    switch( msg->msg_type ) {
         case WRP_MSG_TYPE__REQ:
             free( msg->u.req.transaction_uuid );
             free( msg->u.req.source );
