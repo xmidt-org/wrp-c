@@ -14,6 +14,9 @@
  * limitations under the License.
  *
  */
+#ifndef __WRP_C_H__
+#define __WRP_C_H__
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -158,7 +161,4 @@ char* wrp_struct_to_string( const wrp_msg_t *msg );
  */
 void wrp_free_struct( wrp_msg_t *msg );
 
-/*----------------------------------------------------------------------------*/
-/*                             Internal functions                             */
-/*----------------------------------------------------------------------------*/
-/* none */
+#endif

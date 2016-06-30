@@ -16,3 +16,11 @@ make test
 make coverage
 firefox index.html
 ```
+
+# Coding Formatter Settings
+
+Please format pull requests using the following command to keep the style consistent.
+
+```
+astyle -A10 -S -f -U -p -D -c -xC90 -xL
+```
