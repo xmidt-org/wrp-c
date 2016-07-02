@@ -41,17 +41,17 @@
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
-static const char const *__empty_list               = "''";
-static const char const * WRP_MSG_TYPE              = "msg_type";
-static const char const * WRP_SOURCE                = "source";
-static const char const * WRP_DESTINATION           = "dest";
-static const char const * WRP_TRANSACTION_ID        = "transaction_uuid";
-static const char const * WRP_HEADERS               = "headers";
-static const char const * WRP_PAYLOAD               = "payload";
-static const char const * WRP_TIMING_VALUES         = "timing_values";
-static const char const * WRP_INCLUDE_TIMING_VALUES = "include_timing_values";
-static const char const * WRP_STATUS                = "status";
-static const int const WRP_MAP_SIZE                 = 4; // mandatory msg_type,source,dest,payload
+static const char const *__empty_list        = "''";
+static const char const * WRP_MSG_TYPE       = "msg_type";
+static const char const * WRP_SOURCE         = "source";
+static const char const * WRP_DESTINATION    = "dest";
+static const char const * WRP_TRANSACTION_ID = "transaction_uuid";
+static const char const * WRP_HEADERS        = "headers";
+static const char const * WRP_PAYLOAD        = "payload";
+static const char const * WRP_SPANS          = "spans";
+static const char const * WRP_INCLUDE_SPANS  = "include_spans";
+static const char const * WRP_STATUS         = "status";
+static const int const WRP_MAP_SIZE          = 4; // mandatory msg_type,source,dest,payload
 
 
 /*----------------------------------------------------------------------------*/
@@ -612,13 +612,13 @@ static ssize_t __wrp_pack_structure( int msg_type, char *source, char* dest,
     //timing values available only for msg req not for msg event
     if( msg_type == WRP_MSG_TYPE__REQ ) {
         if( includeTimingValues ) {
-            msgpack_pack_str( &pk, strlen( WRP_INCLUDE_TIMING_VALUES ) );
-            msgpack_pack_str_body( &pk, WRP_INCLUDE_TIMING_VALUES,
-                                   strlen( WRP_INCLUDE_TIMING_VALUES ) );
+            msgpack_pack_str( &pk, strlen( WRP_INCLUDE_SPANS ) );
+            msgpack_pack_str_body( &pk, WRP_INCLUDE_SPANS,
+                                   strlen( WRP_INCLUDE_SPANS ) );
             msgpack_pack_true( &pk );
 
-            msgpack_pack_str( &pk, strlen( WRP_TIMING_VALUES ) );
-            msgpack_pack_str_body( &pk, WRP_TIMING_VALUES, strlen( WRP_TIMING_VALUES ) );
+            msgpack_pack_str( &pk, strlen( WRP_SPANS ) );
+            msgpack_pack_str_body( &pk, WRP_SPANS, strlen( WRP_SPANS ) );
 
             if( timeSpan != NULL ) {
                 if( timeSpan->spans != NULL ) {
@@ -771,7 +771,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                 break;
 
                 case MSGPACK_OBJECT_BOOLEAN: {
-                    if( strcmp( keyName, WRP_INCLUDE_TIMING_VALUES ) == 0 ) {
+                    if( strcmp( keyName, WRP_INCLUDE_SPANS ) == 0 ) {
                         *includeTimingValues = ValueType.via.boolean ? true : false;
                     }
                 }
