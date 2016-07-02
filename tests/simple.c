@@ -161,6 +161,7 @@ void test_to_string()
             printf( "\n\nGot: |%s| Expected: |%s|\n\n", out, test[i].expected );
         }
         CU_ASSERT_STRING_EQUAL( out, test[i].expected );
+        free( out );
 
         rv = wrp_struct_to( &test[i].in, WRP_STRING, (void**) &out );
 
@@ -178,6 +179,7 @@ void test_to_string()
             printf( "\n\nGot: %zd Expected: %zd\n\n", rv, expected_length );
         }
         CU_ASSERT_EQUAL( rv, expected_length );
+        free( out );
     }
 }
 

@@ -520,6 +520,7 @@ static char* __get_header_string( char **headers )
             rv = tmp;
 
             comma = "";
+            *tmp = '\0';
             tmp = strcat( tmp, "'" );
 
             for( i = 0; NULL != headers[i]; i++ ) {
