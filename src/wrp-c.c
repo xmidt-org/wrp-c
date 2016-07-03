@@ -27,10 +27,6 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-/**
- *  Free only if allocated .
- */
-#define WRP_FREE(__x__) if(__x__ != NULL) { free((void*)(__x__)); __x__ = NULL;} else {printf("Trying to free null pointer\n");}
 /* none */
 
 /*----------------------------------------------------------------------------*/
@@ -816,7 +812,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                         **headers_ptr = *headers;
                     }
 
-                    WRP_FREE( NewStringVal );
+                    free( NewStringVal );
                 }
                 break;
 
@@ -844,7 +840,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
         p++;
         i++;
 
-        WRP_FREE( keyString );
+        free( keyString );
     }
 }
 
