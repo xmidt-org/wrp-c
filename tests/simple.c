@@ -30,7 +30,7 @@ struct test_to_string {
 
 void test_to_string()
 {
-    const char *headers[] = { "Header 1", "Header 2", NULL };
+    const char *headers[] = { "Header 1", "Header 2", "Header 3.3", NULL };
     const struct money_trace_span spans[] = {
         { .name = "hop-1",
           .start = 123000044,
@@ -87,7 +87,7 @@ void test_to_string()
                       "    .transaction_uuid = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
                       "    .source           = source-address\n"
                       "    .dest             = dest-address\n"
-                      "    .headers          = 'Header 1, Header 2'\n"
+                      "    .headers          = 'Header 1, Header 2, Header 3.3'\n"
                       "    .include_spans    = false\n"
                       "    .spans            = ''\n"
                       "    .payload_size     = 3\n"
@@ -110,7 +110,7 @@ void test_to_string()
                       "    .transaction_uuid = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
                       "    .source           = source-address\n"
                       "    .dest             = dest-address\n"
-                      "    .headers          = 'Header 1, Header 2'\n"
+                      "    .headers          = 'Header 1, Header 2, Header 3.3'\n"
                       "    .include_spans    = true\n"
                       "    .spans            = \n"
                       "        hop-1: 123000044 - 11\n"
@@ -145,7 +145,7 @@ void test_to_string()
           .expected = "wrp_event_msg {\n"
                       "    .source           = source-address\n"
                       "    .dest             = dest-address\n"
-                      "    .headers          = 'Header 1, Header 2'\n"
+                      "    .headers          = 'Header 1, Header 2, Header 3.3'\n"
                       "    .payload_size     = 3\n"
                       "}\n" },
     };
@@ -261,7 +261,7 @@ void test_to_bytes()
 
 void test_encode_decode()
 {
-	ssize_t size, rv;
+	ssize_t size, base64_size, rv;
 	void *bytes;
 	wrp_msg_t *message;
 
@@ -298,9 +298,34 @@ void test_encode_decode()
 	printf("decoded dest:%s\n", message->u.req.dest);
 	printf("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid);
 	printf("decoded payload:%s\n", (char*)message->u.req.payload);
-
-	wrp_free_struct(message);
+        
+ 	wrp_free_struct(message);
 	free(bytes);
+
+	// msgpack encode
+	base64_size = wrp_struct_to( &msg, WRP_BASE64, &bytes );
+	/* print the encoded message */
+	_internal_tva_xxd( bytes, base64_size, 0 );
+
+	// msgpck decode
+	rv = wrp_to_struct(bytes, base64_size, WRP_BASE64, &message);
+	
+	CU_ASSERT_EQUAL( rv, size );
+	CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
+	CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
+	CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
+	CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg.u.req.transaction_uuid );
+	CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg.u.req.payload );
+	
+	printf("decoded msgType:%d\n", message->msg_type);
+	printf("decoded source:%s\n", message->u.req.source);
+	printf("decoded dest:%s\n", message->u.req.dest);
+	printf("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid);
+	printf("decoded payload:%s\n", (char*)message->u.req.payload);
+        
+ 	wrp_free_struct(message);
+	free(bytes);
+
 }
 
 void add_suites( CU_pSuite *suite )
