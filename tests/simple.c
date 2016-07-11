@@ -579,7 +579,19 @@ void validate_from_bytes( wrp_msg_t *msg, const char *expected )
 {
     char *actual;
     actual = wrp_struct_to_string( msg );
-    CU_ASSERT_STRING_EQUAL( actual, expected );
+
+    if( NULL == expected ) {
+        CU_ASSERT( expected == actual );
+    } else {
+        CU_ASSERT( NULL != actual );
+        if( NULL != actual ) {
+            if( 0 != strcmp( actual, expected) ) {
+                printf( "\n\nGot: |%s| Expected: |%s|\n\n", actual, expected );
+            }
+            CU_ASSERT_STRING_EQUAL( actual, expected );
+            free( actual );
+        }
+    }
 }
 
 
@@ -595,7 +607,7 @@ void test_all()
         /* Testing wrp_struct_to_string(). */
         string = wrp_struct_to_string( &test[i].in );
         validate_to_strings( test[i].string, test[i].string_size, string, strlen(string) );
-        if( 0 < size ) {
+        if( NULL != string ) {
             free( string );
         }
 
@@ -614,16 +626,16 @@ void test_all()
         }
 
         /* Testing wrp_to_struct() --> from bytes. */
-#if 0
-        {
+        if( 1 == i ) {
             wrp_msg_t *msg;
+
+            msg = NULL;
             size = wrp_to_struct( test[i].msgpack, test[i].msgpack_size, WRP_BYTES, &msg );
             validate_from_bytes( msg, test[i].string );
-            if( 0 < size ) {
-                free( msg );
+            if( NULL != msg ) {
+                wrp_free_struct( msg );
             }
         }
-#endif
     }
 }
 

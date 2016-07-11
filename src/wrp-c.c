@@ -85,7 +85,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 static void decodeRequest( msgpack_object deserialized, int *msgType, char** source_ptr,
                            char** dest_ptr, char** transaction_id_ptr, char*** headers,
                            int *statusValue,
-                           char** payload_ptr, bool *include_spans );
+                           char** payload_ptr, size_t *payload_size, bool *include_spans );
 static char* getKey_MsgtypeStr( const msgpack_object key, const size_t keySize,
                                 char* keyString );
 static char* getKey_MsgtypeBin( const msgpack_object key, const size_t binSize,
@@ -736,7 +736,7 @@ static char* __get_spans_string( const struct money_trace_spans *spans )
  */
 static void decodeRequest( msgpack_object deserialized, int *msgType, char** source_ptr,
                            char** dest_ptr, char** transaction_uuid_ptr, char ***headers_ptr, int *statusValue,
-                           char** payload_ptr, bool *include_spans )
+                           char** payload_ptr, size_t *payload_size, bool *include_spans )
 {
     unsigned int i = 0;
     int keySize = 0;
@@ -832,7 +832,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                 case MSGPACK_OBJECT_BIN: {
                     if( strcmp( keyName, WRP_PAYLOAD.name ) == 0 ) {
                         binValueSize = ValueType.via.bin.size;
-                        payload = ( char* ) malloc( binValueSize + 1 );
+                        payload = ( char* ) malloc( binValueSize );
                         keyValue = NULL;
                         keyValue = getKey_MsgtypeBin( ValueType, binValueSize, payload );
 
@@ -841,6 +841,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                         }
 
                         *payload_ptr = keyValue;
+                        *payload_size = binValueSize;
                     }
                 }
                 break;
@@ -911,6 +912,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
     char* transaction_uuid = NULL;
     char** headers = NULL;
     char *payload = NULL;
+    size_t payload_size = 0;
     bool include_spans = false;
 
     wrp_msg_t *msg = NULL;
@@ -930,7 +932,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 
                 if( deserialized.via.map.size != 0 ) {
                     decodeRequest( deserialized, &msgType, &source, &dest, &transaction_uuid, &headers,
-                                   &statusValue, &payload, &include_spans );
+                                   &statusValue, &payload, &payload_size, &include_spans );
                 }
 
                 msgpack_zone_destroy( &mempool );
@@ -956,6 +958,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.req.spans.spans = NULL;   /* not supported */
                         msg->u.req.spans.count = 0;     /* not supported */
                         msg->u.req.payload = payload;
+                        msg->u.req.payload_size = payload_size;
 
                         *msg_ptr = msg;
                         return length;
