@@ -287,6 +287,7 @@ static ssize_t __wrp_struct_to_base64( const wrp_msg_t *msg, char **bytes )
 
     b64_encode( ( uint8_t* ) bytes_data, bytes_size, ( uint8_t* ) base64_data );
     *bytes = base64_data;
+    rv = base64_buf_size;
 
     /* error handling & cleanup */
     if( rv < 1 ) {
