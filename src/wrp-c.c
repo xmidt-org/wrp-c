@@ -32,21 +32,27 @@
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
-/* none */
+struct wrp_token {
+    const char const *name;
+    size_t length;
+};
 
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
-static const char const *__empty_list        = "''";
-static const char const * WRP_MSG_TYPE       = "msg_type";
-static const char const * WRP_SOURCE         = "source";
-static const char const * WRP_DESTINATION    = "dest";
-static const char const * WRP_TRANSACTION_ID = "transaction_uuid";
-static const char const * WRP_HEADERS        = "headers";
-static const char const * WRP_PAYLOAD        = "payload";
-static const char const * WRP_SPANS          = "spans";
-static const char const * WRP_INCLUDE_SPANS  = "include_spans";
-static const char const * WRP_STATUS         = "status";
+static const char const *__empty_list = "''";
+
+/* Reminder: sizeof("string") includes the trailing '\0', which we don't want. */
+static const struct wrp_token WRP_MSG_TYPE      = { .name = "msg_type", .length = sizeof("msg_type") - 1 };
+static const struct wrp_token WRP_STATUS        = { .name = "status", .length = sizeof("status") - 1 };
+static const struct wrp_token WRP_SOURCE        = { .name = "source", .length = sizeof("source") - 1 };
+static const struct wrp_token WRP_DEST          = { .name = "dest", .length = sizeof("dest") - 1 };
+static const struct wrp_token WRP_TRANS_ID      = { .name = "transaction_uuid", .length = sizeof("transaction_uuid") - 1 };
+static const struct wrp_token WRP_HEADERS       = { .name = "headers", .length = sizeof("headers") - 1 };
+static const struct wrp_token WRP_PAYLOAD       = { .name = "payload", .length = sizeof("payload") - 1 };
+static const struct wrp_token WRP_SPANS         = { .name = "spans", .length = sizeof("spans") - 1 };
+static const struct wrp_token WRP_INCLUDE_SPANS = { .name = "include_spans", .length = sizeof("include_spans") - 1 };
+
 static const int const WRP_MAP_SIZE          = 4; // mandatory msg_type,source,dest,payload
 
 
@@ -63,9 +69,13 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
                                              char **bytes );
 static char* __get_header_string( char **headers );
 static char* __get_spans_string( const struct money_trace_spans *spans );
+static void __msgpack_pack_string_nvp( msgpack_packer *pk,
+                                       const struct wrp_token *token,
+                                       const char *val );
+static void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n );
 static ssize_t __wrp_pack_structure( int msg_type, char* source, char* dest,
-                                     char* transaction_uuid, bool includeTimingValues,
-                                     const struct money_trace_spans *timeSpan,
+                                     char* transaction_uuid, bool include_spans,
+                                     const struct money_trace_spans *spans,
                                      char* payload, size_t payload_size,
                                      char **headers, char **data );
 static ssize_t __wrp_base64_to_struct( const void *base64_data, const size_t base64_size,
@@ -75,7 +85,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 static void decodeRequest( msgpack_object deserialized, int *msgType, char** source_ptr,
                            char** dest_ptr, char** transaction_id_ptr, char*** headers,
                            int *statusValue,
-                           char** payload_ptr, bool *includeTimingValues );
+                           char** payload_ptr, size_t *payload_size, bool *include_spans );
 static char* getKey_MsgtypeStr( const msgpack_object key, const size_t keySize,
                                 char* keyString );
 static char* getKey_MsgtypeBin( const msgpack_object key, const size_t binSize,
@@ -214,7 +224,6 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
     ssize_t rv;
     const struct wrp_req_msg *req = & ( msg->u.req );
     const struct wrp_event_msg *event = & ( msg->u.event );
-    const struct money_trace_spans *time_spans = NULL;
 
     if( NULL == msg ) {
         return -1;
@@ -226,17 +235,8 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
             return -1;
 
         case WRP_MSG_TYPE__REQ:
-
-            //spans allocation is required only when include timing spans is enabled
-
-            if( req->include_spans == false ) {
-                time_spans = NULL;
-            } else {
-                time_spans = & ( req->spans );
-            }
-
             rv = __wrp_pack_structure( msg->msg_type, req->source, req->dest, req->transaction_uuid,
-                                       req->include_spans, time_spans, req->payload, req->payload_size, req->headers, bytes );
+                                       req->include_spans, &req->spans, req->payload, req->payload_size, req->headers, bytes );
             break;
 
         case WRP_MSG_TYPE__EVENT:
@@ -533,6 +533,67 @@ static char* __get_header_string( char **headers )
     return rv;
 }
 
+
+static void __msgpack_headers( msgpack_packer *pk, char **headers )
+{
+    if( NULL != headers ) {
+        size_t count = 0;
+
+        while( NULL != headers[count] ) {
+            count++;
+        }
+
+        __msgpack_pack_string( pk, WRP_HEADERS.name, WRP_HEADERS.length );
+
+        msgpack_pack_array( pk, count );
+
+        count = 0;
+        while( NULL != headers[count] ) {
+            __msgpack_pack_string( pk, headers[count], strlen(headers[count]) );
+            count++;
+        }
+    }
+}
+
+static void __msgpack_spans( msgpack_packer *pk, const struct money_trace_spans *spans )
+{
+    if( (NULL != spans) && (0 < spans->count) ) {
+        size_t i;
+        struct money_trace_span *span;
+
+        __msgpack_pack_string( pk, WRP_SPANS.name, WRP_SPANS.length );
+
+        msgpack_pack_array( pk, spans->count );
+
+        span = spans->spans;
+        for( i = 0; i < spans->count; i++ ) {
+            msgpack_pack_array( pk, 3 );
+
+            __msgpack_pack_string( pk, span->name, strlen(span->name) );
+            msgpack_pack_uint64( pk, span->start );
+            msgpack_pack_uint32( pk, span->duration );
+
+            span++;
+        }
+    }
+}
+
+static void __msgpack_pack_string_nvp( msgpack_packer *pk,
+                                       const struct wrp_token *token,
+                                       const char *val )
+{
+    if( (NULL != token) && (NULL != val) ) {
+        __msgpack_pack_string( pk, token->name, token->length );
+        __msgpack_pack_string( pk, val, strlen(val) );
+    }
+}
+
+static void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n )
+{
+    msgpack_pack_str( pk, n );
+    msgpack_pack_str_body( pk, string, n );
+}
+
 /**
  *  Encode/Pack the wrp message structure using msgpack
  *
@@ -542,14 +603,13 @@ static char* __get_header_string( char **headers )
  *  @return the number of bytes in the string or less then 1 on error*/
 
 static ssize_t __wrp_pack_structure( int msg_type, char *source, char* dest,
-                                     char* transaction_uuid, bool includeTimingValues,
-                                     const struct money_trace_spans *timeSpan, char* payload, size_t payload_size,
+                                     char* transaction_uuid, bool include_spans,
+                                     const struct money_trace_spans *spans, char* payload, size_t payload_size,
                                      char **headers, char **data )
 {
     msgpack_sbuffer sbuf;
     msgpack_packer pk;
     ssize_t rv;
-    unsigned int cnt = 0;
     int wrp_map_size = WRP_MAP_SIZE;
 
     /***   Start of Msgpack Encoding  ***/
@@ -557,104 +617,56 @@ static ssize_t __wrp_pack_structure( int msg_type, char *source, char* dest,
     msgpack_sbuffer_init( &sbuf );
     msgpack_packer_init( &pk, &sbuf, msgpack_sbuffer_write );
 
-    // Change wrp_map_size value depending on if optional fields timeSpan and headers are present
-    if( transaction_uuid != NULL ) {
+    // Change wrp_map_size value depending on if optional fields spans and headers are present
+    if( transaction_uuid ) {
         wrp_map_size++;
     }
 
-    if( timeSpan != NULL ) {
-        wrp_map_size = wrp_map_size + 2;
-    }
-
-    if( headers != NULL ) {
+    if( include_spans ) {
         wrp_map_size++;
     }
 
-    printf( "wrp size is:%d\n", wrp_map_size );
+    if( (NULL != spans) && (0 < spans->count) ) {
+        wrp_map_size++;
+    }
+
+    if( headers ) {
+        wrp_map_size++;
+    }
+
     msgpack_pack_map( &pk, wrp_map_size );
 
-    printf( "msg_type %d\n", msg_type );
-    msgpack_pack_str( &pk, strlen( WRP_MSG_TYPE ) );
-    msgpack_pack_str_body( &pk, WRP_MSG_TYPE, strlen( WRP_MSG_TYPE ) );
+    __msgpack_pack_string( &pk, WRP_MSG_TYPE.name, WRP_MSG_TYPE.length );
     msgpack_pack_int( &pk, msg_type );
 
-    if( source != NULL ) {
-        msgpack_pack_str( &pk, strlen( WRP_SOURCE ) );
-        msgpack_pack_str_body( &pk, WRP_SOURCE, strlen( WRP_SOURCE ) );
-        msgpack_pack_str( &pk, strlen( source ) );
-        msgpack_pack_str_body( &pk, source, strlen( source ) );
+    __msgpack_pack_string_nvp( &pk, &WRP_SOURCE, source );
+    __msgpack_pack_string_nvp( &pk, &WRP_DEST, dest );
+    __msgpack_pack_string_nvp( &pk, &WRP_TRANS_ID, transaction_uuid );
+    __msgpack_headers( &pk, headers );
+
+    if( include_spans ) {
+        __msgpack_pack_string( &pk, WRP_INCLUDE_SPANS.name, WRP_INCLUDE_SPANS.length );
+        msgpack_pack_true( &pk );
     }
 
-    if( dest != NULL ) {
-        msgpack_pack_str( &pk, strlen( WRP_DESTINATION ) );
-        msgpack_pack_str_body( &pk, WRP_DESTINATION, strlen( WRP_DESTINATION ) );
-        msgpack_pack_str( &pk, strlen( dest ) );
-        msgpack_pack_str_body( &pk, dest, strlen( dest ) );
-    }
-
-    if( transaction_uuid != NULL ) {
-        msgpack_pack_str( &pk, strlen( WRP_TRANSACTION_ID ) );
-        msgpack_pack_str_body( &pk, WRP_TRANSACTION_ID, strlen( WRP_TRANSACTION_ID ) );
-        msgpack_pack_str( &pk, strlen( transaction_uuid ) );
-        msgpack_pack_str_body( &pk, transaction_uuid, strlen( transaction_uuid ) );
-    }
-
-    if( headers != NULL ) {
-        msgpack_pack_str( &pk, strlen( WRP_HEADERS ) );
-        msgpack_pack_str_body( &pk, WRP_HEADERS, strlen( WRP_HEADERS ) );
-        msgpack_pack_str( &pk, strlen( headers[0] ) );
-        msgpack_pack_str_body( &pk, headers, strlen( headers[0] ) );
-    }
-
-    //timing values available only for msg req not for msg event
-    if( msg_type == WRP_MSG_TYPE__REQ ) {
-        if( includeTimingValues ) {
-            msgpack_pack_str( &pk, strlen( WRP_INCLUDE_SPANS ) );
-            msgpack_pack_str_body( &pk, WRP_INCLUDE_SPANS,
-                                   strlen( WRP_INCLUDE_SPANS ) );
-            msgpack_pack_true( &pk );
-
-            msgpack_pack_str( &pk, strlen( WRP_SPANS ) );
-            msgpack_pack_str_body( &pk, WRP_SPANS, strlen( WRP_SPANS ) );
-
-            if( timeSpan != NULL ) {
-                if( timeSpan->spans != NULL ) {
-                    msgpack_pack_array( &pk, timeSpan->count );
-
-                    for( cnt = 0; cnt < timeSpan->count; cnt++ ) {
-                        msgpack_pack_array( &pk, 3 );
-                        msgpack_pack_str( &pk, strlen( timeSpan->spans[cnt].name ) );
-                        msgpack_pack_str_body( &pk, timeSpan->spans[cnt].name,
-                                               strlen( timeSpan->spans[cnt].name ) );
-
-                        msgpack_pack_uint64( &pk, timeSpan->spans[cnt].start );
-
-                        msgpack_pack_uint32( &pk, timeSpan->spans[cnt].duration );
-                    }
-                }
-            }
-        }
-    }
+    __msgpack_spans( &pk, spans );
 
     if( payload != NULL ) {
-        msgpack_pack_str( &pk, strlen( WRP_PAYLOAD ) );
-        msgpack_pack_str_body( &pk, WRP_PAYLOAD, strlen( WRP_PAYLOAD ) );
+        __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
         msgpack_pack_bin( &pk, payload_size );
         msgpack_pack_bin_body( &pk, payload, payload_size );
     }
 
-    if( data != NULL && sbuf.data != NULL ) {
-        *data = ( char * ) malloc( sizeof( char ) * ( sbuf.size + 1 ) );
-        strncpy( *data, sbuf.data, sbuf.size + 1 );
-        rv = sbuf.size;
+    rv = -1;
+    if( sbuf.data ) {
+        *data = (char *) malloc( sizeof(char) * sbuf.size );
+        if( NULL != *data ) {
+            memcpy( *data, sbuf.data, sbuf.size );
+            rv = sbuf.size;
+        }
     }
 
     msgpack_sbuffer_destroy( &sbuf );
-
-    /***   End of Msgpack Encoding   ***/
-    if( data == NULL ) {
-        return -1;    //failure in packing
-    }
 
     return rv;
 }
@@ -720,11 +732,11 @@ static char* __get_spans_string( const struct money_trace_spans *spans )
  * @param[in] transaction_uuid_ptr Id
  * @param[in] statusValue status value of authorization request
  * @param[in] payload_ptr bin payload to be extracted from request
- * @param[in] includeTimingValues to include timing values
+ * @param[in] include_spans to include timing values
  */
 static void decodeRequest( msgpack_object deserialized, int *msgType, char** source_ptr,
                            char** dest_ptr, char** transaction_uuid_ptr, char ***headers_ptr, int *statusValue,
-                           char** payload_ptr, bool *includeTimingValues )
+                           char** payload_ptr, size_t *payload_size, bool *include_spans )
 {
     unsigned int i = 0;
     int keySize = 0;
@@ -759,17 +771,17 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
         if( keyName != NULL ) {
             switch( ValueType.type ) {
                 case MSGPACK_OBJECT_POSITIVE_INTEGER: {
-                    if( strcmp( keyName, WRP_MSG_TYPE ) == 0 ) {
+                    if( strcmp( keyName, WRP_MSG_TYPE.name ) == 0 ) {
                         *msgType = ValueType.via.i64;
-                    } else if( strcmp( keyName, WRP_STATUS ) == 0 ) {
+                    } else if( strcmp( keyName, WRP_STATUS.name ) == 0 ) {
                         *statusValue = ValueType.via.i64;
                     }
                 }
                 break;
 
                 case MSGPACK_OBJECT_BOOLEAN: {
-                    if( strcmp( keyName, WRP_INCLUDE_SPANS ) == 0 ) {
-                        *includeTimingValues = ValueType.via.boolean ? true : false;
+                    if( strcmp( keyName, WRP_INCLUDE_SPANS.name ) == 0 ) {
+                        *include_spans = ValueType.via.boolean ? true : false;
                     }
                 }
                 break;
@@ -780,7 +792,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                     NewStringVal = ( char* ) malloc( StringValueSize + 1 );
                     StringValue = getKey_MsgtypeStr( ValueType, StringValueSize, NewStringVal );
 
-                    if( strcmp( keyName, WRP_SOURCE ) == 0 ) {
+                    if( strcmp( keyName, WRP_SOURCE.name ) == 0 ) {
                         sLen = strlen( StringValue );
                         source = ( char * ) malloc( sLen + 1 );
                         strncpy( source, StringValue, sLen );
@@ -789,7 +801,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                     }
 
 
-                    else if( strcmp( keyName, WRP_DESTINATION ) == 0 ) {
+                    else if( strcmp( keyName, WRP_DEST.name ) == 0 ) {
                         sLen = strlen( StringValue );
                         dest = ( char * ) malloc( sLen + 1 );
                         strncpy( dest, StringValue, sLen );
@@ -797,7 +809,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                         *dest_ptr = dest;
                     }
 
-                    else if( strcmp( keyName, WRP_TRANSACTION_ID ) == 0 ) {
+                    else if( strcmp( keyName, WRP_TRANS_ID.name ) == 0 ) {
                         sLen = strlen( StringValue );
                         transaction_uuid = ( char * ) malloc( sLen + 1 );
                         strncpy( transaction_uuid, StringValue, sLen );
@@ -805,7 +817,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                         *transaction_uuid_ptr = transaction_uuid;
                     }
 
-                    else if( strcmp( keyName, WRP_HEADERS ) == 0 ) {
+                    else if( strcmp( keyName, WRP_HEADERS.name ) == 0 ) {
                         sLen = strlen( StringValue );
                         *headers = ( char * ) malloc( sLen + 1 );
                         strncpy( *headers, StringValue, sLen );
@@ -818,9 +830,9 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                 break;
 
                 case MSGPACK_OBJECT_BIN: {
-                    if( strcmp( keyName, WRP_PAYLOAD ) == 0 ) {
+                    if( strcmp( keyName, WRP_PAYLOAD.name ) == 0 ) {
                         binValueSize = ValueType.via.bin.size;
-                        payload = ( char* ) malloc( binValueSize + 1 );
+                        payload = ( char* ) malloc( binValueSize );
                         keyValue = NULL;
                         keyValue = getKey_MsgtypeBin( ValueType, binValueSize, payload );
 
@@ -829,6 +841,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                         }
 
                         *payload_ptr = keyValue;
+                        *payload_size = binValueSize;
                     }
                 }
                 break;
@@ -899,7 +912,8 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
     char* transaction_uuid = NULL;
     char** headers = NULL;
     char *payload = NULL;
-    bool includeTimingValues = false;
+    size_t payload_size = 0;
+    bool include_spans = false;
 
     wrp_msg_t *msg = NULL;
 
@@ -918,7 +932,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 
                 if( deserialized.via.map.size != 0 ) {
                     decodeRequest( deserialized, &msgType, &source, &dest, &transaction_uuid, &headers,
-                                   &statusValue, &payload, &includeTimingValues );
+                                   &statusValue, &payload, &payload_size, &include_spans );
                 }
 
                 msgpack_zone_destroy( &mempool );
@@ -929,6 +943,8 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 
                         msg->msg_type = msgType;
                         msg->u.auth.status = statusValue;
+
+                        *msg_ptr = msg;
                         return length;
 
                     case WRP_MSG_TYPE__REQ:
@@ -938,8 +954,11 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.req.dest = dest;
                         msg->u.req.transaction_uuid = transaction_uuid;
                         msg->u.req.headers = headers;
-                        msg->u.req.include_spans = includeTimingValues;
+                        msg->u.req.include_spans = include_spans;
+                        msg->u.req.spans.spans = NULL;   /* not supported */
+                        msg->u.req.spans.count = 0;     /* not supported */
                         msg->u.req.payload = payload;
+                        msg->u.req.payload_size = payload_size;
 
                         *msg_ptr = msg;
                         return length;
@@ -950,6 +969,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.event.source = source;
                         msg->u.event.dest = dest;
                         msg->u.event.payload = payload;
+                        msg->u.event.headers = headers;
 
                         *msg_ptr = msg;
                         return length;
