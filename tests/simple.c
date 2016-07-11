@@ -705,7 +705,6 @@ void add_suites( CU_pSuite *suite )
     CU_add_test( *suite, "Test conversions", test_all );
     //CU_add_test( *suite, "Test struct_to_bytes()", test_to_bytes );
     //CU_add_test( *suite, "Test encode_decode()", test_encode_decode );
-
 }
 
 /*----------------------------------------------------------------------------*/
