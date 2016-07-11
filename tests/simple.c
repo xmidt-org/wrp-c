@@ -485,7 +485,7 @@ void validate_to_strings( const char *expected, ssize_t expected_len,
     }
 
     CU_ASSERT_STRING_EQUAL( actual, expected );
-    CU_ASSERT_EQUAL( actual_len, expected_len );
+    CU_ASSERT_EQUAL( (ssize_t) actual_len, expected_len );
 }
 
 void _internal_tva_xxd( const void *buffer, const size_t length, size_t line )
