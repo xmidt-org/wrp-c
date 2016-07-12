@@ -847,7 +847,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                 break;
 
                 default:
-                    printf( "Unknown Data Type" );
+                    printf( "Unknown Data Type\n" );
             }
         }
 

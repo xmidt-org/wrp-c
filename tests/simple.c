@@ -22,6 +22,10 @@
 
 #include "../src/wrp-c.h"
 
+
+static void test_encode_decode();
+
+
 struct test_vectors {
     /* Struct Version */
     const wrp_msg_t in;
@@ -637,7 +641,131 @@ void test_all()
             }
         }
     }
+    
+    test_encode_decode();
 }
+
+
+
+void test_encode_decode()
+{
+	ssize_t size, base64_size, rv;
+	void *bytes;
+	wrp_msg_t *message;
+
+	printf("\nInside test_encode_decode()....\n");
+	
+	const wrp_msg_t msg = { .msg_type = WRP_MSG_TYPE__REQ,
+          .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+          .u.req.source = "source-address",
+          .u.req.dest = "dest-address",
+          .u.req.headers = (char **) headers, // NULL,
+          .u.req.include_spans = false,
+          .u.req.spans.spans = NULL,
+          .u.req.spans.count = 0,
+          .u.req.payload = "123",
+          .u.req.payload_size = 3 };
+
+	// msgpack encode
+	size = wrp_struct_to( &msg, WRP_BYTES, &bytes );
+	/* print the encoded message */
+	_internal_tva_xxd( bytes, size, 0 );
+
+	// msgpck decode
+	rv = wrp_to_struct(bytes, size, WRP_BYTES, &message);
+	
+	CU_ASSERT_EQUAL( rv, size );
+	CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
+	CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
+	CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
+	CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg.u.req.transaction_uuid );
+	CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg.u.req.payload );
+
+        {
+                    
+            int n = 0;
+            while ( message->u.req.headers && message->u.req.headers[n] ) {
+                 CU_ASSERT_STRING_EQUAL(msg.u.req.headers[n],
+                                        message->u.req.headers[n]);
+                 n++;
+                }
+        }
+	
+	printf("decoded msgType:%d\n", message->msg_type);
+	printf("decoded source:%s\n", message->u.req.source);
+	printf("decoded dest:%s\n", message->u.req.dest);
+	printf("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid);
+	printf("decoded payload:%s\n", (char*)message->u.req.payload);
+        
+ 	wrp_free_struct(message);
+	free(bytes);
+
+	// msgpack encode
+	base64_size = wrp_struct_to( &msg, WRP_BASE64, &bytes );
+	/* print the encoded message */
+	_internal_tva_xxd( bytes, base64_size, 0 );
+
+	// msgpck decode
+	rv = wrp_to_struct(bytes, base64_size, WRP_BASE64, &message);
+	
+	CU_ASSERT_EQUAL( rv, size );
+	CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
+	CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
+	CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
+	CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg.u.req.transaction_uuid );
+	CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg.u.req.payload );
+	
+	printf("decoded msgType:%d\n", message->msg_type);
+	printf("decoded source:%s\n", message->u.req.source);
+	printf("decoded dest:%s\n", message->u.req.dest);
+	printf("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid);
+	printf("decoded payload:%s\n", (char*)message->u.req.payload);
+        
+ 	wrp_free_struct(message);
+	free(bytes);
+
+
+	// msgpack encode
+        const wrp_msg_t *event_msg = &test[5].in;
+	size = wrp_struct_to( event_msg, WRP_BYTES, &bytes );
+        free(bytes);
+        
+	base64_size = wrp_struct_to( event_msg, WRP_BASE64, &bytes );
+	/* print the encoded message */
+	_internal_tva_xxd( bytes, base64_size, 0 );
+
+	// msgpck decode
+	rv = wrp_to_struct(bytes, base64_size, WRP_BASE64, &message);
+	free(bytes);
+	
+        if ( 0 < rv ) {
+        
+	CU_ASSERT_EQUAL( rv, size );
+        
+	CU_ASSERT_EQUAL( message->msg_type, event_msg->msg_type );
+	CU_ASSERT_STRING_EQUAL( message->u.event.source, event_msg->u.event.source );
+	CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
+	CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
+        
+        int n = 0;
+        while ( event_msg->u.event.headers && event_msg->u.event.headers[n] ) {
+             CU_ASSERT_STRING_EQUAL(message->u.event.headers[n],
+                                    event_msg->u.event.headers[n]);
+             n++;
+            }
+        wrp_free_struct(message);
+	       
+        } else {
+            CU_ASSERT(false);
+        }
+        
+	printf("decoded msgType:%d\n", event_msg->msg_type);
+	printf("decoded source:%s\n", event_msg->u.event.source);
+	printf("decoded dest:%s\n", event_msg->u.event.dest);
+	printf("decoded payload:%s\n", (char*)event_msg->u.event.payload);        
+}
+
+
 
 #if 0
 void test_to_bytes()
