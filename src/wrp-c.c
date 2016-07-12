@@ -847,7 +847,7 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                 break;
 
                 default:
-                    printf( "Unknown Data Type" );
+                    printf( "Unknown Data Type\n" );
             }
         }
 
@@ -937,6 +937,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 
                 msgpack_zone_destroy( &mempool );
                 msg = ( wrp_msg_t * ) malloc( sizeof( wrp_msg_t ) );
+                memset(msg, 0, sizeof(wrp_msg_t));
 
                 switch( msgType ) {
                     case WRP_MSG_TYPE__AUTH:
