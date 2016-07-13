@@ -39,7 +39,9 @@ struct test_vectors {
     const uint8_t msgpack[1024];
 };
 
-const char *headers[] = { "Header 1", "Header 2", NULL };
+const char *headers[] = { "Header 111", "Header 2", NULL };
+const char *single_headers[] = { "Single Header 1", NULL };
+
 const struct money_trace_span spans[] = {
     {
         .name = "hop-1",
@@ -666,6 +668,17 @@ void test_encode_decode()
           .u.req.payload = "123",
           .u.req.payload_size = 3 };
 
+        const wrp_msg_t msg2 = { .msg_type = WRP_MSG_TYPE__REQ,
+          .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+          .u.req.source = "source-address",
+          .u.req.dest = "dest-address",
+          .u.req.headers = (char **) single_headers, // NULL,
+          .u.req.include_spans = false,
+          .u.req.spans.spans = NULL,
+          .u.req.spans.count = 0,
+          .u.req.payload = "123",
+          .u.req.payload_size = 3 };
+
 	// msgpack encode
 	size = wrp_struct_to( &msg, WRP_BYTES, &bytes );
 	/* print the encoded message */
@@ -684,9 +697,11 @@ void test_encode_decode()
         {
                     
             int n = 0;
-            while ( message->u.req.headers && message->u.req.headers[n] ) {
+            char **header_strings = message->u.req.headers;
+            while ( msg.u.req.headers && msg.u.req.headers[n] ) {
                  CU_ASSERT_STRING_EQUAL(msg.u.req.headers[n],
-                                        message->u.req.headers[n]);
+                                        *header_strings);
+                 header_strings++;
                  n++;
                 }
         }
@@ -762,7 +777,35 @@ void test_encode_decode()
 	printf("decoded msgType:%d\n", event_msg->msg_type);
 	printf("decoded source:%s\n", event_msg->u.event.source);
 	printf("decoded dest:%s\n", event_msg->u.event.dest);
-	printf("decoded payload:%s\n", (char*)event_msg->u.event.payload);        
+	printf("decoded payload:%s\n", (char*)event_msg->u.event.payload);  
+        
+        
+	// msgpack encode
+	size = wrp_struct_to( &msg2, WRP_BYTES, &bytes );
+	/* print the encoded message */
+	_internal_tva_xxd( bytes, size, 0 );
+
+	// msgpck decode
+	rv = wrp_to_struct(bytes, size, WRP_BYTES, &message);
+	
+	CU_ASSERT_EQUAL( rv, size );
+	CU_ASSERT_EQUAL( message->msg_type, msg2.msg_type );
+	CU_ASSERT_STRING_EQUAL( message->u.req.source, msg2.u.req.source );
+	CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg2.u.req.dest );
+	CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg2.u.req.transaction_uuid );
+	CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg2.u.req.payload );
+
+        {
+                    
+            int n = 0;
+            while ( message->u.req.headers && message->u.req.headers[n] ) {
+                 CU_ASSERT_STRING_EQUAL(msg2.u.req.headers[n],
+                                        message->u.req.headers[n]);
+                 n++;
+                }
+        }              
+               
+        wrp_free_struct(message);
 }
 
 

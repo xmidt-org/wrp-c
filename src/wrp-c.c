@@ -821,8 +821,8 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                         sLen = strlen( StringValue );
                         *headers = ( char * ) malloc( sLen + 1 );
                         strncpy( *headers, StringValue, sLen );
-                        *headers[sLen] = '\0';
-                        **headers_ptr = *headers;
+                        headers[sLen] = '\0';
+                        *headers_ptr = headers;
                     }
 
                     free( NewStringVal );
@@ -845,7 +845,31 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                     }
                 }
                 break;
-
+                
+                case MSGPACK_OBJECT_ARRAY:
+                    if( strcmp( keyName, WRP_HEADERS.name ) == 0 ) {
+                        msgpack_object_array array = ValueType.via.array;
+                        msgpack_object *ptr = array.ptr;
+                        uint32_t cnt = 0;
+                        
+                        ptr = array.ptr;
+                        *headers_ptr = ( char ** ) malloc( array.size + 1);
+                        headers = *headers_ptr;
+                        for (cnt = 0; cnt < array.size; cnt++, ptr++) {
+                            headers[cnt] = (char *) malloc(ptr->via.str.size +1);
+                            memset(headers[cnt], 0, ptr->via.str.size + 1);
+                            memcpy(headers[cnt], ptr->via.str.ptr, ptr->via.str.size);
+                            printf("*\nheaders_ptr[%d] %s\n", cnt, headers[cnt]);
+                        }          
+                        headers[array.size] = NULL;
+                        
+                        printf("MSGPACK_OBJECT_ARRAY\n");
+                    }  else {
+                        printf( "Not Handled  MSGPACK_OBJECT_ARRAY %s\n", keyName);
+                    }            
+                
+                break;                
+                
                 default:
                     printf( "Unknown Data Type\n" );
             }
@@ -954,7 +978,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.req.source = source;
                         msg->u.req.dest = dest;
                         msg->u.req.transaction_uuid = transaction_uuid;
-                        msg->u.req.headers = headers;
+                        msg->u.req.headers = &headers[0];
                         msg->u.req.include_spans = include_spans;
                         msg->u.req.spans.spans = NULL;   /* not supported */
                         msg->u.req.spans.count = 0;     /* not supported */
@@ -970,7 +994,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.event.source = source;
                         msg->u.event.dest = dest;
                         msg->u.event.payload = payload;
-                        msg->u.event.headers = headers;
+                        msg->u.event.headers = &headers[0];
 
                         *msg_ptr = msg;
                         return length;
