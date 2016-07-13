@@ -39,7 +39,7 @@ struct test_vectors {
     const uint8_t msgpack[1024];
 };
 
-const char *headers[] = { "Header 111", "Header 2", NULL };
+const char *headers[] = { "Header 1", "Header 2", NULL };
 const char *single_headers[] = { "Single Header 1", NULL };
 
 const struct money_trace_span spans[] = {
