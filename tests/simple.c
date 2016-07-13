@@ -686,6 +686,7 @@ void test_encode_decode()
 
 	// msgpck decode
 	rv = wrp_to_struct(bytes, size, WRP_BYTES, &message);
+	free(bytes);
 	
 	CU_ASSERT_EQUAL( rv, size );
 	CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
@@ -713,7 +714,6 @@ void test_encode_decode()
 	printf("decoded payload:%s\n", (char*)message->u.req.payload);
         
  	wrp_free_struct(message);
-	free(bytes);
 
 	// msgpack encode
 	base64_size = wrp_struct_to( &msg, WRP_BASE64, &bytes );
@@ -722,6 +722,7 @@ void test_encode_decode()
 
 	// msgpck decode
 	rv = wrp_to_struct(bytes, base64_size, WRP_BASE64, &message);
+	free(bytes);
 	
 	CU_ASSERT_EQUAL( rv, size );
 	CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
@@ -737,7 +738,6 @@ void test_encode_decode()
 	printf("decoded payload:%s\n", (char*)message->u.req.payload);
         
  	wrp_free_struct(message);
-	free(bytes);
 
 
 	// msgpack encode
@@ -787,7 +787,8 @@ void test_encode_decode()
 
 	// msgpck decode
 	rv = wrp_to_struct(bytes, size, WRP_BYTES, &message);
-	
+	free(bytes);
+        
 	CU_ASSERT_EQUAL( rv, size );
 	CU_ASSERT_EQUAL( message->msg_type, msg2.msg_type );
 	CU_ASSERT_STRING_EQUAL( message->u.req.source, msg2.u.req.source );
@@ -807,80 +808,6 @@ void test_encode_decode()
                
         wrp_free_struct(message);
 }
-
-
-
-#if 0
-void test_to_bytes()
-{
-    ssize_t size;
-    void *bytes;
-    printf( "\nInside test_to_bytes()....\n" );
-
-    const wrp_msg_t msg = { .msg_type = WRP_MSG_TYPE__REQ,
-                            .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
-                            .u.req.source = "source-address",
-                            .u.req.dest = "dest-address",
-                            .u.req.headers = NULL,
-                            .u.req.include_spans = false,
-                            .u.req.spans.spans = NULL,
-                            .u.req.spans.count = 0,
-                            .u.req.payload = "123",
-                            .u.req.payload_size = 3
-                          };
-
-    size = wrp_struct_to( &msg, WRP_BYTES, &bytes );
-    /* print the encoded message */
-    _internal_tva_xxd( bytes, size, 0 );
-    free( bytes );
-}
-
-
-void test_encode_decode()
-{
-    ssize_t size, rv;
-    void *bytes;
-    wrp_msg_t *message;
-
-    printf( "\nInside test_encode_decode()....\n" );
-
-    const wrp_msg_t msg = { .msg_type = WRP_MSG_TYPE__REQ,
-                            .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
-                            .u.req.source = "source-address",
-                            .u.req.dest = "dest-address",
-                            .u.req.headers = NULL,
-                            .u.req.include_spans = false,
-                            .u.req.spans.spans = NULL,
-                            .u.req.spans.count = 0,
-                            .u.req.payload = "123",
-                            .u.req.payload_size = 3
-                          };
-
-    // msgpack encode
-    size = wrp_struct_to( &msg, WRP_BYTES, &bytes );
-    /* print the encoded message */
-    _internal_tva_xxd( bytes, size, 0 );
-
-    // msgpck decode
-    rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
-
-    CU_ASSERT_EQUAL( rv, size );
-    CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
-    CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
-    CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
-    CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg.u.req.transaction_uuid );
-    CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg.u.req.payload );
-
-    printf( "decoded msgType:%d\n", message->msg_type );
-    printf( "decoded source:%s\n", message->u.req.source );
-    printf( "decoded dest:%s\n", message->u.req.dest );
-    printf( "decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
-    printf( "decoded payload:%s\n", ( char* )message->u.req.payload );
-
-    wrp_free_struct( message );
-    free( bytes );
-}
-#endif
 
 void add_suites( CU_pSuite *suite )
 {

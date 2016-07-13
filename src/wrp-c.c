@@ -184,6 +184,12 @@ void wrp_free_struct( wrp_msg_t *msg )
             free( msg->u.req.payload );
 
             if( NULL != msg->u.req.headers ) {
+                uint32_t cnt = 0;
+                
+                while (NULL != msg->u.req.headers[cnt]) {
+                    free(msg->u.req.headers[cnt++]);
+                }
+                
                 free( msg->u.req.headers );
             }
 
@@ -271,7 +277,7 @@ static ssize_t __wrp_struct_to_base64( const wrp_msg_t *msg, char **bytes )
 
     if( rv < 1 ) {
         rv = -100;
-        goto failed_to_get_bytes;
+        return rv;
     }
 
     bytes_size = ( size_t ) rv;
@@ -282,22 +288,14 @@ static ssize_t __wrp_struct_to_base64( const wrp_msg_t *msg, char **bytes )
 
     if( NULL == base64_data ) {
         rv = -101;
-        goto failed_to_malloc;
+    } else {
+        b64_encode( ( uint8_t* ) bytes_data, bytes_size, ( uint8_t* ) base64_data );
+        *bytes = base64_data;
+        rv = base64_buf_size;
     }
-
-    b64_encode( ( uint8_t* ) bytes_data, bytes_size, ( uint8_t* ) base64_data );
-    *bytes = base64_data;
-    rv = base64_buf_size;
-
-    /* error handling & cleanup */
-    if( rv < 1 ) {
-failed_to_malloc:
-        free( bytes_data );
-
-failed_to_get_bytes:
-        ;   /* Nothing left to clean up. */
-    }
-
+    
+    free(bytes_data);
+    
     return rv;
 }
 
