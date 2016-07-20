@@ -822,15 +822,12 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                     }
 
                     else if( strcmp( keyName, WRP_HEADERS.name ) == 0 ) {
-#ifdef FixMePlease
                         sLen = strlen( StringValue );
-                        *headers = ( char * ) malloc( sLen + 1 );
-                        strncpy( *headers, StringValue, sLen );
-                        headers[sLen] = '\0';
-                        *headers_ptr = headers;
-#else
-                        assert(0);
-#endif
+                        *headers_ptr = ( headers_t * ) malloc( sizeof(headers_t) );
+                        (*headers_ptr)->count = 1;
+                        (*headers_ptr)->headers[0] = (char *) malloc( sLen );
+                        memset((*headers_ptr)->headers, 0, sLen);
+                        strncpy( (*headers_ptr)->headers[0], StringValue, sLen );
                     }
 
                     free( NewStringVal );
