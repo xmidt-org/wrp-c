@@ -61,6 +61,7 @@ struct money_trace_spans {
 
 typedef struct headers_struct {
     size_t count;
+    // Flexible Array Must be the last element
     char *headers[];
 } headers_t;
 

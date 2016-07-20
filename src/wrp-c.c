@@ -823,7 +823,8 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
 
                     else if( strcmp( keyName, WRP_HEADERS.name ) == 0 ) {
                         sLen = strlen( StringValue );
-                        *headers_ptr = ( headers_t * ) malloc( sizeof(headers_t) );
+                        *headers_ptr = ( headers_t * ) malloc( sizeof(headers_t)
+                                       + sizeof(char *) * 1);
                         (*headers_ptr)->count = 1;
                         (*headers_ptr)->headers[0] = (char *) malloc( sLen );
                         memset((*headers_ptr)->headers, 0, sLen);
@@ -858,7 +859,8 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                         uint32_t cnt = 0;
                         
                         ptr = array.ptr;
-                        *headers_ptr  = ( headers_t *) malloc( sizeof(headers_t));
+                        *headers_ptr  = ( headers_t *) malloc( sizeof(headers_t)
+                                        + sizeof(char *) * array.size);
                         (*headers_ptr)->count = array.size;
                         
                         for (cnt = 0; cnt < array.size; cnt++, ptr++) {
@@ -909,8 +911,11 @@ static char* getKey_MsgtypeBin( const msgpack_object key, const size_t binSize,
                                 char* keyBin )
 {
     const char* keyName = key.via.bin.ptr;
-    memcpy( keyBin, keyName, binSize );
-    keyBin[binSize] = '\0';
+    if (binSize) {
+        memcpy( keyBin, keyName, binSize );
+        keyBin[binSize - 1] = '\0';
+    }
+    
     return keyBin;
 }
 
