@@ -838,7 +838,8 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                 case MSGPACK_OBJECT_BIN: {
                     if( strcmp( keyName, WRP_PAYLOAD.name ) == 0 ) {
                         binValueSize = ValueType.via.bin.size;
-                        payload = ( char* ) malloc( binValueSize );
+                        payload = ( char* ) malloc( binValueSize +1 );
+                        memset(payload, 0, binValueSize +1);
                         keyValue = NULL;
                         keyValue = getKey_MsgtypeBin( ValueType, binValueSize, payload );
 
@@ -911,10 +912,8 @@ static char* getKey_MsgtypeBin( const msgpack_object key, const size_t binSize,
                                 char* keyBin )
 {
     const char* keyName = key.via.bin.ptr;
-    if (binSize) {
-        memcpy( keyBin, keyName, binSize );
-        keyBin[binSize - 1] = '\0';
-    }
+    
+    memcpy( keyBin, keyName, binSize );
     
     return keyBin;
 }
