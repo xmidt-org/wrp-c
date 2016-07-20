@@ -58,11 +58,17 @@ struct money_trace_spans {
     size_t count;
 };
 
+
+typedef struct headers_struct {
+    size_t count;
+    char *headers[];
+} headers_t;
+
 struct wrp_req_msg {
     char *transaction_uuid;
     char *source;
     char *dest;
-    char **headers;                         /* NULL terminated list */
+    headers_t *headers;                         /* NULL terminated list */
     bool include_spans;
     struct money_trace_spans spans;
     void *payload;
@@ -72,7 +78,7 @@ struct wrp_req_msg {
 struct wrp_event_msg {
     char *source;
     char *dest;
-    char **headers;                         /* NULL terminated list */
+    headers_t *headers;                         /* NULL terminated list */
     void *payload;
     size_t payload_size;
 };
