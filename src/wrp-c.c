@@ -67,7 +67,7 @@ static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth,
 static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char **bytes );
 static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
                                              char **bytes );
-static char* __get_header_string( char **headers );
+static char* __get_header_string( headers_t *headers );
 static char* __get_spans_string( const struct money_trace_spans *spans );
 static void __msgpack_pack_string_nvp( msgpack_packer *pk,
                                        const struct wrp_token *token,
@@ -77,13 +77,13 @@ static ssize_t __wrp_pack_structure( int msg_type, char* source, char* dest,
                                      char* transaction_uuid, bool include_spans,
                                      const struct money_trace_spans *spans,
                                      char* payload, size_t payload_size,
-                                     char **headers, char **data );
+                                     headers_t *headers, char **data );
 static ssize_t __wrp_base64_to_struct( const void *base64_data, const size_t base64_size,
                                        wrp_msg_t **msg_ptr );
 static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                                       wrp_msg_t **msg_ptr );
 static void decodeRequest( msgpack_object deserialized, int *msgType, char** source_ptr,
-                           char** dest_ptr, char** transaction_id_ptr, char*** headers,
+                           char** dest_ptr, char** transaction_id_ptr, headers_t** headers,
                            int *statusValue,
                            char** payload_ptr, size_t *payload_size, bool *include_spans );
 static char* getKey_MsgtypeStr( const msgpack_object key, const size_t keySize,
@@ -184,10 +184,10 @@ void wrp_free_struct( wrp_msg_t *msg )
             free( msg->u.req.payload );
 
             if( NULL != msg->u.req.headers ) {
-                uint32_t cnt = 0;
+                size_t cnt;
                 
-                while (NULL != msg->u.req.headers[cnt]) {
-                    free(msg->u.req.headers[cnt++]);
+                for (cnt = 0; cnt < msg->u.req.headers->count; cnt++) {
+                    free(msg->u.req.headers->headers[cnt]);
                 }
                 
                 free( msg->u.req.headers );
@@ -201,12 +201,23 @@ void wrp_free_struct( wrp_msg_t *msg )
             free( msg->u.event.payload );
 
             if( NULL != msg->u.event.headers ) {
+                size_t cnt;
+                
+                for (cnt = 0; cnt < (msg->u.event.headers->count); cnt++) {
+                    free(msg->u.event.headers->headers[cnt]);
+                }
+                
                 free( msg->u.event.headers );
             }
 
             break;
 
+        case WRP_MSG_TYPE__AUTH:
+            break;
+            
         default:
+            printf("wrp_free_struct()->Invalid Message Type! (0x%x)\n",
+                    msg->msg_type);
             break;
     }
 
@@ -486,7 +497,7 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
  *
  *  @return The string representation of the headers.
  */
-static char* __get_header_string( char **headers )
+static char* __get_header_string( headers_t *headers )
 {
     char *rv;
 
@@ -501,9 +512,9 @@ static char* __get_header_string( char **headers )
         comma = 0;
         length = 2; /* For ' characters. */
 
-        for( i = 0; NULL != headers[i]; i++ ) {
+        for( i = 0; i < headers->count ; i++ ) {
             length += comma;
-            length += strlen( headers[i] );
+            length += strlen( headers->headers[i] );
             comma = 2;
         }
 
@@ -518,9 +529,9 @@ static char* __get_header_string( char **headers )
             *tmp = '\0';
             tmp = strcat( tmp, "'" );
 
-            for( i = 0; NULL != headers[i]; i++ ) {
+            for( i = 0; i < headers->count; i++ ) {
                 tmp = strcat( tmp, comma );
-                tmp = strcat( tmp, headers[i] );
+                tmp = strcat( tmp, headers->headers[i] );
                 comma = ", ";
             }
 
@@ -532,22 +543,18 @@ static char* __get_header_string( char **headers )
 }
 
 
-static void __msgpack_headers( msgpack_packer *pk, char **headers )
+static void __msgpack_headers( msgpack_packer *pk, headers_t *headers )
 {
     if( NULL != headers ) {
-        size_t count = 0;
-
-        while( NULL != headers[count] ) {
-            count++;
-        }
+        size_t count = headers->count;
 
         __msgpack_pack_string( pk, WRP_HEADERS.name, WRP_HEADERS.length );
 
         msgpack_pack_array( pk, count );
 
         count = 0;
-        while( NULL != headers[count] ) {
-            __msgpack_pack_string( pk, headers[count], strlen(headers[count]) );
+        while( count < headers->count ) {
+            __msgpack_pack_string( pk, headers->headers[count], strlen(headers->headers[count]) );
             count++;
         }
     }
@@ -603,7 +610,7 @@ static void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_
 static ssize_t __wrp_pack_structure( int msg_type, char *source, char* dest,
                                      char* transaction_uuid, bool include_spans,
                                      const struct money_trace_spans *spans, char* payload, size_t payload_size,
-                                     char **headers, char **data )
+                                     headers_t *headers, char **data )
 {
     msgpack_sbuffer sbuf;
     msgpack_packer pk;
@@ -733,7 +740,7 @@ static char* __get_spans_string( const struct money_trace_spans *spans )
  * @param[in] include_spans to include timing values
  */
 static void decodeRequest( msgpack_object deserialized, int *msgType, char** source_ptr,
-                           char** dest_ptr, char** transaction_uuid_ptr, char ***headers_ptr, int *statusValue,
+                           char** dest_ptr, char** transaction_uuid_ptr, headers_t **headers_ptr, int *statusValue,
                            char** payload_ptr, size_t *payload_size, bool *include_spans )
 {
     unsigned int i = 0;
@@ -746,7 +753,6 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
     char* keyValue = NULL;
 
     char *transaction_uuid = NULL;
-    char **headers = NULL;
     char *source = NULL;
     char *dest = NULL;
     char *payload = NULL;
@@ -816,11 +822,15 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                     }
 
                     else if( strcmp( keyName, WRP_HEADERS.name ) == 0 ) {
+#ifdef FixMePlease
                         sLen = strlen( StringValue );
                         *headers = ( char * ) malloc( sLen + 1 );
                         strncpy( *headers, StringValue, sLen );
                         headers[sLen] = '\0';
                         *headers_ptr = headers;
+#else
+                        assert(0);
+#endif
                     }
 
                     free( NewStringVal );
@@ -851,15 +861,15 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                         uint32_t cnt = 0;
                         
                         ptr = array.ptr;
-                        *headers_ptr = ( char ** ) malloc( array.size + 1);
-                        headers = *headers_ptr;
+                        *headers_ptr  = ( headers_t *) malloc( sizeof(headers_t));
+                        (*headers_ptr)->count = array.size;
+                        
                         for (cnt = 0; cnt < array.size; cnt++, ptr++) {
-                            headers[cnt] = (char *) malloc(ptr->via.str.size +1);
-                            memset(headers[cnt], 0, ptr->via.str.size + 1);
-                            memcpy(headers[cnt], ptr->via.str.ptr, ptr->via.str.size);
-                            printf("*\nheaders_ptr[%d] %s\n", cnt, headers[cnt]);
+                            (*headers_ptr)->headers[cnt] = (char *) malloc(ptr->via.str.size +1);
+                            memset((*headers_ptr)->headers[cnt], 0, ptr->via.str.size + 1);
+                            memcpy((*headers_ptr)->headers[cnt], ptr->via.str.ptr, ptr->via.str.size);
+                            printf("*\nheaders_ptr[%d] %s\n", cnt, (*headers_ptr)->headers[cnt]);
                         }          
-                        headers[array.size] = NULL;
                         
                         printf("MSGPACK_OBJECT_ARRAY\n");
                     }  else {
@@ -932,7 +942,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
     char* source = NULL;
     char* dest = NULL;
     char* transaction_uuid = NULL;
-    char** headers = NULL;
+    headers_t *headers = NULL;
     char *payload = NULL;
     size_t payload_size = 0;
     bool include_spans = false;
@@ -976,7 +986,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.req.source = source;
                         msg->u.req.dest = dest;
                         msg->u.req.transaction_uuid = transaction_uuid;
-                        msg->u.req.headers = &headers[0];
+                        msg->u.req.headers = headers;
                         msg->u.req.include_spans = include_spans;
                         msg->u.req.spans.spans = NULL;   /* not supported */
                         msg->u.req.spans.count = 0;     /* not supported */
@@ -992,7 +1002,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.event.source = source;
                         msg->u.event.dest = dest;
                         msg->u.event.payload = payload;
-                        msg->u.event.headers = &headers[0];
+                        msg->u.event.headers = headers;
 
                         *msg_ptr = msg;
                         return length;
