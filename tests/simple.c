@@ -601,7 +601,6 @@ void validate_from_bytes( wrp_msg_t *msg, const char *expected )
     }
 }
 
-
 void test_all()
 {
     size_t i;
@@ -627,14 +626,11 @@ void test_all()
 
         /* Testing wrp_struct_to() --> bytes. */
         size = wrp_struct_to( &test[i].in, WRP_BYTES, &bytes );
-#ifdef FixMePlease
         validate_to_bytes( test[i].msgpack, test[i].msgpack_size, bytes, size );
-#endif
         if( 0 < size ) {
             free( bytes );
         }
 
- #ifdef FixMePlease
        /* Testing wrp_to_struct() --> from bytes. */
         if( 1 == i ) {
             wrp_msg_t *msg;
@@ -646,7 +642,6 @@ void test_all()
                 wrp_free_struct( msg );
             }
         }
-#endif
     }
     
     test_encode_decode();
