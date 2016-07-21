@@ -604,11 +604,12 @@ void validate_from_bytes( wrp_msg_t *msg, const char *expected )
 void test_all()
 {
     size_t i;
+    ssize_t size;
+    void *bytes;
+    wrp_msg_t *message;
 
     for( i = 0; i < sizeof( test ) / sizeof( struct test_vectors ); i++ ) {
         char *string;
-        void *bytes;
-        ssize_t size;
 
         /* Testing wrp_struct_to_string(). */
         string = wrp_struct_to_string( &test[i].in );
@@ -644,6 +645,30 @@ void test_all()
         }
     }
     
+    printf("Testing NULL msg handling\n");
+    size = wrp_struct_to(NULL, WRP_BYTES, bytes);
+    CU_ASSERT(size < 0);
+
+    printf("Testing Invalid type handling\n");
+    size = wrp_struct_to(&test[2].in, 911, bytes);
+    CU_ASSERT(size < 0);
+
+    printf("Testing NULL data handling\n");
+    size = wrp_struct_to(&test[2].in, WRP_BYTES, NULL);
+    CU_ASSERT(size < 0);
+
+    printf("Testing NULL wrp_to_struct handling\n");
+    wrp_to_struct(NULL, 0, WRP_BYTES, NULL);
+    CU_ASSERT(size < 0);
+
+    printf("Testing wrp_to_struct null data handling\n");
+    wrp_to_struct(test[3].msgpack, test[3].msgpack_size, WRP_BYTES, NULL);
+    CU_ASSERT(size < 0);
+
+    printf("Testing wrp_to_struct invalid type handling\n");
+    wrp_to_struct(test[3].msgpack, test[3].msgpack_size, 911, &message);
+    CU_ASSERT(size < 0);
+
     test_encode_decode();
 }
 
@@ -668,6 +693,13 @@ void test_encode_decode()
           .u.req.payload = "123",
           .u.req.payload_size = 3 };
 
+	const wrp_msg_t event_m = { .msg_type = WRP_MSG_TYPE__EVENT,
+          .u.event.source = "source-address",
+          .u.event.dest = "dest-address",
+          .u.event.headers = &headers,
+          .u.event.payload = "0123456789",
+          .u.event.payload_size = 10 };
+
         const wrp_msg_t msg2 = { .msg_type = WRP_MSG_TYPE__REQ,
           .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
           .u.req.source = "source-address",
@@ -687,7 +719,7 @@ void test_encode_decode()
 	// msgpck decode
 	rv = wrp_to_struct(bytes, size, WRP_BYTES, &message);
 	free(bytes);
-	
+        
 	CU_ASSERT_EQUAL( rv, size );
 	CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
 	CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
@@ -782,7 +814,41 @@ void test_encode_decode()
 	printf("decoded dest:%s\n", event_msg->u.event.dest);
 	printf("decoded payload:%s\n", (char*)event_msg->u.event.payload);  
         
+   
+  
+	// msgpack encode
+        event_msg = &event_m;
+	size = wrp_struct_to( event_msg, WRP_BYTES, &bytes );
+        free(bytes);
+
+	base64_size = wrp_struct_to( event_msg, WRP_BASE64, &bytes );
+	/* print the encoded message */
+	_internal_tva_xxd( bytes, base64_size, 0 );
+
+	// msgpck decode
+	rv = wrp_to_struct(bytes, base64_size, WRP_BASE64, &message);
+	free(bytes);
+
+        if ( 0 < rv ) {
+
+	CU_ASSERT_EQUAL( rv, size );
         
+	CU_ASSERT_EQUAL( message->msg_type, event_msg->msg_type );
+	CU_ASSERT_STRING_EQUAL( message->u.event.source, event_msg->u.event.source );
+	CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
+	CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
+
+        if (NULL != event_msg->u.event.headers) {
+            size_t n = 0;
+            while ( n < event_msg->u.event.headers->count ) {
+                 CU_ASSERT_STRING_EQUAL(message->u.event.headers->headers[n],
+                                        event_msg->u.event.headers->headers[n]);
+                 n++;
+                }
+            } 
+        }
+        wrp_free_struct(message);      
+
 	// msgpack encode
 	size = wrp_struct_to( &msg2, WRP_BYTES, &bytes );
 	/* print the encoded message */
@@ -791,7 +857,7 @@ void test_encode_decode()
 	// msgpck decode
 	rv = wrp_to_struct(bytes, size, WRP_BYTES, &message);
 	free(bytes);
-        
+
 	CU_ASSERT_EQUAL( rv, size );
 	CU_ASSERT_EQUAL( message->msg_type, msg2.msg_type );
 	CU_ASSERT_STRING_EQUAL( message->u.req.source, msg2.u.req.source );
@@ -809,8 +875,13 @@ void test_encode_decode()
                  n++;
                 }
         }              
-               
+ 
         wrp_free_struct(message);
+        message = (wrp_msg_t *) malloc(sizeof(wrp_msg_t));
+        printf("Testing invalid message type free\n");
+        message->msg_type = WRP_MSG_TYPE__UNKNOWN;
+        wrp_free_struct(message);
+
 }
 
 void add_suites( CU_pSuite *suite )

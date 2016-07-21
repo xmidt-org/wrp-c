@@ -102,7 +102,7 @@ ssize_t wrp_struct_to( const wrp_msg_t *msg, const enum wrp_format fmt, void **b
     char *data;
     ssize_t rv;
 
-    if( NULL == msg ) {
+    if( NULL == msg || NULL == bytes) {
         return -1;
     }
 
@@ -153,7 +153,7 @@ ssize_t wrp_to_struct( const void *bytes, const size_t length,
 {
     ssize_t rv;
 
-    if( NULL == bytes || length <= 0 ) {
+    if( NULL == bytes || length <= 0 || NULL == msg) {
         return -1;
     }
 
@@ -242,7 +242,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
     const struct wrp_req_msg *req = & ( msg->u.req );
     const struct wrp_event_msg *event = & ( msg->u.event );
 
-    if( NULL == msg ) {
+    if( NULL == msg || NULL == bytes) {
         return -1;
     }
 
