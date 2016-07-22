@@ -38,9 +38,9 @@ enum wrp_msg_type {
 };
 
 enum wrp_format {
-    WRP_BYTES,
-    WRP_BASE64,
-    WRP_STRING
+    WRP_BYTES = 0,
+    WRP_BASE64 = 1,
+    WRP_STRING = 2
 };
 
 struct wrp_auth_msg {
@@ -61,6 +61,7 @@ struct money_trace_spans {
 
 typedef struct headers_struct {
     size_t count;
+    // Flexible Array Must be the last element
     char *headers[];
 } headers_t;
 

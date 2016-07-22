@@ -102,7 +102,7 @@ ssize_t wrp_struct_to( const wrp_msg_t *msg, const enum wrp_format fmt, void **b
     char *data;
     ssize_t rv;
 
-    if( NULL == msg ) {
+    if( NULL == msg || NULL == bytes) {
         return -1;
     }
 
@@ -153,7 +153,7 @@ ssize_t wrp_to_struct( const void *bytes, const size_t length,
 {
     ssize_t rv;
 
-    if( NULL == bytes || length <= 0 ) {
+    if( NULL == bytes || length <= 0 || NULL == msg) {
         return -1;
     }
 
@@ -242,7 +242,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
     const struct wrp_req_msg *req = & ( msg->u.req );
     const struct wrp_event_msg *event = & ( msg->u.event );
 
-    if( NULL == msg ) {
+    if( NULL == msg || NULL == bytes) {
         return -1;
     }
 
@@ -823,7 +823,8 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
 
                     else if( strcmp( keyName, WRP_HEADERS.name ) == 0 ) {
                         sLen = strlen( StringValue );
-                        *headers_ptr = ( headers_t * ) malloc( sizeof(headers_t) );
+                        *headers_ptr = ( headers_t * ) malloc( sizeof(headers_t)
+                                       + sizeof(char *) * 1);
                         (*headers_ptr)->count = 1;
                         (*headers_ptr)->headers[0] = (char *) malloc( sLen );
                         memset((*headers_ptr)->headers, 0, sLen);
@@ -837,7 +838,8 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                 case MSGPACK_OBJECT_BIN: {
                     if( strcmp( keyName, WRP_PAYLOAD.name ) == 0 ) {
                         binValueSize = ValueType.via.bin.size;
-                        payload = ( char* ) malloc( binValueSize );
+                        payload = ( char* ) malloc( binValueSize +1 );
+                        memset(payload, 0, binValueSize +1);
                         keyValue = NULL;
                         keyValue = getKey_MsgtypeBin( ValueType, binValueSize, payload );
 
@@ -858,7 +860,8 @@ static void decodeRequest( msgpack_object deserialized, int *msgType, char** sou
                         uint32_t cnt = 0;
                         
                         ptr = array.ptr;
-                        *headers_ptr  = ( headers_t *) malloc( sizeof(headers_t));
+                        *headers_ptr  = ( headers_t *) malloc( sizeof(headers_t)
+                                        + sizeof(char *) * array.size);
                         (*headers_ptr)->count = array.size;
                         
                         for (cnt = 0; cnt < array.size; cnt++, ptr++) {
@@ -909,8 +912,9 @@ static char* getKey_MsgtypeBin( const msgpack_object key, const size_t binSize,
                                 char* keyBin )
 {
     const char* keyName = key.via.bin.ptr;
+    
     memcpy( keyBin, keyName, binSize );
-    keyBin[binSize] = '\0';
+    
     return keyBin;
 }
 
