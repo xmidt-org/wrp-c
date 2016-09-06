@@ -12,19 +12,19 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-add_test(NAME Simple COMMAND simple)
+add_test( NAME Simple COMMAND simple )
 
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-error=missing-field-initializers -W -g -fprofile-arcs -ftest-coverage -O0")
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -W  -g -fprofile-arcs -ftest-coverage -O0")
-set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage -O0")
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-error=missing-field-initializers -W -g -fprofile-arcs -ftest-coverage -O0" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -W  -g -fprofile-arcs -ftest-coverage -O0" )
+set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage -O0" )
 
-add_executable(simple simple.c ../src/wrp-c.c ../src/wrp-c.c)
+add_executable( simple simple.c .. / src / wrp - c.c .. / src / wrp - c.c )
 
-target_link_libraries (simple -lmsgpackc -ltrower-base64)
-target_link_libraries (simple gcov)
-target_link_libraries (simple cunit)
+target_link_libraries( simple - lmsgpackc - ltrower - base64 )
+target_link_libraries( simple gcov )
+target_link_libraries( simple cunit )
 
-add_custom_target(coverage
-                  COMMAND lcov -q --capture --directory ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/simple.dir/__/src --output-file coverage.info
-                  COMMAND genhtml coverage.info
-                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+add_custom_target( coverage
+                   COMMAND lcov - q --capture --directory $ {CMAKE_CURRENT_BINARY_DIR} / CMakeFiles / simple.dir / __ / src --output - file coverage.info
+                   COMMAND genhtml coverage.info
+                   WORKING_DIRECTORY $ {CMAKE_BINARY_DIR} )

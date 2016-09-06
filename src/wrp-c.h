@@ -30,11 +30,14 @@
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
 enum wrp_msg_type {
-    WRP_MSG_TYPE__AUTH    = 2,
-    WRP_MSG_TYPE__REQ     = 3,
-    WRP_MSG_TYPE__EVENT   = 4,
-
-    WRP_MSG_TYPE__UNKNOWN = 200
+    WRP_MSG_TYPE__AUTH     = 2,
+    WRP_MSG_TYPE__REQ      = 3,
+    WRP_MSG_TYPE__EVENT    = 4,
+    WRP_MSG_TYPE__CREATE   = 5,
+    WRP_MSG_TYPE__RETRIEVE = 6,
+    WRP_MSG_TYPE__UPDATE   = 7,
+    WRP_MSG_TYPE__DELETE   = 8,
+    WRP_MSG_TYPE__UNKNOWN  = 200
 };
 
 enum wrp_format {
@@ -69,6 +72,7 @@ struct wrp_req_msg {
     char *transaction_uuid;
     char *source;
     char *dest;
+    char *path;
     headers_t *headers;                         /* NULL terminated list */
     bool include_spans;
     struct money_trace_spans spans;
@@ -167,5 +171,10 @@ char* wrp_struct_to_string( const wrp_msg_t *msg );
  *  @param msg [in] the wrp_msg_t structure to free
  */
 void wrp_free_struct( wrp_msg_t *msg );
+
+void processCreateRequest( void * argc, void * argv ); //TODO arguments has to updated
+int processRetrieveRequest( void * argc, void * argv ); //TODO arguments has to updated
+void processUpdateRequest( void * argc, void * argv ); //TODO arguments has to updated
+void processDeleteRequest( void * argc, void * argv ); //TODO arguments has to updated
 
 #endif
