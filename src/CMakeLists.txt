@@ -12,15 +12,15 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-set(PROJ_WRPC wrp-c)
+set( PROJ_WRPC wrp - c )
 
-file(GLOB HEADERS wrp-c.h)
-set(SOURCES wrp-c.c)
+file( GLOB HEADERS wrp - c.h )
+set( SOURCES wrp - c.c )
 
-add_library(${PROJ_WRPC} STATIC ${HEADERS} ${SOURCES})
-add_library(${PROJ_WRPC}.shared SHARED ${HEADERS} ${SOURCES})
-set_target_properties(${PROJ_WRPC}.shared PROPERTIES OUTPUT_NAME ${PROJ_WRPC})
+add_library( $ {PROJ_WRPC} STATIC $ {HEADERS} $ {SOURCES} )
+add_library( $ {PROJ_WRPC} .shared SHARED $ {HEADERS} $ {SOURCES} )
+set_target_properties( $ {PROJ_WRPC} .shared PROPERTIES OUTPUT_NAME $ {PROJ_WRPC} )
 
-install (TARGETS ${PROJ_WRPC} DESTINATION lib${LIB_SUFFIX})
-install (TARGETS ${PROJ_WRPC}.shared DESTINATION lib${LIB_SUFFIX})
-install (FILES wrp-c.h DESTINATION include/${PROJ_WRPC})
+install( TARGETS $ {PROJ_WRPC} DESTINATION lib$ {LIB_SUFFIX} )
+install( TARGETS $ {PROJ_WRPC} .shared DESTINATION lib$ {LIB_SUFFIX} )
+install( FILES wrp - c.h DESTINATION include / $ {PROJ_WRPC} )

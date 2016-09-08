@@ -12,46 +12,56 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required( VERSION 2.8.7 )
 
-project(wrp-c)
-include(ExternalProject)
+project( wrp - c )
+include( ExternalProject )
 
-add_definitions(-std=c99)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g -Werror -Wall")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -g -Werror -Wall")
+add_definitions( -std = c99 )
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g -Werror -Wall" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -g -Werror -Wall" )
 
-set(INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/_install)
-set(PREFIX_DIR ${CMAKE_CURRENT_BINARY_DIR}/_prefix)
-set(INCLUDE_DIR ${INSTALL_DIR}/include)
-set(LIBRARY_DIR ${INSTALL_DIR}/lib${LIB_SUFFIX})
-include_directories(${INCLUDE_DIR}
-                    ${INCLUDE_DIR}/msgpack
-                    ${INCLUDE_DIR}/trower-base64)
-include_directories (SYSTEM /usr/include)
-link_directories ( ${LIBRARY_DIR} )
+set( INSTALL_DIR $ {CMAKE_CURRENT_BINARY_DIR} / _install )
+set( PREFIX_DIR $ {CMAKE_CURRENT_BINARY_DIR} / _prefix )
+set( INCLUDE_DIR $ {INSTALL_DIR} / include )
+set( LIBRARY_DIR $ {INSTALL_DIR} / lib$ {LIB_SUFFIX} )
+include_directories( $ {INCLUDE_DIR}
+                     $ {INCLUDE_DIR} / msgpack
+                     $ {INCLUDE_DIR} / trower - base64)
+include_directories( SYSTEM / usr / include )
+link_directories( $ {LIBRARY_DIR} )
 
 enable_testing()
 
 # base64 external dependency
-ExternalProject_Add(trower-base64
-    PREFIX ${PREFIX_DIR}/trower-base64
-    GIT_REPOSITORY https://github.com/Comcast/trower-base64.git
-    GIT_TAG "master"
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR})
-add_library(libtrower-base64 STATIC IMPORTED)
-add_dependencies(libtrower-base64 trower-base64)
+ExternalProject_Add( trower - base64
+                     PREFIX $ {PREFIX_DIR} / trower - base64
+                     GIT_REPOSITORY https://github.com/Comcast/trower-base64.git
+                     GIT_TAG "master"
+                     CMAKE_ARGS - DCMAKE_INSTALL_PREFIX = $ {INSTALL_DIR} )
+add_library( libtrower - base64 STATIC IMPORTED )
+add_dependencies( libtrower - base64 trower - base64 )
 
 # msgpack-c external dependency
-ExternalProject_Add(msgpack
-    PREFIX ${PREFIX_DIR}/msgpack
-    GIT_REPOSITORY https://github.com/msgpack/msgpack-c.git
-    GIT_TAG "master"
-    CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
-    -DMSGPACK_ENABLE_CXX=OFF
-    -DMSGPACK_BUILD_EXAMPLES=OFF)
-add_library(libmsgpack STATIC IMPORTED)
-add_dependencies(libmsgpack msgpack)
+ExternalProject_Add( msgpack
+                     PREFIX $ {PREFIX_DIR} / msgpack
+                     GIT_REPOSITORY https://github.com/msgpack/msgpack-c.git
+                     GIT_TAG "master"
+                     CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX = $ {INSTALL_DIR}
+                                   -DMSGPACK_ENABLE_CXX = OFF
+                                           - DMSGPACK_BUILD_EXAMPLES = OFF )
+add_library( libmsgpack STATIC IMPORTED )
+add_dependencies( libmsgpack msgpack )
 
-add_subdirectory(src)
-add_subdirectory(tests)
+# wdmp-c external dependency
+ExternalProject_Add(wdmp-c
+    PREFIX ${PREFIX_DIR}/wdmp-c
+    GIT_REPOSITORY https://github.com/Comcast/wdmp-c
+    GIT_TAG "master"
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR})
+add_library(libwdmp-c STATIC IMPORTED)
+add_dependencies(libwdmp-c wdmp-c)
+
+
+add_subdirectory( src )
+add_subdirectory( tests )
