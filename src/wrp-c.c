@@ -23,7 +23,7 @@
 #include <trower-base64/base64.h>
 
 #include "wrp-c.h"
-#include "cJSON.h"
+
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -1113,55 +1113,22 @@ static ssize_t __wrp_base64_to_struct( const void *base64_data, const size_t bas
 
 void processCreateRequest( void * argc, void * argv )
 {
-    //TODO stub
+    //TODO stub call wdmp-c library apis
 }
 
 int processRetrieveRequest( void * userData, void * argv )
 {
-    FILE *fp;
-    cJSON *webpa_cfg = NULL;
-    char *cfg_file_content = NULL, *get_data = NULL, *temp_ptr = NULL;
-    get_data = ( char* )userData;
-    int ch_count = 0;
-    int i = 0, bootTime;
-    fp = fopen( CFG_FILE, "r" );
+    //TODO stub call wdmp-c library apis
 
-    if( fp == NULL ) {
-        printf( "Failed to open cfg file %s\n", CFG_FILE );
-        return -1;
-    }
-
-    fseek( fp, 0, SEEK_END );
-    ch_count = ftell( fp );
-    fseek( fp, 0, SEEK_SET );
-    cfg_file_content = ( char * ) malloc( sizeof( char ) * ( ch_count + 1 ) );
-    fread( cfg_file_content, 1, ch_count, fp );
-    cfg_file_content[ch_count] = '\0';
-    fclose( fp );
-    webpa_cfg = cJSON_Parse( cfg_file_content );
 }
 
-if( webpa_cfg )
-{
-    temp_ptr = cJSON_GetObjectItem( webpa_cfg, get_data )->valuestring;
-    bootTime = cJSON_GetObjectItem( webpa_cfg, "boot-time" )->valueint;
-    printf( "temp_ptr and boot-time is %s\n", temp_ptr, boot - time );
-    cJSON_Delete( webpa_cfg );
-} else
-{
-    printf( "Error parsing config file\n" );
-}
 
-free( cfg_file_content );
-
-return 0;
-}
 void processUpdateRequest( void * argc, void * argv )
 {
-    //TODO stub
+    //TODO stub call wdmp-c library apis
 }
 void processDeleteRequest( void * argc, void * argv )
 {
-    //TODO stub
+    //TODO stub call wdmp-c library apis
 }
 

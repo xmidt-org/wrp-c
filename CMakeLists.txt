@@ -27,8 +27,7 @@ set( INCLUDE_DIR $ {INSTALL_DIR} / include )
 set( LIBRARY_DIR $ {INSTALL_DIR} / lib$ {LIB_SUFFIX} )
 include_directories( $ {INCLUDE_DIR}
                      $ {INCLUDE_DIR} / msgpack
-                     $ {INCLUDE_DIR} / trower - base64
-                     $ {INCLUDE_DIR} / cJSON )
+                     $ {INCLUDE_DIR} / trower - base64)
 include_directories( SYSTEM / usr / include )
 link_directories( $ {LIBRARY_DIR} )
 
@@ -53,16 +52,16 @@ ExternalProject_Add( msgpack
                                            - DMSGPACK_BUILD_EXAMPLES = OFF )
 add_library( libmsgpack STATIC IMPORTED )
 add_dependencies( libmsgpack msgpack )
-# cJSON external dependency
-ExternalProject_Add( cJSON
-                     PREFIX $ {PREFIX_DIR} / cJSON
-                     GIT_REPOSITORY https://github.com/kbranigan/cJSON.git
-                     GIT_TAG "master"
-                     CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX = $ {INSTALL_DIR}
-                   )
 
-add_library( libcJSON STATIC IMPORTED )
-add_dependencies( libcJSON cJSON )
+# wdmp-c external dependency
+ExternalProject_Add(wdmp-c
+    PREFIX ${PREFIX_DIR}/wdmp-c
+    GIT_REPOSITORY https://github.com/Comcast/wdmp-c
+    GIT_TAG "master"
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR})
+add_library(libwdmp-c STATIC IMPORTED)
+add_dependencies(libwdmp-c wdmp-c)
+
 
 add_subdirectory( src )
 add_subdirectory( tests )
