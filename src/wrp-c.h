@@ -30,10 +30,14 @@
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
 enum wrp_msg_type {
-    WRP_MSG_TYPE__AUTH    = 2,
-    WRP_MSG_TYPE__REQ     = 3,
-    WRP_MSG_TYPE__EVENT   = 4,
-
+    WRP_MSG_TYPE__AUTH          = 2,
+    WRP_MSG_TYPE__REQ           = 3,
+    WRP_MSG_TYPE__EVENT         = 4,
+    WRP_MSG_TYPE__CREATE        = 5,
+    WRP_MSG_TYPE__RETREIVE      = 6,
+    WRP_MSG_TYPE__UPDATE        = 7,
+    WRP_MSG_TYPE__DELETE        = 8,
+    WRP_MSG_TYPE__SVC_REGISTRATION      = 9,
     WRP_MSG_TYPE__UNKNOWN = 200
 };
 
@@ -65,11 +69,22 @@ typedef struct headers_struct {
     char *headers[];
 } headers_t;
 
+struct data {
+    char *name;
+    char *value;
+};
+
+typedef struct data_struct {
+    size_t count;
+    struct data *data_items;
+} data_t;
+
 struct wrp_req_msg {
     char *transaction_uuid;
     char *source;
     char *dest;
     headers_t *headers;                         /* NULL terminated list */
+    data_t *metadata;
     bool include_spans;
     struct money_trace_spans spans;
     void *payload;
@@ -80,8 +95,27 @@ struct wrp_event_msg {
     char *source;
     char *dest;
     headers_t *headers;                         /* NULL terminated list */
+    data_t *metadata;
     void *payload;
     size_t payload_size;
+};
+
+struct wrp_crud_msg {
+    char *transaction_uuid;
+    char *source;
+    char *dest;
+    headers_t *headers;                         /* NULL terminated list */
+    data_t *metadata;
+    bool include_spans;
+    struct money_trace_spans spans;
+    int status;
+    char *path;
+    data_t *payload;
+};
+
+struct wrp_svc_registration_msg {
+    char *service_name;
+    char *url;
 };
 
 typedef struct {
@@ -91,6 +125,8 @@ typedef struct {
         struct wrp_auth_msg  auth;
         struct wrp_req_msg   req;
         struct wrp_event_msg event;
+        struct wrp_crud_msg crud;
+        struct wrp_svc_registration_msg reg;
     } u;
 } wrp_msg_t;
 
