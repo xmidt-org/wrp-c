@@ -63,7 +63,7 @@ const struct test_vectors test[] = {
         "    .status = 123\n"
         "}\n",
 
-        .msgpack_size = -1, /* Really 19, but test is broken now. */
+        .msgpack_size = 19, /* Really 19, but test is broken now. */
         .msgpack = {
             0x82,   /* 2 name value pairs */
 
@@ -781,6 +781,7 @@ void test_encode_decode()
 
     if( 0 < rv ) {
         CU_ASSERT_EQUAL( rv, size );
+        CU_ASSERT_EQUAL( message->u.event.payload_size, event_msg->u.event.payload_size );
         CU_ASSERT_EQUAL( message->msg_type, event_msg->msg_type );
         CU_ASSERT_STRING_EQUAL( message->u.event.source, event_msg->u.event.source );
         CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
@@ -802,6 +803,7 @@ void test_encode_decode()
     printf( "decoded source:%s\n", event_msg->u.event.source );
     printf( "decoded dest:%s\n", event_msg->u.event.dest );
     printf( "decoded payload:%s\n", ( char* )event_msg->u.event.payload );
+    printf( "message->u.event.payload_size %zu\n", message->u.event.payload_size );
     // msgpack encode
     event_msg = &event_m;
     size = wrp_struct_to( event_msg, WRP_BYTES, &bytes );
@@ -885,8 +887,6 @@ void test_crud_message()
     void *bytes;
     wrp_msg_t *message;
     printf( "\nInside Crud_encode_decode()....\n" );
-    /*struct data map_data1[] = {{"webpa_server_url","fabric.webpa.comcast.net"}};
-    data_t updatePayload = {1, map_data1};*/
     struct data map_data3[] = {{"webpa_server_url", "fabric.webpa.comcast.net"}, {"device_info_status", "down"},   {"wifi_device_info", "Radio"}};
     data_t crudPayload = {3, map_data3};
     struct data meta_data2[] = {{"firmware", "PROD-DEV"}, {"model", "TG1680"}};
@@ -992,6 +992,7 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.source, create.u.crud.source );
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, create.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, create.u.crud.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.path, create.u.crud.path );
 
     if( message->u.crud.payload != NULL ) {
         size_t n = 0;
@@ -1022,6 +1023,7 @@ void test_crud_message()
     printf( "decoded source:%s\n", message->u.crud.source );
     printf( "decoded dest:%s\n", message->u.crud.dest );
     printf( "decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    printf( " decoded path %s\n", message->u.crud.path );
     wrp_free_struct( message );
     printf( "       **************** CRUD retreive*****************     \n" );
     // msgpack encode for CRUD
@@ -1036,6 +1038,7 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.source, retreive.u.crud.source );
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, retreive.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, retreive.u.crud.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.path, retreive.u.crud.path );
 
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
@@ -1056,6 +1059,7 @@ void test_crud_message()
     printf( "decoded source:%s\n", message->u.crud.source );
     printf( "decoded dest:%s\n", message->u.crud.dest );
     printf( "decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    printf( "decoded path:%s\n", message->u.crud.path );
     wrp_free_struct( message );
     printf( "       **************** CRUD Update*****************     \n" );
     // msgpack encode for CRUD
@@ -1070,6 +1074,7 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.source, update.u.crud.source );
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, update.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, update.u.crud.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.path, update.u.crud.path );
 
     if( message->u.crud.payload != NULL ) {
         size_t n = 0;
@@ -1100,6 +1105,7 @@ void test_crud_message()
     printf( "decoded source:%s\n", message->u.crud.source );
     printf( "decoded dest:%s\n", message->u.crud.dest );
     printf( "decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    printf( "decoded path:%s\n", message->u.crud.path );
     wrp_free_struct( message );
     printf( "       **************** CRUD Delete*****************     \n" );
     // msgpack encode for CRUD
@@ -1114,6 +1120,7 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.source, delete.u.crud.source );
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, delete.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, delete.u.crud.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.path, delete.u.crud.path );
 
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
@@ -1134,6 +1141,7 @@ void test_crud_message()
     printf( "decoded source:%s\n", message->u.crud.source );
     printf( "decoded dest:%s\n", message->u.crud.dest );
     printf( "decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    printf( "decoded path:%s\n", message->u.crud.path );
     wrp_free_struct( message );
     printf( "       **************** Metadata *****************     \n" );
     // msgpack encode for METADATA
@@ -1145,18 +1153,19 @@ void test_crud_message()
     free( bytes );
     CU_ASSERT_EQUAL( rv, size );
     CU_ASSERT_EQUAL( message->msg_type, meta_payload.msg_type );
-    CU_ASSERT_STRING_EQUAL( message->u.req.source, meta_payload.u.req.source );
-    CU_ASSERT_STRING_EQUAL( message->u.req.dest, meta_payload.u.req.dest );
-    CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, meta_payload.u.req.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.source, meta_payload.u.crud.source );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.dest, meta_payload.u.crud.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, meta_payload.u.crud.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.path, meta_payload.u.crud.path );
 
-    if( NULL != meta_payload.u.req.headers ) {
+    if( NULL != meta_payload.u.crud.headers ) {
         size_t n = 0;
-        printf( "headers count returned is %d\n", ( int ) message->u.req.headers->count );
+        printf( "headers count returned is %d\n", ( int ) message->u.crud.headers->count );
 
-        if( NULL != meta_payload.u.req.headers ) {
-            while( n < meta_payload.u.req.headers->count ) {
-                CU_ASSERT_STRING_EQUAL( meta_payload.u.req.headers->headers[n],
-                                        message->u.req.headers->headers[n] );
+        if( NULL != meta_payload.u.crud.headers ) {
+            while( n < meta_payload.u.crud.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.headers->headers[n],
+                                        message->u.crud.headers->headers[n] );
                 n++;
             }
         } else {
@@ -1165,9 +1174,26 @@ void test_crud_message()
     }
 
     printf( "decoded msgType:%d\n", message->msg_type );
-    printf( "decoded source:%s\n", message->u.req.source );
-    printf( "decoded dest:%s\n", message->u.req.dest );
-    printf( "decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
+    printf( "decoded source:%s\n", message->u.crud.source );
+    printf( "decoded dest:%s\n", message->u.crud.dest );
+    printf( "decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    wrp_free_struct( message );
+    printf( "********* Authorization ********\n" );
+    const wrp_msg_t auth_msg = {
+        .msg_type = WRP_MSG_TYPE__AUTH,
+        .u.auth.status = 200
+    };
+    size = wrp_struct_to( &auth_msg, WRP_BYTES, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( message->msg_type, auth_msg.msg_type );
+    CU_ASSERT_EQUAL( message->u.auth.status, auth_msg.u.auth.status );
+    printf( "message->msg_type %d\n", message->msg_type );
+    printf( "message->u.auth.status %d\n", message->u.auth.status );
     wrp_free_struct( message );
 }
 void add_suites( CU_pSuite *suite )
