@@ -310,6 +310,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
     const struct wrp_event_msg *event = & ( msg->u.event );
     const struct wrp_svc_registration_msg *reg = & ( msg->u.reg );
     const struct wrp_crud_msg *crud = &( msg->u.crud );
+    const struct wrp_auth_msg *auth = &( msg->u.auth );
 
     if( NULL == msg || NULL == bytes ) {
         return -1;
@@ -322,8 +323,10 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
     //convert to binary bytes using msgpack
     switch( msg->msg_type ) {
         case WRP_MSG_TYPE__AUTH:
-            free( encode );
-            return -1;
+            encode->msgType = msg->msg_type;
+            encode->statusValue = auth->status;
+            rv = __wrp_pack_structure( encode, bytes );
+            break;
         case WRP_MSG_TYPE__REQ:
             encode->source = req->source;
             encode->dest = req->dest;
@@ -375,7 +378,9 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
             encode->path = crud->path;
             encode->status = crud->status;
             rv = __wrp_pack_structure( encode, bytes );
+            break;
         default:
+            printf( "Unknown msgType to encode\n" );
             break;
     }
 
@@ -764,6 +769,14 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
     }
 
     switch( encodeReqtmp->msgType ) {
+        case WRP_MSG_TYPE__AUTH:
+            wrp_map_size = 2;//Hardcoded. Pack for msgType and status alone for auth msg
+            msgpack_pack_map( &pk, wrp_map_size );
+            __msgpack_pack_string( &pk, WRP_MSG_TYPE.name, WRP_MSG_TYPE.length );
+            msgpack_pack_int( &pk, encodeReqtmp->msgType );
+            __msgpack_pack_string( &pk, WRP_STATUS.name, WRP_STATUS.length );
+            msgpack_pack_int( &pk, encodeReqtmp->statusValue );
+            break;
         case WRP_MSG_TYPE__REQ:
             msgpack_pack_map( &pk, wrp_map_size );
             //Pack msgType,source,dest,headers,metadata
@@ -1257,6 +1270,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.event.source = decodeReq->source;
                         msg->u.event.dest = decodeReq->dest;
                         msg->u.event.payload = decodeReq->payload;
+                        msg->u.event.payload_size = decodeReq->payload_size;
                         msg->u.event.headers = decodeReq->headers;
                         *msg_ptr = msg;
                         free( decodeReq->mapData->data_items );
