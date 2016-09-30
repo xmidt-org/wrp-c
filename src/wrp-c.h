@@ -204,4 +204,31 @@ char* wrp_struct_to_string( const wrp_msg_t *msg );
  */
 void wrp_free_struct( wrp_msg_t *msg );
 
+/**
+ *  Encode/pack only metadata from wrp_msg_t structure.
+ *
+ *  @note Do not call free of output data in failure case!
+ *
+ *  @param msg [in] packData the data_t structure to pack/encode
+ *  @param msg [out] the encoded output
+ *  @return encoded buffer size or less than 1 in failure case
+ */
+
+ssize_t wrp_pack_metadata( const data_t *packData, void **data );
+
+/**
+ * @brief appendEncodedData function to append two encoded buffer and change MAP size accordingly.
+ *
+ * @note appendEncodedData function allocates memory for buffer, caller needs to free the buffer(appendData)in
+ * both success or failure case. use wrp_free_struct() for free
+ *
+ * @param[in] encodedBuffer msgpack object (first buffer)
+ * @param[in] encodedSize is size of first buffer
+ * @param[in] metadataPack msgpack object (second buffer)
+ * @param[in] metadataSize is size of second buffer
+ * @param[out] appendData final encoded buffer after append
+ * @return  appended total buffer size or less than 1 in failure case
+ */
+
+size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encodedSize, void *metadataPack, size_t metadataSize );
 #endif

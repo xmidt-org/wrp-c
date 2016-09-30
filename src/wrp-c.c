@@ -63,7 +63,7 @@ struct req_res_t {
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
 static const char const *__empty_list = "''";
-
+#define METADATA_MAP_SIZE                          1
 /* Reminder: sizeof("string") includes the trailing '\0', which we don't want. */
 static const struct wrp_token WRP_MSG_TYPE      = { .name = "msg_type", .length = sizeof( "msg_type" ) - 1 };
 static const struct wrp_token WRP_STATUS        = { .name = "status", .length = sizeof( "status" ) - 1 };
@@ -115,6 +115,7 @@ static char* getKey_MsgtypeBin( const msgpack_object key, const size_t binSize,
 static void __msgpack_maps( msgpack_packer *pk, const data_t *dataMap );
 static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **decodeMapReq );
 static void mapCommonString( msgpack_packer *pk, struct req_res_t *encodeComReq );
+static int alterMap( char * buf );
 
 
 /*----------------------------------------------------------------------------*/
@@ -875,6 +876,46 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
 }
 
 /**
+ *  Encode/pack only metadata from wrp_msg_t structure.
+ *
+ *  @note Do not call free of output data in failure case!
+ *
+ *  @param msg [in] packData the data_t structure to pack/encode
+ *  @param msg [out] the encoded output
+ *  @return encoded buffer size or less than 1 in failure case
+ */
+
+ssize_t wrp_pack_metadata( const data_t *packData, void **data )
+{
+    size_t rv = -1;
+    msgpack_sbuffer sbuf;
+    msgpack_packer pk;
+    msgpack_sbuffer_init( &sbuf );
+    msgpack_packer_init( &pk, &sbuf, msgpack_sbuffer_write );
+
+    if( packData != NULL && packData->count != 0 ) {
+        __msgpack_pack_string( &pk, WRP_METADATA.name, WRP_METADATA.length );
+        __msgpack_maps( &pk, packData );
+    } else {
+        printf( "Metadata is NULL\n" );
+        return rv;
+    }
+
+    if( sbuf.data ) {
+        *data = ( char * ) malloc( sizeof( char ) * sbuf.size );
+
+        if( NULL != *data ) {
+            memcpy( *data, sbuf.data, sbuf.size );
+            rv = sbuf.size;
+        }
+    }
+
+    msgpack_sbuffer_destroy( &sbuf );
+    return rv;
+}
+
+
+/**
  *  Converts the list of times into a string to print.
  *
  *  @note The caller must check to see if the value is equal to __empty_list
@@ -1078,8 +1119,16 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                         printf( "Type of MAP\n" );
                         decodeMapRequest( ValueType, decodeReq );
                         break;
+                    case MSGPACK_OBJECT_NIL:
+
+                        if( strcmp( keyName, WRP_SPANS.name ) == 0 ) {
+                            printf( "spans is nil\n" );
+                        }
+
+                        break;
                     default:
                         printf( "Unknown Data Type\n" );
+                        break;
                 }
             } else {
                 printf( "Metadata decode is not handled\n" );
@@ -1369,5 +1418,63 @@ static ssize_t __wrp_base64_to_struct( const void *base64_data, const size_t bas
     free( bytes );
     return rv;
 }
+/**
+ * @brief alterMap function to change MAP size of encoded msgpack object.
+ *
+ * @param[in] encodedBuffer msgpack object
+ * @param[out] return 0 in success or less than 1 in failure case
+ */
 
+static int alterMap( char * buf )
+{
+    //Extract 1st byte from binary stream which holds type and map size
+    unsigned char *byte = ( unsigned char * )( &( buf[0] ) ) ;
+    int mapSize;
+    printf( "First byte in hex : %x\n", 0xff & *byte );
+    //Calculate map size
+    mapSize = ( 0xff & *byte ) % 0x10;
+    printf( "Map size is :%d\n", mapSize );
 
+    if( mapSize == 15 ) {
+        printf( "Msgpack Map (fixmap) is already at its MAX size i.e. 15\n" );
+        return -1;
+    }
+
+    *byte = *byte + METADATA_MAP_SIZE;
+    mapSize = ( 0xff & *byte ) % 0x10;
+    printf( "New Map size : %d\n", mapSize );
+    //Update 1st byte with new MAP size
+    buf[0] = *byte;
+    return 0;
+}
+
+/**
+ * @brief appendEncodedData function to append two encoded buffer and change MAP size accordingly.
+ * 
+ * @note appendEncodedData function allocates memory for buffer, caller needs to free the buffer(appendData)in
+ * both success or failure case. use wrp_free_struct() for free
+ *
+ * @param[in] encodedBuffer msgpack object (first buffer)
+ * @param[in] encodedSize is size of first buffer
+ * @param[in] metadataPack msgpack object (second buffer)
+ * @param[in] metadataSize is size of second buffer
+ * @param[out] appendData final encoded buffer after append
+ * @return  appended total buffer size or less than 1 in failure case
+ */
+
+size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encodedSize, void *metadataPack, size_t metadataSize )
+{
+    //Allocate size for final buffer
+    *appendData = ( void * )malloc( sizeof( char * ) * ( encodedSize + metadataSize ) );
+    memcpy( *appendData, encodedBuffer, encodedSize );
+    //Append 2nd encoded buf with 1st encoded buf
+    memcpy( *appendData + ( encodedSize ), metadataPack, metadataSize );
+    //Alter MAP
+    int ret = alterMap( ( char * ) * appendData );
+
+    if( ret ) {
+        return -1;
+    }
+
+    return ( encodedSize + metadataSize );
+}

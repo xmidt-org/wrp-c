@@ -1195,7 +1195,104 @@ void test_crud_message()
     printf( "message->msg_type %d\n", message->msg_type );
     printf( "message->u.auth.status %d\n", message->u.auth.status );
     wrp_free_struct( message );
+    printf( "******** METADATA packing **********\n" );
+    // Failure case
+    struct data metadata_null[2];
+    memset(metadata_null,0,sizeof(struct data));
+    const data_t metapackNull = {0, metadata_null};
+    //message encode
+    size = wrp_pack_metadata( &metapackNull , &bytes );
+
+    if( size > 0 ) {
+        _internal_tva_xxd( bytes, size, 0 );
+        // Free only encode succeds
+        free( bytes );
+    } else {
+        CU_ASSERT( true );
+    }
+
+    // Success case
+    struct data meta_pack[] = {{"firmware", "PROD-DEV"}, {"model", "TG1680"}};
+    const data_t metapack = {2, meta_pack};
+    size = wrp_pack_metadata( &metapack , &bytes );
+
+    if( size > 0 ) {
+        _internal_tva_xxd( bytes, size, 0 );
+        CU_ASSERT( true );
+        free( bytes );
+    } else {
+        printf( "Metada Encoding failed\n " );
+        CU_ASSERT( false );
+    }
+
+    printf( "******** Append Metadata packing **********\n" );
+    // Append Encoded data
+    wrp_msg_t eventMsg, *finalMsg;
+    void *metadataPack, *encodedData;
+    size_t encodedSize;
+    eventMsg.msg_type = WRP_MSG_TYPE__EVENT;
+    eventMsg.u.event.source = "mac:format/iot" ;
+    eventMsg.u.event.dest = "dns:scytale.webpa.comcast.net/iot" ;
+    eventMsg.u.event.headers = NULL ;
+    eventMsg.u.event.metadata = NULL ;
+    eventMsg.u.event.payload = "0123456789";
+    eventMsg.u.event.payload_size = 10;
+    // msgpck encode
+    size = wrp_struct_to( &eventMsg, WRP_BYTES, &bytes );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
+
+    if( rv > 0 ) {
+        CU_ASSERT_EQUAL( rv, size );
+        CU_ASSERT_EQUAL( message->msg_type, eventMsg.msg_type );
+        CU_ASSERT_STRING_EQUAL( message->u.event.source, eventMsg.u.event.source );
+        CU_ASSERT_STRING_EQUAL( message->u.event.dest, eventMsg.u.event.dest );
+        CU_ASSERT_STRING_EQUAL( message->u.event.payload, eventMsg.u.event.payload );
+        CU_ASSERT_EQUAL( message->u.event.payload_size, eventMsg.u.event.payload_size );
+        printf( "decoded event source:%s\n", message->u.event.source );
+        printf( "decoded event dest:%s\n", message->u.event.dest );
+        printf( "decoded event payload:%s\n", ( char * ) message->u.event.payload );
+        printf( "decoded event payload_size:%zu\n", message->u.event.payload_size );
+        size = wrp_pack_metadata( &metapack , &metadataPack );
+
+        if( size > 0 ) {
+            _internal_tva_xxd( metadataPack, size, 0 );
+            encodedSize = appendEncodedData( &encodedData, bytes, rv, metadataPack, size );
+
+            if( encodedSize > 0 ) {
+                // verify msgpck decode
+                rv = wrp_to_struct( encodedData, encodedSize, WRP_BYTES, &finalMsg );
+
+                if( rv > 0 ) {
+                    CU_ASSERT_EQUAL( message->msg_type, eventMsg.msg_type );
+                    CU_ASSERT_STRING_EQUAL( message->u.event.source, finalMsg->u.event.source );
+                    CU_ASSERT_STRING_EQUAL( message->u.event.dest, finalMsg->u.event.dest );
+                    CU_ASSERT_STRING_EQUAL( message->u.event.payload, finalMsg->u.event.payload );
+                    CU_ASSERT_EQUAL( message->u.event.payload_size, finalMsg->u.event.payload_size );
+                    printf( "Complete Encode and Decode for appended metada is successfull ;) \n" );
+                    printf( "decoded final event source:%s\n", finalMsg->u.event.source );
+                    printf( "decoded final event dest:%s\n", finalMsg->u.event.dest );
+                    printf( "decoded final payload:%s\n", ( char * ) finalMsg->u.event.payload );
+                    printf( "decoded final payload_size:%zu\n", finalMsg->u.event.payload_size );
+                } else {
+                    printf( "Decode failed for appended data\n" );
+                    CU_ASSERT( false );
+                }
+            }
+
+            free( bytes );
+            free( metadataPack );
+            free( encodedData );
+        } else {
+            printf( "Metada Encoding failed for append encode data\n " );
+            CU_ASSERT( false );
+        }
+    }
+
+    wrp_free_struct( finalMsg );
+    wrp_free_struct( message );
 }
+
 void add_suites( CU_pSuite *suite )
 {
     *suite = CU_add_suite( "wrp-c encoding tests", NULL, NULL );
