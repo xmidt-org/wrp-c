@@ -929,7 +929,7 @@ void test_crud_message()
         .u.crud.source = "source-address",
         .u.crud.dest = "dest-address",
         .u.crud.headers = &headers,
-        .u.crud.metadata = NULL,
+        .u.crud.metadata = &meta_data,
         .u.crud.include_spans = false,
         .u.crud.spans.spans = ( struct money_trace_span* ) crud_spans,
         .u.crud.spans.count = sizeof( crud_spans ) / sizeof( struct money_trace_span ),
@@ -1000,6 +1000,17 @@ void test_crud_message()
         while( n < message->u.crud.payload->count ) {
             CU_ASSERT_STRING_EQUAL( create.u.crud.payload->data_items[n].name, message->u.crud.payload->data_items[n].name );
             CU_ASSERT_STRING_EQUAL( create.u.crud.payload->data_items[n].value, message->u.crud.payload->data_items[n].value );
+            printf("Crud payload Key value pair: %s = %s\n",message->u.crud.payload->data_items[n].name,message->u.crud.payload->data_items[n].value);
+            n++;
+        }
+    }
+    if( message->u.crud.metadata != NULL ) {
+        size_t n = 0;
+
+        while( n < message->u.crud.metadata->count ) {
+            CU_ASSERT_STRING_EQUAL( create.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
+            CU_ASSERT_STRING_EQUAL( create.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
+            printf("Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
             n++;
         }
     }
@@ -1039,7 +1050,32 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, retreive.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, retreive.u.crud.transaction_uuid );
     CU_ASSERT_STRING_EQUAL( message->u.crud.path, retreive.u.crud.path );
+    
+     if( message->u.crud.payload != NULL ) {
+        size_t n = 0;
 
+        while( n < message->u.crud.payload->count ) {
+            CU_ASSERT_STRING_EQUAL( retreive.u.crud.payload->data_items[n].name, message->u.crud.payload->data_items[n].name );
+            CU_ASSERT_STRING_EQUAL( retreive.u.crud.payload->data_items[n].value, message->u.crud.payload->data_items[n].value );
+            printf("Crud payload Key value pair: %s = %s\n",message->u.crud.payload->data_items[n].name,message->u.crud.payload->data_items[n].value);
+            printf("Retrieve payload Key value pair: %s = %s\n",message->u.crud.payload->data_items[n].name,message->u.crud.payload->data_items[n].value);
+            n++;
+        }
+    }
+    if( message->u.crud.metadata != NULL ) {
+        size_t n = 0;
+
+        while( n < message->u.crud.metadata->count ) {
+            CU_ASSERT_STRING_EQUAL( retreive.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
+            CU_ASSERT_STRING_EQUAL( retreive.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
+            printf("Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
+            n++;
+        }
+    }
+    else
+    {
+        printf("retrieve metadata is NULL.Please fix it\n");
+    }
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
         printf( "headers count returned is %d\n", ( int ) message->u.req.headers->count );
@@ -1082,10 +1118,20 @@ void test_crud_message()
         while( n < message->u.crud.payload->count ) {
             CU_ASSERT_STRING_EQUAL( update.u.crud.payload->data_items[n].name, message->u.crud.payload->data_items[n].name );
             CU_ASSERT_STRING_EQUAL( update.u.crud.payload->data_items[n].value, message->u.crud.payload->data_items[n].value );
+            printf("Update payload Key value pair: %s = %s\n",message->u.crud.payload->data_items[n].name,message->u.crud.payload->data_items[n].value);
             n++;
         }
     }
+    if( message->u.crud.metadata != NULL ) {
+        size_t n = 0;
 
+        while( n < message->u.crud.metadata->count ) {
+            CU_ASSERT_STRING_EQUAL( update.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
+            CU_ASSERT_STRING_EQUAL( update.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
+            printf("Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
+            n++;
+        }
+    }
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
         printf( "headers count returned is %d\n", ( int ) message->u.req.headers->count );
@@ -1121,7 +1167,26 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, delete.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, delete.u.crud.transaction_uuid );
     CU_ASSERT_STRING_EQUAL( message->u.crud.path, delete.u.crud.path );
+    if( message->u.crud.payload != NULL ) {
+        size_t n = 0;
 
+        while( n < message->u.crud.payload->count ) {
+            CU_ASSERT_STRING_EQUAL( delete.u.crud.payload->data_items[n].name, message->u.crud.payload->data_items[n].name );
+            CU_ASSERT_STRING_EQUAL( delete.u.crud.payload->data_items[n].value, message->u.crud.payload->data_items[n].value );
+            printf("Delete payload Key value pair: %s = %s\n",message->u.crud.payload->data_items[n].name,message->u.crud.payload->data_items[n].value);
+            n++;
+        }
+    }
+    if( message->u.crud.metadata != NULL ) {
+        size_t n = 0;
+
+        while( n < message->u.crud.metadata->count ) {
+            CU_ASSERT_STRING_EQUAL( delete.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
+            CU_ASSERT_STRING_EQUAL( delete.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
+            printf("Delete Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
+            n++;
+        }
+    }
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
         printf( "headers count returned is %d\n", ( int ) message->u.req.headers->count );
@@ -1157,7 +1222,26 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, meta_payload.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, meta_payload.u.crud.transaction_uuid );
     CU_ASSERT_STRING_EQUAL( message->u.crud.path, meta_payload.u.crud.path );
+    if( message->u.crud.payload != NULL ) {
+        size_t n = 0;
 
+        while( n < message->u.crud.payload->count ) {
+            CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.payload->data_items[n].name, message->u.crud.payload->data_items[n].name );
+            CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.payload->data_items[n].value, message->u.crud.payload->data_items[n].value );
+            printf("Update payload Key value pair: %s = %s\n",message->u.crud.payload->data_items[n].name,message->u.crud.payload->data_items[n].value);
+            n++;
+        }
+    }
+    if( message->u.crud.metadata != NULL ) {
+        size_t n = 0;
+
+        while( n < message->u.crud.metadata->count ) {
+            CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
+            CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
+            printf("Update Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
+            n++;
+        }
+    }
     if( NULL != meta_payload.u.crud.headers ) {
         size_t n = 0;
         printf( "headers count returned is %d\n", ( int ) message->u.crud.headers->count );
@@ -1269,6 +1353,17 @@ void test_crud_message()
                     CU_ASSERT_STRING_EQUAL( message->u.event.dest, finalMsg->u.event.dest );
                     CU_ASSERT_STRING_EQUAL( message->u.event.payload, finalMsg->u.event.payload );
                     CU_ASSERT_EQUAL( message->u.event.payload_size, finalMsg->u.event.payload_size );
+                    if( message->u.event.metadata != NULL ) 
+                    {
+                        size_t n = 0;
+                        while( n < finalMsg->u.event.metadata->count ) 
+                        {
+                            CU_ASSERT_STRING_EQUAL( metapack.data_items[n].name, finalMsg->u.event.metadata->data_items[n].name );
+                            CU_ASSERT_STRING_EQUAL( metapack.data_items[n].value, finalMsg->u.event.metadata->data_items[n].value );
+                            printf("Append Metadata Key value pair: %s = %s\n",finalMsg->u.event.metadata->data_items[n].name,finalMsg->u.event.metadata->data_items[n].value);
+                            n++;
+                        }
+                    }
                     printf( "Complete Encode and Decode for appended metada is successfull ;) \n" );
                     printf( "decoded final event source:%s\n", finalMsg->u.event.source );
                     printf( "decoded final event dest:%s\n", finalMsg->u.event.dest );
