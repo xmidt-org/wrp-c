@@ -54,7 +54,7 @@ struct req_res_t {
     char *path;
     char *service_name;
     char *url;
-    data_t *mapData;
+    char *crudPayload;
 
 };
 
@@ -113,7 +113,7 @@ static char* getKey_MsgtypeStr( const msgpack_object key, const size_t keySize,
 static char* getKey_MsgtypeBin( const msgpack_object key, const size_t binSize,
                                 char* keyBin );
 static void __msgpack_maps( msgpack_packer *pk, const data_t *dataMap );
-static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **decodeMapReq ,char* mapKeyName);
+static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **decodeMapReq );
 static void mapCommonString( msgpack_packer *pk, struct req_res_t *encodeComReq );
 static int alterMap( char * buf );
 
@@ -292,15 +292,6 @@ void wrp_free_struct( wrp_msg_t *msg )
             }
 
             if( NULL != msg->u.crud.payload ) {
-                size_t n = 0;
-
-                while( n < msg->u.crud.payload->count ) {
-                    free( msg->u.crud.payload->data_items[n].name );
-                    free( msg->u.crud.payload->data_items[n].value );
-                    n++;
-                }
-
-                free( msg->u.crud.payload->data_items );
                 free( msg->u.crud.payload );
             }
             if( NULL != msg->u.crud.metadata ) {
@@ -410,7 +401,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
             encode->transaction_uuid = crud->transaction_uuid;
             encode->include_spans = crud->include_spans;
             encode->spans = crud->spans;
-            encode->mapData = crud->payload;//type data_t
+            encode->crudPayload = crud->payload;//type string
             encode->headers = crud->headers;
             encode->metadata = crud->metadata;
             encode->path = crud->path;
@@ -852,7 +843,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
         case WRP_MSG_TYPE__UPDATE:
         case WRP_MSG_TYPE__DELETE:
 
-            if( encodeReqtmp->mapData == NULL ) {
+            if( encodeReqtmp->crudPayload == NULL ) {
                 wrp_map_size--;
                 printf( "CRUD payload is NULL map size is %d\n", wrp_map_size );
             }
@@ -885,10 +876,9 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             if( encodeReqtmp->path != NULL ) {
                 __msgpack_pack_string_nvp( &pk, &WRP_PATH, encodeReqtmp->path );
             }
-
-            if( encodeReqtmp->mapData != NULL ) {
-                __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
-                __msgpack_maps( &pk, encodeReqtmp->mapData );
+            
+            if( encodeReqtmp->crudPayload != NULL ) {
+                 __msgpack_pack_string_nvp( &pk, &WRP_PAYLOAD, encodeReqtmp->crudPayload );
             }
 
             break;
@@ -1030,6 +1020,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
     char *service_name = NULL;
     char *url = NULL;
     char *path = NULL;
+    char *crudpayload = NULL;
     struct req_res_t *tmpdecodeReq = *decodeReq;
     msgpack_object_kv* p = deserialized.via.map.ptr;
 
@@ -1107,6 +1098,12 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                             strncpy( path, StringValue, sLen );
                             path[sLen] = '\0';
                             tmpdecodeReq->path = path;
+                        } else if( strcmp( keyName, WRP_PAYLOAD.name ) == 0 ) {
+                            sLen = strlen( StringValue );
+                            crudpayload = ( char * ) malloc( sLen + 1 );
+                            strncpy( crudpayload, StringValue, sLen );
+                            crudpayload[sLen] = '\0';
+                            tmpdecodeReq->crudPayload = crudpayload;
                         }
 
                         free( NewStringVal );
@@ -1154,7 +1151,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                     case MSGPACK_OBJECT_MAP:
                         printf( "Type of MAP\n" );
                         printf("keyName is %s\n",keyName);
-                        decodeMapRequest( ValueType, decodeReq ,keyName);
+                        decodeMapRequest( ValueType, decodeReq );
                         break;
                     case MSGPACK_OBJECT_NIL:
 
@@ -1175,8 +1172,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
     }
 }
 
-
-static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **decodeMapReq,char* mapKeyName )
+static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **decodeMapReq )
 {
     unsigned int i = 0;
     int n = 0, v = 0;
@@ -1188,40 +1184,20 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
     char* NewStringVal, *StringValue;
     char* mapName = NULL;
     char *mapValue = NULL;
-    unsigned int mapSize = 0;
-    int metaFlag =0;
     struct req_res_t *mapdecodeReq = *decodeMapReq;
     msgpack_object_kv* p = deserialized.via.map.ptr;
-    
-    mapSize = deserialized.via.map.size;
-    if( strcmp( mapKeyName, WRP_METADATA.name ) == 0 ) 
-    {
-        printf("Decode for metadata\n");
-        if( mapdecodeReq->metadata != NULL ) {
-            printf( "Metadata map count is: %d\n", mapSize );
+    printf( "Map size is %d\n", deserialized.via.map.size );
 
-            if( mapSize != 0 ) {
-                mapdecodeReq->metadata->count = mapSize;
-                mapdecodeReq->metadata->data_items = ( struct data* )malloc( sizeof( struct data ) * ( mapSize ) );
-            }
-        }
-        metaFlag = 1;
-    }
-    else
-    {
-        printf("Decode for crud payload\n");
-        if( mapdecodeReq->mapData != NULL ) {
-            printf( "Crud payload map count is: %d\n", mapSize );
+    if( mapdecodeReq->metadata != NULL ) {
+        printf( "mapdecodeReq->metadata->count is %d\n", deserialized.via.map.size );
 
-            if( mapSize != 0 ) {
-                mapdecodeReq->mapData->count = mapSize;
-                mapdecodeReq->mapData->data_items = ( struct data* )malloc( sizeof( struct data ) * ( mapSize ) );
-            }
+        if( deserialized.via.map.size != 0 ) {
+            mapdecodeReq->metadata->count = deserialized.via.map.size;
+            mapdecodeReq->metadata->data_items = ( struct data* )malloc( sizeof( struct data ) * ( deserialized.via.map.size ) );
         }
-        metaFlag = 0;
     }
 
-    while( i < mapSize ) {
+    while( i < deserialized.via.map.size ) {
         sLen = 0;
         msgpack_object keyType = p->key;
         msgpack_object ValueType = p->val;
@@ -1235,40 +1211,19 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
             mapName = ( char * ) malloc( kLen + 1 );
             strncpy( mapName, keyName, kLen );
             mapName[kLen] = '\0';
-            if(metaFlag)
-            {   
-                mapdecodeReq->metadata->data_items[n].name = mapName;
-            }
-            else
-            {
-                mapdecodeReq->mapData->data_items[n].name = mapName;
-            }    
+            mapdecodeReq->metadata->data_items[n].name = mapName;
             n++;
 
             switch( ValueType.type ) {
                 case MSGPACK_OBJECT_POSITIVE_INTEGER: {
                     printf( "Map value is int %ld\n", ValueType.via.i64 );
-                    if(metaFlag)
-                    {   
-                        sprintf( mapdecodeReq->metadata->data_items[v].value, "%ld", ValueType.via.i64 );
-                    }
-                    else
-                    {
-                        sprintf( mapdecodeReq->mapData->data_items[v].value, "%ld", ValueType.via.i64 );
-                    }
+                    sprintf( mapdecodeReq->metadata->data_items[v].value, "%ld", ValueType.via.i64 );
                     v++;
                 }
                 break;
                 case MSGPACK_OBJECT_BOOLEAN: {
                     printf( "Map value boolean %d\n", ValueType.via.boolean ? true : false );
-                    if(metaFlag)
-                    {   
-                        mapdecodeReq->metadata->data_items[v].value = ValueType.via.boolean ? "true" : "false";
-                    }
-                    else
-                    {
-                        mapdecodeReq->mapData->data_items[v].value = ValueType.via.boolean ? "true" : "false";
-                    }
+                    mapdecodeReq->metadata->data_items[v].value = ValueType.via.boolean ? "true" : "false";
                     v++;
                 }
                 break;
@@ -1280,14 +1235,7 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
                     mapValue = ( char * ) malloc( sLen + 1 );
                     strncpy( mapValue, StringValue, sLen );
                     mapValue[sLen] = '\0';
-                    if(metaFlag)
-                    {   
-                        mapdecodeReq->metadata->data_items[v].value = mapValue;
-                    }
-                    else
-                    {
-                        mapdecodeReq->mapData->data_items[v].value = mapValue;
-                    }
+                    mapdecodeReq->metadata->data_items[v].value = mapValue;
                     v++;
                     free( NewStringVal );
                 }
@@ -1297,11 +1245,14 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
                     break;
             }
         }
+
         p++;
         i++;
         free( keyString );
     }
 }
+
+
 /*
 * @brief Returns the value of a given key.
 * @param[in] key key name with message type string.
@@ -1352,8 +1303,6 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
     {
         struct req_res_t *decodeReq = malloc( sizeof( struct req_res_t ) );
         memset( decodeReq, 0, sizeof( struct req_res_t ) );
-        decodeReq->mapData = malloc( sizeof( data_t ) );
-        memset( decodeReq->mapData, 0, sizeof( data_t ) );
         decodeReq->metadata = malloc( sizeof( data_t ) );
         memset( decodeReq->metadata, 0, sizeof( data_t ) );
         printf( "unpacking encoded data\n" );
@@ -1380,8 +1329,6 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         *msg_ptr = msg;
                         free( decodeReq->metadata->data_items );
                         free( decodeReq->metadata );
-                        free( decodeReq->mapData->data_items );
-                        free( decodeReq->mapData );
                         free( decodeReq );
                         return length;
                     case WRP_MSG_TYPE__REQ:
@@ -1397,8 +1344,6 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.req.payload = decodeReq->payload;
                         msg->u.req.payload_size = decodeReq->payload_size;
                         *msg_ptr = msg;
-                        free( decodeReq->mapData->data_items );
-                        free( decodeReq->mapData );
                         free( decodeReq );
                         return length;
                     case WRP_MSG_TYPE__EVENT:
@@ -1410,8 +1355,6 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.event.payload_size = decodeReq->payload_size;
                         msg->u.event.headers = decodeReq->headers;
                         *msg_ptr = msg;
-                        free( decodeReq->mapData->data_items );
-                        free( decodeReq->mapData );
                         free( decodeReq );
                         return length;
                     case WRP_MSG_TYPE__SVC_REGISTRATION:
@@ -1421,8 +1364,6 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         *msg_ptr = msg;
                         free( decodeReq->metadata->data_items );
                         free( decodeReq->metadata );
-                        free( decodeReq->mapData->data_items );
-                        free( decodeReq->mapData );
                         free( decodeReq );
                         return length;
                     case WRP_MSG_TYPE__CREATE:
@@ -1438,7 +1379,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.crud.include_spans = decodeReq->include_spans;
                         msg->u.crud.spans.spans = NULL;   /* not supported */
                         msg->u.crud.spans.count = 0;     /* not supported */
-                        msg->u.crud.payload = decodeReq->mapData;//type data_t
+                        msg->u.crud.payload = decodeReq->crudPayload;//type string
                         msg->u.crud.path = decodeReq->path;
                         free( decodeReq );
                         *msg_ptr = msg;
@@ -1446,8 +1387,6 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                     default:
                         free( decodeReq->metadata->data_items );
                         free( decodeReq->metadata );
-                        free( decodeReq->mapData->data_items );
-                        free( decodeReq->mapData );
                         free( decodeReq );
                         return -1;
                 }
@@ -1455,34 +1394,29 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
             case MSGPACK_UNPACK_EXTRA_BYTES: {
                 printf( "MSGPACK_UNPACK_EXTRA_BYTES\n" );
                 free( decodeReq->metadata );
-                free( decodeReq->mapData );
                 free( decodeReq );
                 return -1;
             }
             case MSGPACK_UNPACK_CONTINUE: {
                 printf( "MSGPACK_UNPACK_CONTINUE\n" );
                 free( decodeReq->metadata );
-                free( decodeReq->mapData );
                 free( decodeReq );
                 return -1;
             }
             case MSGPACK_UNPACK_PARSE_ERROR: {
                 printf( "MSGPACK_UNPACK_PARSE_ERROR\n" );
                 free( decodeReq->metadata );
-                free( decodeReq->mapData );
                 free( decodeReq );
                 return -1;
             }
             case MSGPACK_UNPACK_NOMEM_ERROR: {
                 printf( "MSGPACK_UNPACK_NOMEM_ERROR\n" );
                 free( decodeReq->metadata );
-                free( decodeReq->mapData );
                 free( decodeReq );
                 return -1;
             }
             default:
                 free( decodeReq->metadata );
-                free( decodeReq->mapData );
                 free( decodeReq );
                 return -1;
         }

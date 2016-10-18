@@ -887,8 +887,6 @@ void test_crud_message()
     void *bytes;
     wrp_msg_t *message;
     printf( "\nInside Crud_encode_decode()....\n" );
-    struct data map_data3[] = {{"webpa_server_url", "fabric.webpa.comcast.net"}, {"device_info_status", "down"},   {"wifi_device_info", "Radio"}};
-    data_t crudPayload = {3, map_data3};
     struct data meta_data2[] = {{"firmware", "PROD-DEV"}, {"model", "TG1680"}};
     data_t meta_data = {2, meta_data2};
     const struct money_trace_span crud_spans[] = {
@@ -898,17 +896,9 @@ void test_crud_message()
             .duration = 11
         },
     };
-    struct data mapData[] = {
-        {
-            .name = "uuid",
-            .value = "1123"
-        },
-        {
-            .name = "boot_time",
-            .value = "65sec"
-        },
-    };
-    data_t createMap = {2, mapData};
+    char updatePayload[]="{\n\"webpa-url\": \"fabric.webpa.comast.net\", \n\"webpa-uuid\": \"123d\"\n}";
+    char createPayload[]="{\n\"tags\": {\n\t\"test\": {\n\t\t\"expires\": \"432123\"\n\t\t}\n\t}\n}";
+    
     const wrp_msg_t create = {
         .msg_type = WRP_MSG_TYPE__CREATE,
         .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
@@ -921,7 +911,7 @@ void test_crud_message()
         .u.crud.spans.count = 0,
         .u.crud.status = 1,
         .u.crud.path = "/Harvester",
-        .u.crud.payload = &createMap
+        .u.crud.payload = createPayload
     };
     const wrp_msg_t retreive = {
         .msg_type = WRP_MSG_TYPE__RETREIVE,
@@ -949,7 +939,7 @@ void test_crud_message()
         .u.crud.spans.count = sizeof( spans ) / sizeof( struct money_trace_span ),
         .u.crud.status = 0,
         .u.crud.path = "/Harvester",
-        .u.crud.payload = &crudPayload
+        .u.crud.payload = updatePayload
     };
     const wrp_msg_t delete = {
         .msg_type = WRP_MSG_TYPE__DELETE,
@@ -977,7 +967,7 @@ void test_crud_message()
         .u.crud.spans.count = sizeof( spans ) / sizeof( struct money_trace_span ),
         .u.crud.status = 1,
         .u.crud.path = "/Harvester",
-        .u.crud.payload = &crudPayload
+        .u.crud.payload = updatePayload
     };
     printf( "       **************** CRUD Create*****************     \n" );
     // msgpack encode for CRUD
@@ -994,15 +984,10 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, create.u.crud.transaction_uuid );
     CU_ASSERT_STRING_EQUAL( message->u.crud.path, create.u.crud.path );
 
-    if( message->u.crud.payload != NULL ) {
-        size_t n = 0;
-
-        while( n < message->u.crud.payload->count ) {
-            CU_ASSERT_STRING_EQUAL( create.u.crud.payload->data_items[n].name, message->u.crud.payload->data_items[n].name );
-            CU_ASSERT_STRING_EQUAL( create.u.crud.payload->data_items[n].value, message->u.crud.payload->data_items[n].value );
-            printf("Crud payload Key value pair: %s = %s\n",message->u.crud.payload->data_items[n].name,message->u.crud.payload->data_items[n].value);
-            n++;
-        }
+    if( message->u.crud.payload != NULL ) 
+    {
+            CU_ASSERT_STRING_EQUAL( create.u.crud.payload, message->u.crud.payload);
+            printf("Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
         size_t n = 0;
@@ -1051,17 +1036,11 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, retreive.u.crud.transaction_uuid );
     CU_ASSERT_STRING_EQUAL( message->u.crud.path, retreive.u.crud.path );
     
-     if( message->u.crud.payload != NULL ) {
-        size_t n = 0;
-
-        while( n < message->u.crud.payload->count ) {
-            CU_ASSERT_STRING_EQUAL( retreive.u.crud.payload->data_items[n].name, message->u.crud.payload->data_items[n].name );
-            CU_ASSERT_STRING_EQUAL( retreive.u.crud.payload->data_items[n].value, message->u.crud.payload->data_items[n].value );
-            printf("Crud payload Key value pair: %s = %s\n",message->u.crud.payload->data_items[n].name,message->u.crud.payload->data_items[n].value);
-            printf("Retrieve payload Key value pair: %s = %s\n",message->u.crud.payload->data_items[n].name,message->u.crud.payload->data_items[n].value);
-            n++;
-        }
-    }
+     if( message->u.crud.payload != NULL ) 
+     {
+        CU_ASSERT_STRING_EQUAL( retreive.u.crud.payload, message->u.crud.payload);
+        printf("Crud payload : %s\n",message->u.crud.payload);
+     }
     if( message->u.crud.metadata != NULL ) {
         size_t n = 0;
 
@@ -1112,15 +1091,10 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, update.u.crud.transaction_uuid );
     CU_ASSERT_STRING_EQUAL( message->u.crud.path, update.u.crud.path );
 
-    if( message->u.crud.payload != NULL ) {
-        size_t n = 0;
-
-        while( n < message->u.crud.payload->count ) {
-            CU_ASSERT_STRING_EQUAL( update.u.crud.payload->data_items[n].name, message->u.crud.payload->data_items[n].name );
-            CU_ASSERT_STRING_EQUAL( update.u.crud.payload->data_items[n].value, message->u.crud.payload->data_items[n].value );
-            printf("Update payload Key value pair: %s = %s\n",message->u.crud.payload->data_items[n].name,message->u.crud.payload->data_items[n].value);
-            n++;
-        }
+    if( message->u.crud.payload != NULL ) 
+    {
+        CU_ASSERT_STRING_EQUAL( update.u.crud.payload, message->u.crud.payload);
+        printf("Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
         size_t n = 0;
@@ -1167,15 +1141,10 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, delete.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, delete.u.crud.transaction_uuid );
     CU_ASSERT_STRING_EQUAL( message->u.crud.path, delete.u.crud.path );
-    if( message->u.crud.payload != NULL ) {
-        size_t n = 0;
-
-        while( n < message->u.crud.payload->count ) {
-            CU_ASSERT_STRING_EQUAL( delete.u.crud.payload->data_items[n].name, message->u.crud.payload->data_items[n].name );
-            CU_ASSERT_STRING_EQUAL( delete.u.crud.payload->data_items[n].value, message->u.crud.payload->data_items[n].value );
-            printf("Delete payload Key value pair: %s = %s\n",message->u.crud.payload->data_items[n].name,message->u.crud.payload->data_items[n].value);
-            n++;
-        }
+    if( message->u.crud.payload != NULL ) 
+    {
+        CU_ASSERT_STRING_EQUAL( delete.u.crud.payload, message->u.crud.payload);
+        printf("Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
         size_t n = 0;
@@ -1222,15 +1191,10 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, meta_payload.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, meta_payload.u.crud.transaction_uuid );
     CU_ASSERT_STRING_EQUAL( message->u.crud.path, meta_payload.u.crud.path );
-    if( message->u.crud.payload != NULL ) {
-        size_t n = 0;
-
-        while( n < message->u.crud.payload->count ) {
-            CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.payload->data_items[n].name, message->u.crud.payload->data_items[n].name );
-            CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.payload->data_items[n].value, message->u.crud.payload->data_items[n].value );
-            printf("Update payload Key value pair: %s = %s\n",message->u.crud.payload->data_items[n].name,message->u.crud.payload->data_items[n].value);
-            n++;
-        }
+    if( message->u.crud.payload != NULL ) 
+    {
+        CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.payload, message->u.crud.payload);
+        printf("Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
         size_t n = 0;

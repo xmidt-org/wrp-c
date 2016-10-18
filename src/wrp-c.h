@@ -110,7 +110,7 @@ struct wrp_crud_msg {
     struct money_trace_spans spans;
     int status;
     char *path;
-    data_t *payload;
+    char *payload;
 };
 
 struct wrp_svc_registration_msg {
