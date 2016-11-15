@@ -652,11 +652,15 @@ void test_all()
     }
 
     printf( "Testing NULL msg handling\n" );
-    size = wrp_struct_to( NULL, WRP_BYTES, bytes );
+    size = wrp_struct_to( NULL, WRP_BYTES, &bytes );
     CU_ASSERT( size < 0 );
-    printf( "Testing Invalid type handling\n" );
-    size = wrp_struct_to( &test[2].in, 911, bytes );
+    printf( "Testing Invalid conversion type handling\n" );
+    size = wrp_struct_to( &test[2].in, 911, &bytes );
     CU_ASSERT( size < 0 );
+    printf( "Testing Invalid message type handling\n" );
+    size = wrp_struct_to( (wrp_msg_t*) "*** Invalid WRP message\n", WRP_BYTES, &bytes );
+    CU_ASSERT( size < 0 );
+    CU_ASSERT(NULL == bytes);
     printf( "Testing NULL data handling\n" );
     size = wrp_struct_to( &test[2].in, WRP_BYTES, NULL );
     CU_ASSERT( size < 0 );

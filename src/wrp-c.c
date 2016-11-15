@@ -334,7 +334,7 @@ void wrp_free_struct( wrp_msg_t *msg )
 
 static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 {
-    ssize_t rv;
+    ssize_t rv = -1;
     const struct wrp_req_msg *req = & ( msg->u.req );
     const struct wrp_event_msg *event = & ( msg->u.event );
     const struct wrp_svc_registration_msg *reg = & ( msg->u.reg );
@@ -345,6 +345,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
         return -1;
     }
 
+    *bytes = NULL;
     struct req_res_t *encode = malloc( sizeof( struct req_res_t ) );
 
     memset( encode, 0, sizeof( struct req_res_t ) );
