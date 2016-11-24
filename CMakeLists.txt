@@ -16,7 +16,7 @@ cmake_minimum_required(VERSION 2.8.7)
 
 project(wrp-c)
 include(ExternalProject)
-
+include(CTest)
 add_definitions(-std=c99)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g -Werror -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -g -Werror -Wall")
@@ -32,7 +32,7 @@ include_directories (SYSTEM /usr/include)
 link_directories ( ${LIBRARY_DIR} )
 
 enable_testing()
-
+if (NOT BUILD_YOCTO)
 # base64 external dependency
 ExternalProject_Add(trower-base64
     PREFIX ${PREFIX_DIR}/trower-base64
@@ -52,6 +52,8 @@ ExternalProject_Add(msgpack
     -DMSGPACK_BUILD_EXAMPLES=OFF)
 add_library(libmsgpack STATIC IMPORTED)
 add_dependencies(libmsgpack msgpack)
-
+endif ()
 add_subdirectory(src)
+if (BUILD_TESTING)
 add_subdirectory(tests)
+endif (BUILD_TESTING)
