@@ -1217,8 +1217,8 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
 
             switch( ValueType.type ) {
                 case MSGPACK_OBJECT_POSITIVE_INTEGER: {
-                    printf( "Map value is int %ld\n", ValueType.via.i64 );
-                    sprintf( mapdecodeReq->metadata->data_items[v].value, "%ld", ValueType.via.i64 );
+                    printf( "Map value is int %" PRId64 "\n", ValueType.via.i64 );
+                    sprintf( mapdecodeReq->metadata->data_items[v].value, "%" PRId64, ValueType.via.i64 );
                     v++;
                 }
                 break;
