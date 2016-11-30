@@ -20,6 +20,8 @@ set(SOURCES wrp-c.c)
 add_library(${PROJ_WRPC} STATIC ${HEADERS} ${SOURCES})
 add_library(${PROJ_WRPC}.shared SHARED ${HEADERS} ${SOURCES})
 set_target_properties(${PROJ_WRPC}.shared PROPERTIES OUTPUT_NAME ${PROJ_WRPC})
+set_property(TARGET ${PROJ_WRPC} PROPERTY C_STANDARD 99)
+set_property(TARGET ${PROJ_WRPC}.shared PROPERTY C_STANDARD 99)
 
 install (TARGETS ${PROJ_WRPC} DESTINATION lib${LIB_SUFFIX})
 install (TARGETS ${PROJ_WRPC}.shared DESTINATION lib${LIB_SUFFIX})
