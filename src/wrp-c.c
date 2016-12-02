@@ -774,7 +774,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
     int wrp_map_size = WRP_MAP_SIZE;
     struct req_res_t *encodeReqtmp =  encodeReq;
     /***   Start of Msgpack Encoding  ***/
-    WrpInfo( "WRP-C: ***   Start of Msgpack Encoding  ***\n" );
+    WrpPrint( "WRP-C: ***   Start of Msgpack Encoding  ***\n" );
     msgpack_sbuffer_init( &sbuf );
     msgpack_packer_init( &pk, &sbuf, msgpack_sbuffer_write );
 
