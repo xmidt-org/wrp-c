@@ -23,6 +23,7 @@
 #include <trower-base64/base64.h>
 
 #include "wrp-c.h"
+#include "wrp_log.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -255,7 +256,7 @@ void wrp_free_struct( wrp_msg_t *msg )
 
             break;
         case WRP_MSG_TYPE__SVC_REGISTRATION:
-            printf( "Free for REGISTRATION \n" );
+            WrpPrint( "WRP-C: Free for REGISTRATION \n" );
             free( msg->u.reg.service_name );
             free( msg->u.reg.url );
             break;
@@ -263,7 +264,7 @@ void wrp_free_struct( wrp_msg_t *msg )
         case WRP_MSG_TYPE__RETREIVE:
         case WRP_MSG_TYPE__UPDATE:
         case WRP_MSG_TYPE__DELETE:
-            printf( "Free for CRUD \n" );
+            WrpPrint( "WRP-C: Free for CRUD \n" );
 
             if( msg->u.crud.source ) {
                 free( msg->u.crud.source );
@@ -312,7 +313,7 @@ void wrp_free_struct( wrp_msg_t *msg )
         case WRP_MSG_TYPE__AUTH:
             break;
         default:
-            printf( "wrp_free_struct()->Invalid Message Type! (0x%x)\n",
+            WrpError( "WRP-C: wrp_free_struct()->Invalid Message Type! (0x%x)\n",
                     msg->msg_type );
             break;
     }
@@ -410,7 +411,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
             rv = __wrp_pack_structure( encode, bytes );
             break;
         default:
-            printf( "Unknown msgType to encode\n" );
+            WrpError( "WRP-C: Unknown msgType to encode\n" );
             break;
     }
 
@@ -712,7 +713,7 @@ static void __msgpack_maps( msgpack_packer *pk, const data_t *dataMap )
         struct wrp_token WRP_MAP_NAME = {'\0'};
         msgpack_pack_map( pk, dataMap->count );
         tmpdata = dataMap->data_items;
-        printf( "dataMap->count is %zu\n", dataMap->count );
+        WrpPrint( "WRP-C: dataMap->count is %zu\n", dataMap->count );
 
         for( i = 0; i < dataMap->count; i++ ) {
             WRP_MAP_NAME.name = tmpdata[i].name;
@@ -720,7 +721,7 @@ static void __msgpack_maps( msgpack_packer *pk, const data_t *dataMap )
             __msgpack_pack_string_nvp( pk, &WRP_MAP_NAME, tmpdata[i].value );
         }
     } else {
-        printf( "Map is NULL.Do not pack\n" );
+        WrpError( "WRP-C: Map is NULL.Do not pack\n" );
     }
 }
 
@@ -773,7 +774,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
     int wrp_map_size = WRP_MAP_SIZE;
     struct req_res_t *encodeReqtmp =  encodeReq;
     /***   Start of Msgpack Encoding  ***/
-    printf( "***   Start of Msgpack Encoding  ***\n" );
+    WrpInfo( "WRP-C: ***   Start of Msgpack Encoding  ***\n" );
     msgpack_sbuffer_init( &sbuf );
     msgpack_packer_init( &pk, &sbuf, msgpack_sbuffer_write );
 
@@ -846,7 +847,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
 
             if( encodeReqtmp->crudPayload == NULL ) {
                 wrp_map_size--;
-                printf( "CRUD payload is NULL map size is %d\n", wrp_map_size );
+                WrpInfo( "WRP-C: CRUD payload is NULL map size is %d\n", wrp_map_size );
             }
 
             if( encodeReqtmp->path != NULL ) {
@@ -884,7 +885,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
 
             break;
         default:
-            printf( "Un-supported format to pack\n" );
+            WrpError( "WRP-C: Un-supported format to pack\n" );
             return -1;
     }
 
@@ -925,7 +926,7 @@ ssize_t wrp_pack_metadata( const data_t *packData, void **data )
         __msgpack_pack_string( &pk, WRP_METADATA.name, WRP_METADATA.length );
         __msgpack_maps( &pk, packData );
     } else {
-        printf( "Metadata is NULL\n" );
+        WrpError( "WRP-C: Metadata is NULL\n" );
         return rv;
     }
 
@@ -1119,7 +1120,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                             keyValue = getKey_MsgtypeBin( ValueType, binValueSize, payload );
 
                             if( keyValue != NULL ) {
-                                printf( "Binary payload %s\n", keyValue );
+                                WrpInfo( "WRP-C: Binary payload %s\n", keyValue );
                             }
 
                             tmpdecodeReq->payload = keyValue;
@@ -1142,27 +1143,27 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                                 tmpdecodeReq->headers->headers[cnt] = ( char * ) malloc( ptr->via.str.size + 1 );
                                 memset( tmpdecodeReq->headers->headers[cnt], 0, ptr->via.str.size + 1 );
                                 memcpy( tmpdecodeReq->headers->headers[cnt], ptr->via.str.ptr, ptr->via.str.size );
-                                printf( "tmpdecodeReq->headers[%d] %s\n", cnt, tmpdecodeReq->headers->headers[cnt] );
+                                WrpPrint( "WRP-C: tmpdecodeReq->headers[%d] %s\n", cnt, tmpdecodeReq->headers->headers[cnt] );
                             }
                         } else {
-                            printf( "Not Handled MSGPACK_OBJECT_ARRAY %s\n", keyName );
+                            WrpError( "WRP-C: Not Handled MSGPACK_OBJECT_ARRAY %s\n", keyName );
                         }
 
                         break;
                     case MSGPACK_OBJECT_MAP:
-                        printf( "Type of MAP\n" );
-                        printf("keyName is %s\n",keyName);
+                        WrpPrint( "WRP-C: Type of MAP\n" );
+                        WrpPrint("WRP-C: keyName is %s\n",keyName);
                         decodeMapRequest( ValueType, decodeReq );
                         break;
                     case MSGPACK_OBJECT_NIL:
 
                         if( strcmp( keyName, WRP_SPANS.name ) == 0 ) {
-                            printf( "spans is nil\n" );
+                            WrpError( "WRP-C: spans is nil\n" );
                         }
 
                         break;
                     default:
-                        printf( "Unknown Data Type\n" );
+                        WrpError( "WRP-C: Unknown Data Type\n" );
                         break;
                 }
         }
@@ -1187,10 +1188,10 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
     char *mapValue = NULL;
     struct req_res_t *mapdecodeReq = *decodeMapReq;
     msgpack_object_kv* p = deserialized.via.map.ptr;
-    printf( "Map size is %d\n", deserialized.via.map.size );
+    WrpPrint( "WRP-C: Map size is %d\n", deserialized.via.map.size );
 
     if( mapdecodeReq->metadata != NULL ) {
-        printf( "mapdecodeReq->metadata->count is %d\n", deserialized.via.map.size );
+        WrpPrint( "WRP-C: mapdecodeReq->metadata->count is %d\n", deserialized.via.map.size );
 
         if( deserialized.via.map.size != 0 ) {
             mapdecodeReq->metadata->count = deserialized.via.map.size;
@@ -1217,13 +1218,13 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
 
             switch( ValueType.type ) {
                 case MSGPACK_OBJECT_POSITIVE_INTEGER: {
-                    printf( "Map value is int %" PRId64 "\n", ValueType.via.i64 );
+                    WrpPrint( "WRP-C: Map value is int %" PRId64 "\n", ValueType.via.i64 );
                     sprintf( mapdecodeReq->metadata->data_items[v].value, "%" PRId64, ValueType.via.i64 );
                     v++;
                 }
                 break;
                 case MSGPACK_OBJECT_BOOLEAN: {
-                    printf( "Map value boolean %d\n", ValueType.via.boolean ? true : false );
+                    WrpPrint( "WRP-C: Map value boolean %d\n", ValueType.via.boolean ? true : false );
                     mapdecodeReq->metadata->data_items[v].value = ValueType.via.boolean ? "true" : "false";
                     v++;
                 }
@@ -1242,7 +1243,7 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
                 }
                 break;
                 default:
-                    printf( "Unknown data format inside MAP\n" );
+                    WrpError( "WRP-C: Unknown data format inside MAP\n" );
                     break;
             }
         }
@@ -1306,10 +1307,10 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
         memset( decodeReq, 0, sizeof( struct req_res_t ) );
         decodeReq->metadata = malloc( sizeof( data_t ) );
         memset( decodeReq->metadata, 0, sizeof( data_t ) );
-        printf( "unpacking encoded data\n" );
+        WrpPrint( "WRP-C: unpacking encoded data\n" );
         msgpack_zone_init( &mempool, 2048 );
         unpack_ret = msgpack_unpack( bytes, length, NULL, &mempool, &deserialized );
-        printf( "unpack_ret:%d\n", unpack_ret );
+        WrpPrint( "WRP-C: unpack_ret:%d\n", unpack_ret );
 
         switch( unpack_ret ) {
             case MSGPACK_UNPACK_SUCCESS:
@@ -1393,25 +1394,25 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                 }
 
             case MSGPACK_UNPACK_EXTRA_BYTES: {
-                printf( "MSGPACK_UNPACK_EXTRA_BYTES\n" );
+                WrpError( "WRP-C: MSGPACK_UNPACK_EXTRA_BYTES\n" );
                 free( decodeReq->metadata );
                 free( decodeReq );
                 return -1;
             }
             case MSGPACK_UNPACK_CONTINUE: {
-                printf( "MSGPACK_UNPACK_CONTINUE\n" );
+                WrpError( "WRP-C: MSGPACK_UNPACK_CONTINUE\n" );
                 free( decodeReq->metadata );
                 free( decodeReq );
                 return -1;
             }
             case MSGPACK_UNPACK_PARSE_ERROR: {
-                printf( "MSGPACK_UNPACK_PARSE_ERROR\n" );
+                WrpError( "WRP-C: MSGPACK_UNPACK_PARSE_ERROR\n" );
                 free( decodeReq->metadata );
                 free( decodeReq );
                 return -1;
             }
             case MSGPACK_UNPACK_NOMEM_ERROR: {
-                printf( "MSGPACK_UNPACK_NOMEM_ERROR\n" );
+                WrpError( "WRP-C: MSGPACK_UNPACK_NOMEM_ERROR\n" );
                 free( decodeReq->metadata );
                 free( decodeReq );
                 return -1;
@@ -1423,7 +1424,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
         }
     }
 
-    printf( "bytes is NULL\n" );
+    WrpError( "WRP-C: bytes is NULL\n" );
     return -1;
 }
 
@@ -1464,19 +1465,19 @@ static int alterMap( char * buf )
     //Extract 1st byte from binary stream which holds type and map size
     unsigned char *byte = ( unsigned char * )( &( buf[0] ) ) ;
     int mapSize;
-    printf( "First byte in hex : %x\n", 0xff & *byte );
+    WrpPrint( "WRP-C: First byte in hex : %x\n", 0xff & *byte );
     //Calculate map size
     mapSize = ( 0xff & *byte ) % 0x10;
-    printf( "Map size is :%d\n", mapSize );
+    WrpPrint( "WRP-C: Map size is :%d\n", mapSize );
 
     if( mapSize == 15 ) {
-        printf( "Msgpack Map (fixmap) is already at its MAX size i.e. 15\n" );
+        WrpError( "WRP-C: Msgpack Map (fixmap) is already at its MAX size i.e. 15\n" );
         return -1;
     }
 
     *byte = *byte + METADATA_MAP_SIZE;
     mapSize = ( 0xff & *byte ) % 0x10;
-    printf( "New Map size : %d\n", mapSize );
+    WrpPrint( "WRP-C: New Map size : %d\n", mapSize );
     //Update 1st byte with new MAP size
     buf[0] = *byte;
     return 0;
