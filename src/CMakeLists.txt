@@ -15,7 +15,7 @@
 set(PROJ_WRPC wrp-c)
 
 file(GLOB HEADERS wrp-c.h)
-set(SOURCES wrp-c.c)
+set(SOURCES wrp-c.c wrp_log.c)
 
 add_library(${PROJ_WRPC} STATIC ${HEADERS} ${SOURCES})
 add_library(${PROJ_WRPC}.shared SHARED ${HEADERS} ${SOURCES})
