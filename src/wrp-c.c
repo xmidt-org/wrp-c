@@ -147,11 +147,7 @@ ssize_t wrp_struct_to( const wrp_msg_t *msg, const enum wrp_format fmt, void **b
             return -2;
     }
 
-    if( NULL != bytes ) {
-        *bytes = data;
-    } else {
-        free( data );
-    }
+    *bytes = data;
 
     return rv;
 }
@@ -1190,13 +1186,11 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
     msgpack_object_kv* p = deserialized.via.map.ptr;
     WrpPrint( "WRP-C: Map size is %d\n", deserialized.via.map.size );
 
-    if( mapdecodeReq->metadata != NULL ) {
-        WrpPrint( "WRP-C: mapdecodeReq->metadata->count is %d\n", deserialized.via.map.size );
+    WrpPrint( "WRP-C: mapdecodeReq->metadata->count is %d\n", deserialized.via.map.size );
 
-        if( deserialized.via.map.size != 0 ) {
-            mapdecodeReq->metadata->count = deserialized.via.map.size;
-            mapdecodeReq->metadata->data_items = ( struct data* )malloc( sizeof( struct data ) * ( deserialized.via.map.size ) );
-        }
+    if( deserialized.via.map.size != 0 ) {
+        mapdecodeReq->metadata->count = deserialized.via.map.size;
+        mapdecodeReq->metadata->data_items = ( struct data* )malloc( sizeof( struct data ) * ( deserialized.via.map.size ) );
     }
 
     while( i < deserialized.via.map.size ) {
