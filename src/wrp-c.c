@@ -88,6 +88,7 @@ static const int const WRP_MAP_SIZE             = 4; // mandatory msg_type,sourc
 static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes );
 static ssize_t __wrp_struct_to_base64( const wrp_msg_t *msg, char **bytes );
 static ssize_t __wrp_struct_to_string( const wrp_msg_t *msg, char **bytes );
+static ssize_t __wrp_keep_alive_to_string (char **bytes );
 static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth,
         char **bytes );
 static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char **bytes );
@@ -409,6 +410,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
             break;
         case WRP_MSG_TYPE__SVC_ALIVE:
             encode->msgType = msg->msg_type;
+            rv = __wrp_pack_structure( encode, bytes );
             break;
         default:
             WrpError( "WRP-C: Unknown msgType to encode\n" ); 
@@ -469,6 +471,8 @@ static ssize_t __wrp_struct_to_base64( const wrp_msg_t *msg, char **bytes )
 static ssize_t __wrp_struct_to_string( const wrp_msg_t *msg, char **bytes )
 {
     switch( msg->msg_type ) {
+        case WRP_MSG_TYPE__SVC_ALIVE:
+            return __wrp_keep_alive_to_string (bytes);
         case WRP_MSG_TYPE__AUTH:
             return __wrp_auth_struct_to_string( &msg->u.auth, bytes );
         case WRP_MSG_TYPE__REQ:
@@ -479,9 +483,32 @@ static ssize_t __wrp_struct_to_string( const wrp_msg_t *msg, char **bytes )
             break;
     }
 
-    return -1;
+    return -1;  
 }
 
+static ssize_t __wrp_keep_alive_to_string (char **bytes )
+{
+    const char const *keep_alive_fmt =
+        "wrp_keep_alive_msg {\n"
+        "}\n";
+    char *data;
+    size_t length;
+    length = strlen (keep_alive_fmt);
+
+    if( NULL != bytes ) {
+        data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
+
+        if( NULL != data ) {
+            sprintf( data, keep_alive_fmt );
+            data[length] = '\0';
+            *bytes = data;
+        } else {
+            return -1;
+        }
+    }
+
+    return length;
+}
 
 /**
  *  Convert the auth structure to a string.
@@ -841,7 +868,10 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             __msgpack_pack_string_nvp( &pk, &WRP_URL, encodeReqtmp->url );
             break;
         case WRP_MSG_TYPE__SVC_ALIVE:
+            wrp_map_size = 1;//Hardcoded. Pack for msgType only
             msgpack_pack_map( &pk, wrp_map_size );
+            __msgpack_pack_string( &pk, WRP_MSG_TYPE.name, WRP_MSG_TYPE.length );
+            msgpack_pack_int( &pk, encodeReqtmp->msgType );
             break;
         case WRP_MSG_TYPE__CREATE:
         case WRP_MSG_TYPE__RETREIVE:
