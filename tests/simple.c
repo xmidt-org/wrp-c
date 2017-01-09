@@ -479,6 +479,26 @@ const struct test_vectors test[] = {
             0x31, 0x32, 0x33,
         },
     },
+
+    /*--------------------------------------------------------------------*/
+    {/* Index 7 */
+        .in.msg_type = WRP_MSG_TYPE__SVC_ALIVE,
+
+        .string_size = 0,
+        .string =
+        "wrp_keep_alive_msg {\n"
+        "}\n",
+
+        .msgpack_size = 11,
+        .msgpack = {
+            0x81,   /* 1 name value pair */
+
+            /* msg_type -> 10 */
+            0xa8,  /* "msg_type" */
+            'm', 's', 'g', '_', 't', 'y', 'p', 'e',
+            0x0a,  /* 10 */
+        },
+    },
 };
 
 void validate_to_strings( const char *expected, ssize_t expected_len,

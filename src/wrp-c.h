@@ -38,6 +38,7 @@ enum wrp_msg_type {
     WRP_MSG_TYPE__UPDATE        = 7,
     WRP_MSG_TYPE__DELETE        = 8,
     WRP_MSG_TYPE__SVC_REGISTRATION      = 9,
+    WRP_MSG_TYPE__SVC_ALIVE     = 10,
     WRP_MSG_TYPE__UNKNOWN = 200
 };
 
