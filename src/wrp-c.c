@@ -202,7 +202,10 @@ void wrp_free_struct( wrp_msg_t *msg )
             free( msg->u.req.source );
             free( msg->u.req.dest );
             free( msg->u.req.payload );
-
+            if(NULL != msg->u.req.content_type)
+            {
+                free(msg->u.req.content_type);
+            }
             if( NULL != msg->u.req.headers ) {
                 size_t cnt;
 
@@ -230,7 +233,10 @@ void wrp_free_struct( wrp_msg_t *msg )
             free( msg->u.event.source );
             free( msg->u.event.dest );
             free( msg->u.event.payload );
-
+            if(NULL != msg->u.event.content_type)
+            {
+                free(msg->u.event.content_type);
+            }
             if( NULL != msg->u.event.headers ) {
                 size_t cnt;
 
