@@ -82,6 +82,7 @@ typedef struct data_struct {
 
 struct wrp_req_msg {
     char *transaction_uuid;
+    char *content_type;
     char *source;
     char *dest;
     headers_t *headers;                         /* NULL terminated list */
@@ -93,6 +94,7 @@ struct wrp_req_msg {
 };
 
 struct wrp_event_msg {
+    char *content_type;
     char *source;
     char *dest;
     headers_t *headers;                         /* NULL terminated list */

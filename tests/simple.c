@@ -87,6 +87,7 @@ const struct test_vectors test[] = {
         .in.u.req.source = "source-address",
         .in.u.req.dest = "dest-address",
         .in.u.req.headers = NULL,
+        .in.u.req.content_type = "application/json",
         .in.u.req.include_spans = false,
         .in.u.req.spans.spans = NULL,
         .in.u.req.spans.count = 0,
@@ -100,14 +101,15 @@ const struct test_vectors test[] = {
         "    .source           = source-address\n"
         "    .dest             = dest-address\n"
         "    .headers          = ''\n"
+        "    .content_type     = application/json\n"
         "    .include_spans    = false\n"
         "    .spans            = ''\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 119,
+        .msgpack_size = 149,
         .msgpack = {
-            0x85,  /* 5 name value pairs */
+            0x86,  /* 6 name value pairs */
 
             /* msg_type -> 3 */
             0xa8,  /* "msg_type" */
@@ -136,6 +138,12 @@ const struct test_vectors test[] = {
             'a', '1', '5', '6', '-',
             '0', '9', '7', 'c', '7', '6', '7', 'a', 'd', '8', 'a', 'a',
 
+            /* content_type -> application/json */
+            0xac,   /* content_type */
+            'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
+            0xb0,   /* application/json */
+            'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
+
             /* payload -> data */
             0xa7,   /* payload */
             'p', 'a', 'y', 'l', 'o', 'a', 'd',
@@ -151,6 +159,7 @@ const struct test_vectors test[] = {
         .in.u.req.source = "source-address",
         .in.u.req.dest = "dest-address",
         .in.u.req.headers = &headers,
+        .in.u.req.content_type = "application/json",
         .in.u.req.include_spans = true,
         .in.u.req.spans.spans = NULL,
         .in.u.req.spans.count = 0,
@@ -164,14 +173,15 @@ const struct test_vectors test[] = {
         "    .source           = source-address\n"
         "    .dest             = dest-address\n"
         "    .headers          = 'Header 1, Header 2'\n"
+        "    .content_type     = application/json\n"
         "    .include_spans    = true\n"
         "    .spans            = ''\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 161,
+        .msgpack_size = 191,
         .msgpack = {
-            0x87,  /* 7 name value pairs */
+            0x88,  /* 8 name value pairs */
 
             /* msg_type -> 3 */
             0xa8,  /* "msg_type" */
@@ -207,6 +217,12 @@ const struct test_vectors test[] = {
             '4', '4', '4', 'c', '-',
             'a', '1', '5', '6', '-',
             '0', '9', '7', 'c', '7', '6', '7', 'a', 'd', '8', 'a', 'a',
+
+            /* content_type -> application/json */
+            0xac,   /* content_type */
+            'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
+            0xb0,   /* application/json */
+            'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
 
             0xad,   /* include_spans -> true */
             'i', 'n', 'c', 'l', 'u', 'd', 'e', '_', 's', 'p', 'a', 'n', 's',
@@ -229,6 +245,7 @@ const struct test_vectors test[] = {
         .in.u.req.source = "source-address",
         .in.u.req.dest = "dest-address",
         .in.u.req.headers = &headers,
+        .in.u.req.content_type = "application/json",
         .in.u.req.include_spans = false,
         .in.u.req.spans.spans = NULL,
         .in.u.req.spans.count = 0,
@@ -242,86 +259,13 @@ const struct test_vectors test[] = {
         "    .source           = source-address\n"
         "    .dest             = dest-address\n"
         "    .headers          = 'Header 1, Header 2'\n"
+        "    .content_type     = application/json\n"
         "    .include_spans    = false\n"
         "    .spans            = ''\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 146,
-        .msgpack = {
-            0x86,  /* 6 name value pairs */
-
-            /* msg_type -> 3 */
-            0xa8,  /* "msg_type" */
-            'm', 's', 'g', '_', 't', 'y', 'p', 'e',
-            0x03,  /* 3 */
-
-            /* source -> source-address */
-            0xa6,   /* source */
-            's', 'o', 'u', 'r', 'c', 'e',
-            0xae,   /* source-address */
-            's', 'o', 'u', 'r', 'c', 'e', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
-
-            /* dest -> dest-address */
-            0xa4,   /* dest */
-            'd', 'e', 's', 't',
-            0xac,   /* dest-address */
-            'd', 'e', 's', 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
-
-            0xa7,   /* headers -> Array[2] */
-            'h', 'e', 'a', 'd', 'e', 'r', 's',
-            0x92,
-            0xa8,
-            'H', 'e', 'a', 'd', 'e', 'r', ' ', '1',
-            0xa8,
-            'H', 'e', 'a', 'd', 'e', 'r', ' ', '2',
-
-            /* transaction_uuid -> c07ee5e1-70be-444c-a156-097c767ad8aa */
-            0xb0,   /* transaction_uuid */
-            't', 'r', 'a', 'n', 's', 'a', 'c', 't', 'i', 'o', 'n', '_', 'u', 'u', 'i', 'd',
-            0xd9, 0x24, /* c07ee5e1-70be-444c-a156-097c767ad8aa */
-            'c', '0', '7', 'e', 'e', '5', 'e', '1', '-',
-            '7', '0', 'b', 'e', '-',
-            '4', '4', '4', 'c', '-',
-            'a', '1', '5', '6', '-',
-            '0', '9', '7', 'c', '7', '6', '7', 'a', 'd', '8', 'a', 'a',
-
-            /* payload -> data */
-            0xa7,   /* payload */
-            'p', 'a', 'y', 'l', 'o', 'a', 'd',
-            0xc4, 0x03, /* Binary message, length 3 */
-            0x31, 0x32, 0x33,
-        },
-
-    },
-
-    /*--------------------------------------------------------------------*/
-    {/* Index 4 */
-        .in.msg_type = WRP_MSG_TYPE__REQ,
-        .in.u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
-        .in.u.req.source = "source-address",
-        .in.u.req.dest = "dest-address",
-        .in.u.req.headers = &headers,
-        .in.u.req.include_spans = false,
-        .in.u.req.spans.spans = ( struct money_trace_span* ) spans,
-        .in.u.req.spans.count = sizeof( spans ) / sizeof( struct money_trace_span ),
-        .in.u.req.payload = "123",
-        .in.u.req.payload_size = 3,
-
-        .string_size = 0,
-        .string =
-        "wrp_req_msg {\n"
-        "    .transaction_uuid = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
-        "    .source           = source-address\n"
-        "    .dest             = dest-address\n"
-        "    .headers          = 'Header 1, Header 2'\n"
-        "    .include_spans    = false\n"
-        "    .spans            = \n"
-        "        hop-1: 123000044 - 11\n"
-        "    .payload_size     = 3\n"
-        "}\n",
-
-        .msgpack_size = 166,
+        .msgpack_size = 176,
         .msgpack = {
             0x87,  /* 7 name value pairs */
 
@@ -359,6 +303,94 @@ const struct test_vectors test[] = {
             '4', '4', '4', 'c', '-',
             'a', '1', '5', '6', '-',
             '0', '9', '7', 'c', '7', '6', '7', 'a', 'd', '8', 'a', 'a',
+
+            /* content_type -> application/json */
+            0xac,   /* content_type */
+            'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
+            0xb0,   /* application/json */
+            'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
+
+            /* payload -> data */
+            0xa7,   /* payload */
+            'p', 'a', 'y', 'l', 'o', 'a', 'd',
+            0xc4, 0x03, /* Binary message, length 3 */
+            0x31, 0x32, 0x33,
+        },
+
+    },
+
+    /*--------------------------------------------------------------------*/
+    {/* Index 4 */
+        .in.msg_type = WRP_MSG_TYPE__REQ,
+        .in.u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+        .in.u.req.source = "source-address",
+        .in.u.req.dest = "dest-address",
+        .in.u.req.headers = &headers,
+        .in.u.req.content_type = "application/json",
+        .in.u.req.include_spans = false,
+        .in.u.req.spans.spans = ( struct money_trace_span* ) spans,
+        .in.u.req.spans.count = sizeof( spans ) / sizeof( struct money_trace_span ),
+        .in.u.req.payload = "123",
+        .in.u.req.payload_size = 3,
+
+        .string_size = 0,
+        .string =
+        "wrp_req_msg {\n"
+        "    .transaction_uuid = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
+        "    .source           = source-address\n"
+        "    .dest             = dest-address\n"
+        "    .headers          = 'Header 1, Header 2'\n"
+        "    .content_type     = application/json\n"
+        "    .include_spans    = false\n"
+        "    .spans            = \n"
+        "        hop-1: 123000044 - 11\n"
+        "    .payload_size     = 3\n"
+        "}\n",
+
+        .msgpack_size = 196,
+        .msgpack = {
+            0x88,  /* 8 name value pairs */
+
+            /* msg_type -> 3 */
+            0xa8,  /* "msg_type" */
+            'm', 's', 'g', '_', 't', 'y', 'p', 'e',
+            0x03,  /* 3 */
+
+            /* source -> source-address */
+            0xa6,   /* source */
+            's', 'o', 'u', 'r', 'c', 'e',
+            0xae,   /* source-address */
+            's', 'o', 'u', 'r', 'c', 'e', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
+
+            /* dest -> dest-address */
+            0xa4,   /* dest */
+            'd', 'e', 's', 't',
+            0xac,   /* dest-address */
+            'd', 'e', 's', 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
+
+            0xa7,   /* headers -> Array[2] */
+            'h', 'e', 'a', 'd', 'e', 'r', 's',
+            0x92,
+            0xa8,
+            'H', 'e', 'a', 'd', 'e', 'r', ' ', '1',
+            0xa8,
+            'H', 'e', 'a', 'd', 'e', 'r', ' ', '2',
+
+            /* transaction_uuid -> c07ee5e1-70be-444c-a156-097c767ad8aa */
+            0xb0,   /* transaction_uuid */
+            't', 'r', 'a', 'n', 's', 'a', 'c', 't', 'i', 'o', 'n', '_', 'u', 'u', 'i', 'd',
+            0xd9, 0x24, /* c07ee5e1-70be-444c-a156-097c767ad8aa */
+            'c', '0', '7', 'e', 'e', '5', 'e', '1', '-',
+            '7', '0', 'b', 'e', '-',
+            '4', '4', '4', 'c', '-',
+            'a', '1', '5', '6', '-',
+            '0', '9', '7', 'c', '7', '6', '7', 'a', 'd', '8', 'a', 'a',
+
+            /* content_type -> application/json */
+            0xac,   /* content_type */
+            'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
+            0xb0,   /* application/json */
+            'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
 
             0xa5,   /* spans -> Array[2] */
             's', 'p', 'a', 'n', 's',
@@ -383,6 +415,7 @@ const struct test_vectors test[] = {
         .in.msg_type = WRP_MSG_TYPE__EVENT,
         .in.u.event.source = "source-address",
         .in.u.event.dest = "dest-address",
+        .in.u.event.content_type = "application/json",
         .in.u.event.headers = NULL,
         .in.u.event.payload = "123",
         .in.u.event.payload_size = 3,
@@ -393,12 +426,13 @@ const struct test_vectors test[] = {
         "    .source           = source-address\n"
         "    .dest             = dest-address\n"
         "    .headers          = ''\n"
+        "    .content_type     = application/json\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 64,
+        .msgpack_size = 94,
         .msgpack = {
-            0x84,  /* 4 name value pairs */
+            0x85,  /* 5 name value pairs */
 
             /* msg_type -> 4 */
             0xa8,  /* "msg_type" */
@@ -416,6 +450,12 @@ const struct test_vectors test[] = {
             'd', 'e', 's', 't',
             0xac,   /* dest-address */
             'd', 'e', 's', 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
+            
+            /* content_type -> application/json */
+            0xac,   /* content_type */
+            'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
+            0xb0,   /* application/json */
+            'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
 
             /* payload -> data */
             0xa7,   /* payload */
@@ -430,6 +470,7 @@ const struct test_vectors test[] = {
         .in.msg_type = WRP_MSG_TYPE__EVENT,
         .in.u.event.source = "source-address",
         .in.u.event.dest = "dest-address",
+        .in.u.event.content_type = "application/json",
         .in.u.event.headers = &headers,
         .in.u.event.payload = "123",
         .in.u.event.payload_size = 3,
@@ -440,12 +481,13 @@ const struct test_vectors test[] = {
         "    .source           = source-address\n"
         "    .dest             = dest-address\n"
         "    .headers          = 'Header 1, Header 2'\n"
+        "    .content_type     = application/json\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 91,
+        .msgpack_size = 121,
         .msgpack = {
-            0x85,  /* 5 name value pairs */
+            0x86,  /* 6 name value pairs */
 
             /* msg_type -> 4 */
             0xa8,  /* "msg_type" */
@@ -471,6 +513,12 @@ const struct test_vectors test[] = {
             'H', 'e', 'a', 'd', 'e', 'r', ' ', '1',
             0xa8,
             'H', 'e', 'a', 'd', 'e', 'r', ' ', '2',
+
+            /* content_type -> application/json */
+            0xac,   /* content_type */
+            'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
+            0xb0,   /* application/json */
+            'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
 
             /* payload -> data */
             0xa7,   /* payload */
@@ -707,6 +755,7 @@ void test_encode_decode()
     WrpPrint( "\n WRP-C: Inside test_encode_decode()....\n" );
     const wrp_msg_t msg = { .msg_type = WRP_MSG_TYPE__REQ,
                             .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+                            .u.req.content_type = "application/json",
                             .u.req.source = "source-address",
                             .u.req.dest = "dest-address",
                             .u.req.headers = &headers,
@@ -719,6 +768,7 @@ void test_encode_decode()
     const wrp_msg_t event_m = { .msg_type = WRP_MSG_TYPE__EVENT,
                                 .u.event.source = "source-address",
                                 .u.event.dest = "dest-address",
+                                .u.event.content_type = "application/json",
                                 .u.event.headers = &headers,
                                 .u.event.payload = "0123456789",
                                 .u.event.payload_size = 10
@@ -726,6 +776,7 @@ void test_encode_decode()
     const wrp_msg_t msg2 = { .msg_type = WRP_MSG_TYPE__REQ,
                              .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
                              .u.req.source = "source-address",
+                             .u.req.content_type = NULL,
                              .u.req.dest = "dest-address",
                              .u.req.headers = &single_headers,
                              .u.req.include_spans = false,
@@ -749,6 +800,7 @@ void test_encode_decode()
     CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
     CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
     CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg.u.req.content_type );
     CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg.u.req.transaction_uuid );
     CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg.u.req.payload );
 
@@ -770,6 +822,7 @@ void test_encode_decode()
     WrpPrint( "WRP-C: decoded msgType:%d\n", message->msg_type );
     WrpPrint( "WRP-C: decoded source:%s\n", message->u.req.source );
     WrpPrint( "WRP-C: decoded dest:%s\n", message->u.req.dest );
+    WrpPrint( "WRP-C: decoded content_type:%s\n", message->u.req.content_type );
     WrpPrint( "WRP-C: decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
     WrpPrint( "WRP-C: decoded payload:%s\n", ( char* )message->u.req.payload );
     wrp_free_struct( message );
@@ -785,12 +838,14 @@ void test_encode_decode()
     CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
     CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
     CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg.u.req.content_type );
     CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg.u.req.transaction_uuid );
     CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg.u.req.payload );
     WrpPrint( "WRP-C: decoded msgType:%d\n", message->msg_type );
     WrpPrint( "WRP-C: decoded source:%s\n", message->u.req.source );
     WrpPrint( "WRP-C: decoded dest:%s\n", message->u.req.dest );
     WrpPrint( "WRP-C: decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
+    WrpPrint( "WRP-C: decoded content_type:%s\n", message->u.req.content_type );
     WrpPrint( "WRP-C: decoded payload:%s\n", ( char* )message->u.req.payload );
     wrp_free_struct( message );
     // msgpack encode
@@ -810,6 +865,7 @@ void test_encode_decode()
         CU_ASSERT_EQUAL( message->msg_type, event_msg->msg_type );
         CU_ASSERT_STRING_EQUAL( message->u.event.source, event_msg->u.event.source );
         CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
+        CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
 
         if( NULL != event_msg->u.event.headers ) {
@@ -827,6 +883,7 @@ void test_encode_decode()
     WrpPrint( "WRP-C: decoded msgType:%d\n", event_msg->msg_type );
     WrpPrint( "WRP-C: decoded source:%s\n", event_msg->u.event.source );
     WrpPrint( "WRP-C: decoded dest:%s\n", event_msg->u.event.dest );
+    WrpPrint( "WRP-C: decoded content_type:%s\n", event_msg->u.event.content_type );
     WrpPrint( "WRP-C: decoded payload:%s\n", ( char* )event_msg->u.event.payload );
     WrpPrint( "WRP-C: message->u.event.payload_size %zu\n", message->u.event.payload_size );
     // msgpack encode
@@ -845,6 +902,7 @@ void test_encode_decode()
         CU_ASSERT_EQUAL( message->msg_type, event_msg->msg_type );
         CU_ASSERT_STRING_EQUAL( message->u.event.source, event_msg->u.event.source );
         CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
+        CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
 
         if( NULL != event_msg->u.event.headers ) {
@@ -1307,6 +1365,7 @@ void test_crud_message()
     eventMsg.u.event.source = "mac:format/iot" ;
     eventMsg.u.event.dest = "dns:scytale.webpa.comcast.net/iot" ;
     eventMsg.u.event.headers = NULL ;
+    eventMsg.u.event.content_type = "application/json" ;
     eventMsg.u.event.metadata = NULL ;
     eventMsg.u.event.payload = "0123456789";
     eventMsg.u.event.payload_size = 10;
@@ -1324,6 +1383,7 @@ void test_crud_message()
         CU_ASSERT_EQUAL( message->u.event.payload_size, eventMsg.u.event.payload_size );
         WrpPrint( "WRP-C: decoded event source:%s\n", message->u.event.source );
         WrpPrint( "WRP-C: decoded event dest:%s\n", message->u.event.dest );
+        WrpPrint( "WRP-C: decoded event content_type:%s\n", message->u.event.content_type );
         WrpPrint( "WRP-C: decoded event payload:%s\n", ( char * ) message->u.event.payload );
         WrpPrint( "WRP-C: decoded event payload_size:%zu\n", message->u.event.payload_size );
         size = wrp_pack_metadata( &metapack , &metadataPack );
@@ -1356,6 +1416,7 @@ void test_crud_message()
                     WrpPrint( "WRP-C: Complete Encode and Decode for appended metada is successfull ;) \n" );
                     WrpPrint( "WRP-C: decoded final event source:%s\n", finalMsg->u.event.source );
                     WrpPrint( "WRP-C: decoded final event dest:%s\n", finalMsg->u.event.dest );
+                    WrpPrint( "WRP-C: decoded final event content_type:%s\n", finalMsg->u.event.content_type );
                     WrpPrint( "WRP-C: decoded final payload:%s\n", ( char * ) finalMsg->u.event.payload );
                     WrpPrint( "WRP-C: decoded final payload_size:%zu\n", finalMsg->u.event.payload_size );
                 } else {
