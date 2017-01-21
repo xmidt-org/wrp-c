@@ -55,6 +55,7 @@ struct req_res_t {
     char *path;
     char *service_name;
     char *url;
+    char *content_type;
     char *crudPayload;
 
 };
@@ -71,6 +72,7 @@ static const struct wrp_token WRP_STATUS        = { .name = "status", .length = 
 static const struct wrp_token WRP_SOURCE        = { .name = "source", .length = sizeof( "source" ) - 1 };
 static const struct wrp_token WRP_DEST          = { .name = "dest", .length = sizeof( "dest" ) - 1 };
 static const struct wrp_token WRP_TRANS_ID      = { .name = "transaction_uuid", .length = sizeof( "transaction_uuid" ) - 1 };
+static const struct wrp_token WRP_CONTENT_TYPE  = { .name = "content_type", .length = sizeof( "content_type" ) - 1 };
 static const struct wrp_token WRP_HEADERS       = { .name = "headers", .length = sizeof( "headers" ) - 1 };
 static const struct wrp_token WRP_PAYLOAD       = { .name = "payload", .length = sizeof( "payload" ) - 1 };
 static const struct wrp_token WRP_SPANS         = { .name = "spans", .length = sizeof( "spans" ) - 1 };
@@ -200,7 +202,10 @@ void wrp_free_struct( wrp_msg_t *msg )
             free( msg->u.req.source );
             free( msg->u.req.dest );
             free( msg->u.req.payload );
-
+            if(NULL != msg->u.req.content_type)
+            {
+                free(msg->u.req.content_type);
+            }
             if( NULL != msg->u.req.headers ) {
                 size_t cnt;
 
@@ -228,7 +233,10 @@ void wrp_free_struct( wrp_msg_t *msg )
             free( msg->u.event.source );
             free( msg->u.event.dest );
             free( msg->u.event.payload );
-
+            if(NULL != msg->u.event.content_type)
+            {
+                free(msg->u.event.content_type);
+            }
             if( NULL != msg->u.event.headers ) {
                 size_t cnt;
 
@@ -359,6 +367,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
         case WRP_MSG_TYPE__REQ:
             encode->source = req->source;
             encode->dest = req->dest;
+            encode->content_type = req->content_type;
             encode->transaction_uuid = req->transaction_uuid;
             encode->include_spans = req->include_spans;
             encode->spans = req->spans;
@@ -372,6 +381,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
         case WRP_MSG_TYPE__EVENT:
             encode->source = event->source;
             encode->dest = event->dest;
+            encode->content_type = event->content_type;
             encode->transaction_uuid = NULL;
             encode->include_spans = false;
             encode->spans.spans = NULL;
@@ -559,6 +569,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
                                 "    .source           = %s\n"
                                 "    .dest             = %s\n"
                                 "    .headers          = %s\n"
+                                "    .content_type     = %s\n"
                                 "    .include_spans    = %s\n"
                                 "    .spans            = %s\n"
                                 "    .payload_size     = %zd\n"
@@ -569,7 +580,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
     headers = __get_header_string( req->headers );
     spans = __get_spans_string( &req->spans );
     length = snprintf( NULL, 0, req_fmt, req->transaction_uuid, req->source,
-                       req->dest, headers, ( req->include_spans ? "true" : "false" ),
+                       req->dest, headers,req->content_type, ( req->include_spans ? "true" : "false" ),
                        spans, req->payload_size );
 
     if( NULL != bytes ) {
@@ -578,7 +589,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
 
         if( NULL != data ) {
             sprintf( data, req_fmt, req->transaction_uuid, req->source,
-                     req->dest, headers, ( req->include_spans ? "true" : "false" ),
+                     req->dest, headers, req->content_type,( req->include_spans ? "true" : "false" ),
                      spans, req->payload_size );
             data[length] = '\0';
             *bytes = data;
@@ -614,20 +625,21 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
                                   "    .source           = %s\n"
                                   "    .dest             = %s\n"
                                   "    .headers          = %s\n"
+                                  "    .content_type     = %s\n"
                                   "    .payload_size     = %zd\n"
                                   "}\n";
     size_t length;
     char *headers;
     headers = __get_header_string( event->headers );
     length = snprintf( NULL, 0, event_fmt, event->source, event->dest,
-                       headers, event->payload_size );
+                       headers, event->content_type, event->payload_size );
 
     if( NULL != bytes ) {
         char *data;
         data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
 
         if( NULL != data ) {
-            sprintf( data, event_fmt, event->source, event->dest, headers,
+            sprintf( data, event_fmt, event->source, event->dest, headers, event->content_type,
                      event->payload_size );
             data[length] = '\0';
             *bytes = data;
@@ -805,8 +817,12 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
     msgpack_sbuffer_init( &sbuf );
     msgpack_packer_init( &pk, &sbuf, msgpack_sbuffer_write );
 
-    // Change wrp_map_size value depending on if optional fields spans and headers,metadata, crud payload are present
+    // Change wrp_map_size value depending on if optional fields spans and headers,metadata,content_type, crud payload are present
     if( encodeReqtmp->transaction_uuid ) {
+        wrp_map_size++;
+    }
+    
+    if( encodeReqtmp->content_type ) {
         wrp_map_size++;
     }
 
@@ -840,6 +856,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             //Pack msgType,source,dest,headers,metadata
             mapCommonString( &pk, encodeReqtmp );
             __msgpack_pack_string_nvp( &pk, &WRP_TRANS_ID, encodeReqtmp->transaction_uuid );
+            __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
 
             if( encodeReqtmp->include_spans ) {
                 __msgpack_pack_string( &pk, WRP_INCLUDE_SPANS.name, WRP_INCLUDE_SPANS.length );
@@ -855,6 +872,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             msgpack_pack_map( &pk, wrp_map_size );
             //Pack msgType,source,dest,headers,metadata
             mapCommonString( &pk, encodeReqtmp );
+            __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
             msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
@@ -1055,6 +1073,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
     char *service_name = NULL;
     char *url = NULL;
     char *path = NULL;
+    char *content_type = NULL;
     char *crudpayload = NULL;
     struct req_res_t *tmpdecodeReq = *decodeReq;
     msgpack_object_kv* p = deserialized.via.map.ptr;
@@ -1133,6 +1152,12 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                             strncpy( path, StringValue, sLen );
                             path[sLen] = '\0';
                             tmpdecodeReq->path = path;
+                        } else if( strcmp( keyName, WRP_CONTENT_TYPE.name ) == 0 ) {
+                            sLen = strlen( StringValue );
+                            content_type = ( char * ) malloc( sLen + 1 );
+                            strncpy( content_type, StringValue, sLen );
+                            content_type[sLen] = '\0';
+                            tmpdecodeReq->content_type = content_type;
                         } else if( strcmp( keyName, WRP_PAYLOAD.name ) == 0 ) {
                             sLen = strlen( StringValue );
                             crudpayload = ( char * ) malloc( sLen + 1 );
@@ -1369,6 +1394,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.req.source = decodeReq->source;
                         msg->u.req.dest = decodeReq->dest;
                         msg->u.req.transaction_uuid = decodeReq->transaction_uuid;
+                        msg->u.req.content_type = decodeReq->content_type;
                         msg->u.req.headers = decodeReq->headers;
                         msg->u.req.metadata = decodeReq->metadata;
                         msg->u.req.include_spans = decodeReq->include_spans;
@@ -1383,6 +1409,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->msg_type = decodeReq->msgType;
                         msg->u.event.source = decodeReq->source;
                         msg->u.event.dest = decodeReq->dest;
+                        msg->u.event.content_type = decodeReq->content_type;
                         msg->u.event.metadata = decodeReq->metadata;
                         msg->u.event.payload = decodeReq->payload;
                         msg->u.event.payload_size = decodeReq->payload_size;
