@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include "wrp_log.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */

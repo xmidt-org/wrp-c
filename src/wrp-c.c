@@ -23,7 +23,6 @@
 #include <trower-base64/base64.h>
 
 #include "wrp-c.h"
-#include "wrp_log.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -1178,7 +1177,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                             keyValue = getKey_MsgtypeBin( ValueType, binValueSize, payload );
 
                             if( keyValue != NULL ) {
-                                WrpInfo( "WRP-C: Binary payload %s\n", keyValue );
+                                WrpPrint( "WRP-C: Binary payload %s\n", keyValue );
                             }
 
                             tmpdecodeReq->payload = keyValue;
@@ -1370,8 +1369,8 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 
         switch( unpack_ret ) {
             case MSGPACK_UNPACK_SUCCESS:
-                msgpack_object_print( stdout, deserialized );
-                puts("");
+                //msgpack_object_print( stdout, deserialized );
+                //puts("");
                 if( deserialized.via.map.size != 0 ) {
                     decodeRequest( deserialized, &decodeReq );
                 }
