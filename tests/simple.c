@@ -21,7 +21,6 @@
 #include <stdbool.h>
 
 #include "../src/wrp-c.h"
-#include "../src/wrp_log.h"
 
 
 static void test_encode_decode();
