@@ -14,8 +14,8 @@
 
 set(PROJ_WRPC wrp-c)
 
-file(GLOB HEADERS wrp-c.h wrp_log.h)
-set(SOURCES wrp-c.c wrp_log.c)
+file(GLOB HEADERS wrp-c.h)
+set(SOURCES wrp-c.c)
 
 add_library(${PROJ_WRPC} STATIC ${HEADERS} ${SOURCES})
 add_library(${PROJ_WRPC}.shared SHARED ${HEADERS} ${SOURCES})
@@ -25,4 +25,4 @@ set_property(TARGET ${PROJ_WRPC}.shared PROPERTY C_STANDARD 99)
 
 install (TARGETS ${PROJ_WRPC} DESTINATION lib${LIB_SUFFIX})
 install (TARGETS ${PROJ_WRPC}.shared DESTINATION lib${LIB_SUFFIX})
-install (FILES wrp-c.h wrp_log.h DESTINATION include/${PROJ_WRPC})
+install (FILES wrp-c.h DESTINATION include/${PROJ_WRPC})

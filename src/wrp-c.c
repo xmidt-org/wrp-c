@@ -21,6 +21,7 @@
 #include <string.h>
 #include <msgpack.h>
 #include <trower-base64/base64.h>
+#include <cimplog.h>
 
 #include "wrp-c.h"
 
@@ -260,7 +261,7 @@ void wrp_free_struct( wrp_msg_t *msg )
 
             break;
         case WRP_MSG_TYPE__SVC_REGISTRATION:
-            WrpPrint( "WRP-C: Free for REGISTRATION \n" );
+            cimplog_debug("WRP-C: ", "Free for REGISTRATION \n" );
             free( msg->u.reg.service_name );
             free( msg->u.reg.url );
             break;
@@ -268,7 +269,7 @@ void wrp_free_struct( wrp_msg_t *msg )
         case WRP_MSG_TYPE__RETREIVE:
         case WRP_MSG_TYPE__UPDATE:
         case WRP_MSG_TYPE__DELETE:
-            WrpPrint( "WRP-C: Free for CRUD \n" );
+            cimplog_debug("WRP-C: ", "Free for CRUD \n" );
 
             if( msg->u.crud.source ) {
                 free( msg->u.crud.source );
@@ -318,7 +319,7 @@ void wrp_free_struct( wrp_msg_t *msg )
         case WRP_MSG_TYPE__SVC_ALIVE:
             break;
         default:
-            WrpError( "WRP-C: wrp_free_struct()->Invalid Message Type! (0x%x)\n",
+            cimplog_error("WRP-C: ", "wrp_free_struct()->Invalid Message Type! (0x%x)\n",
                     msg->msg_type );
             break;
     }
@@ -422,7 +423,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
             rv = __wrp_pack_structure( encode, bytes );
             break;
         default:
-            WrpError( "WRP-C: Unknown msgType to encode\n" ); 
+            cimplog_error("WRP-C: ", "Unknown msgType to encode\n" ); 
             break;  
     }
 
@@ -751,7 +752,7 @@ static void __msgpack_maps( msgpack_packer *pk, const data_t *dataMap )
         struct wrp_token WRP_MAP_NAME = {'\0'};
         msgpack_pack_map( pk, dataMap->count );
         tmpdata = dataMap->data_items;
-        WrpPrint( "WRP-C: dataMap->count is %zu\n", dataMap->count );
+        cimplog_debug("WRP-C: ", "dataMap->count is %zu\n", dataMap->count );
 
         for( i = 0; i < dataMap->count; i++ ) {
             WRP_MAP_NAME.name = tmpdata[i].name;
@@ -759,7 +760,7 @@ static void __msgpack_maps( msgpack_packer *pk, const data_t *dataMap )
             __msgpack_pack_string_nvp( pk, &WRP_MAP_NAME, tmpdata[i].value );
         }
     } else {
-        WrpError( "WRP-C: Map is NULL.Do not pack\n" );
+        cimplog_error("WRP-C: ", "Map is NULL.Do not pack\n" );
     }
 }
 
@@ -812,7 +813,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
     int wrp_map_size = WRP_MAP_SIZE;
     struct req_res_t *encodeReqtmp =  encodeReq;
     /***   Start of Msgpack Encoding  ***/
-    WrpPrint( "WRP-C: ***   Start of Msgpack Encoding  ***\n" );
+    cimplog_debug("WRP-C: ", "***   Start of Msgpack Encoding  ***\n" );
     msgpack_sbuffer_init( &sbuf );
     msgpack_packer_init( &pk, &sbuf, msgpack_sbuffer_write );
 
@@ -897,7 +898,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
 
             if( encodeReqtmp->crudPayload == NULL ) {
                 wrp_map_size--; 
-                WrpInfo( "WRP-C: CRUD payload is NULL map size is %d\n", wrp_map_size );
+                cimplog_info("WRP-C: ", "CRUD payload is NULL map size is %d\n", wrp_map_size );
             }
 
             if( encodeReqtmp->path != NULL ) {
@@ -935,7 +936,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
 
             break;
         default:
-            WrpError( "WRP-C: Un-supported format to pack\n" );
+            cimplog_error("WRP-C: ", "Un-supported format to pack\n" );
             return -1;
     }
 
@@ -976,7 +977,7 @@ ssize_t wrp_pack_metadata( const data_t *packData, void **data )
         __msgpack_pack_string( &pk, WRP_METADATA.name, WRP_METADATA.length );
         __msgpack_maps( &pk, packData );
     } else {
-        WrpError( "WRP-C: Metadata is NULL\n" );
+        cimplog_error("WRP-C: ", "Metadata is NULL\n" );
         return rv;
     }
 
@@ -1177,7 +1178,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                             keyValue = getKey_MsgtypeBin( ValueType, binValueSize, payload );
 
                             if( keyValue != NULL ) {
-                                WrpPrint( "WRP-C: Binary payload %s\n", keyValue );
+                                cimplog_debug("WRP-C: ", "Binary payload %s\n", keyValue );
                             }
 
                             tmpdecodeReq->payload = keyValue;
@@ -1200,27 +1201,27 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                                 tmpdecodeReq->headers->headers[cnt] = ( char * ) malloc( ptr->via.str.size + 1 );
                                 memset( tmpdecodeReq->headers->headers[cnt], 0, ptr->via.str.size + 1 );
                                 memcpy( tmpdecodeReq->headers->headers[cnt], ptr->via.str.ptr, ptr->via.str.size );
-                                WrpPrint( "WRP-C: tmpdecodeReq->headers[%d] %s\n", cnt, tmpdecodeReq->headers->headers[cnt] );
+                                cimplog_debug("WRP-C: ", "tmpdecodeReq->headers[%d] %s\n", cnt, tmpdecodeReq->headers->headers[cnt] );
                             }
                         } else {
-                            WrpError( "WRP-C: Not Handled MSGPACK_OBJECT_ARRAY %s\n", keyName );
+                            cimplog_error("WRP-C: ", "Not Handled MSGPACK_OBJECT_ARRAY %s\n", keyName );
                         }
 
                         break;
                     case MSGPACK_OBJECT_MAP:
-                        WrpPrint( "WRP-C: Type of MAP\n" );
-                        WrpPrint("WRP-C: keyName is %s\n",keyName);
+                        cimplog_debug("WRP-C: ", "Type of MAP\n" );
+                        cimplog_debug("WRP-C: ", "keyName is %s\n",keyName);
                         decodeMapRequest( ValueType, decodeReq );
                         break;
                     case MSGPACK_OBJECT_NIL:
 
                         if( strcmp( keyName, WRP_SPANS.name ) == 0 ) {
-                            WrpError( "WRP-C: spans is nil\n" );
+                            cimplog_error("WRP-C: ", "spans is nil\n" );
                         }
 
                         break;
                     default:
-                        WrpError( "WRP-C: Unknown Data Type\n" );
+                        cimplog_error("WRP-C: ", "Unknown Data Type\n" );
                         break;
                 }
         }
@@ -1245,9 +1246,9 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
     char *mapValue = NULL;
     struct req_res_t *mapdecodeReq = *decodeMapReq;
     msgpack_object_kv* p = deserialized.via.map.ptr;
-    WrpPrint( "WRP-C: Map size is %d\n", deserialized.via.map.size );
+    cimplog_debug("WRP-C: ", "Map size is %d\n", deserialized.via.map.size );
 
-    WrpPrint( "WRP-C: mapdecodeReq->metadata->count is %d\n", deserialized.via.map.size );
+    cimplog_debug("WRP-C: ", "mapdecodeReq->metadata->count is %d\n", deserialized.via.map.size );
 
     if( deserialized.via.map.size != 0 ) {
         mapdecodeReq->metadata->count = deserialized.via.map.size;
@@ -1273,13 +1274,13 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
 
             switch( ValueType.type ) {
                 case MSGPACK_OBJECT_POSITIVE_INTEGER: {
-                    WrpPrint( "WRP-C: Map value is int %" PRId64 "\n", ValueType.via.i64 );
+                    cimplog_debug("WRP-C: ", "Map value is int %" PRId64 "\n", ValueType.via.i64 );
                     sprintf( mapdecodeReq->metadata->data_items[v].value, "%" PRId64, ValueType.via.i64 );
                     v++;
                 }
                 break;
                 case MSGPACK_OBJECT_BOOLEAN: {
-                    WrpPrint( "WRP-C: Map value boolean %d\n", ValueType.via.boolean ? true : false );
+                    cimplog_debug("WRP-C: ", "Map value boolean %d\n", ValueType.via.boolean ? true : false );
                     mapdecodeReq->metadata->data_items[v].value = ValueType.via.boolean ? "true" : "false";
                     v++;
                 }
@@ -1298,7 +1299,7 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
                 }
                 break;
                 default:
-                    WrpError( "WRP-C: Unknown data format inside MAP\n" );
+                    cimplog_error("WRP-C: ", "Unknown data format inside MAP\n" );
                     break;
             }
         }
@@ -1362,10 +1363,10 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
         memset( decodeReq, 0, sizeof( struct req_res_t ) );
         decodeReq->metadata = malloc( sizeof( data_t ) );
         memset( decodeReq->metadata, 0, sizeof( data_t ) );
-        WrpPrint( "WRP-C: unpacking encoded data\n" );
+        cimplog_debug("WRP-C: ", "unpacking encoded data\n" );
         msgpack_zone_init( &mempool, 2048 );
         unpack_ret = msgpack_unpack( bytes, length, NULL, &mempool, &deserialized );
-        WrpPrint( "WRP-C: unpack_ret:%d\n", unpack_ret );
+        cimplog_debug("WRP-C: ", "unpack_ret:%d\n", unpack_ret );
 
         switch( unpack_ret ) {
             case MSGPACK_UNPACK_SUCCESS:
@@ -1457,25 +1458,25 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                 }
 
             case MSGPACK_UNPACK_EXTRA_BYTES: {
-                WrpError( "WRP-C: MSGPACK_UNPACK_EXTRA_BYTES\n" );
+                cimplog_error("WRP-C: ", "MSGPACK_UNPACK_EXTRA_BYTES\n" );
                 free( decodeReq->metadata );
                 free( decodeReq );
                 return -1;
             }
             case MSGPACK_UNPACK_CONTINUE: {
-                WrpError( "WRP-C: MSGPACK_UNPACK_CONTINUE\n" );
+                cimplog_error("WRP-C: ", "MSGPACK_UNPACK_CONTINUE\n" );
                 free( decodeReq->metadata );
                 free( decodeReq );
                 return -1;
             }
             case MSGPACK_UNPACK_PARSE_ERROR: {
-                WrpError( "WRP-C: MSGPACK_UNPACK_PARSE_ERROR\n" );
+                cimplog_error("WRP-C: ", "MSGPACK_UNPACK_PARSE_ERROR\n" );
                 free( decodeReq->metadata );
                 free( decodeReq );
                 return -1;
             }
             case MSGPACK_UNPACK_NOMEM_ERROR: {
-                WrpError( "WRP-C: MSGPACK_UNPACK_NOMEM_ERROR\n" );
+                cimplog_error("WRP-C: ", "MSGPACK_UNPACK_NOMEM_ERROR\n" );
                 free( decodeReq->metadata );
                 free( decodeReq );
                 return -1;
@@ -1487,7 +1488,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
         }
     }
 
-    WrpError( "WRP-C: bytes is NULL\n" );
+    cimplog_error("WRP-C: ", "bytes is NULL\n" );
     return -1;
 }
 
@@ -1528,19 +1529,19 @@ static int alterMap( char * buf )
     //Extract 1st byte from binary stream which holds type and map size
     unsigned char *byte = ( unsigned char * )( &( buf[0] ) ) ;
     int mapSize;
-    WrpPrint( "WRP-C: First byte in hex : %x\n", 0xff & *byte );
+    cimplog_debug("WRP-C: ", "First byte in hex : %x\n", 0xff & *byte );
     //Calculate map size
     mapSize = ( 0xff & *byte ) % 0x10;
-    WrpPrint( "WRP-C: Map size is :%d\n", mapSize );
+    cimplog_debug("WRP-C: ", "Map size is :%d\n", mapSize );
 
     if( mapSize == 15 ) {
-        WrpError( "WRP-C: Msgpack Map (fixmap) is already at its MAX size i.e. 15\n" );
+        cimplog_error("WRP-C: ", "Msgpack Map (fixmap) is already at its MAX size i.e. 15\n" );
         return -1;
     }
 
     *byte = *byte + METADATA_MAP_SIZE;
     mapSize = ( 0xff & *byte ) % 0x10;
-    WrpPrint( "WRP-C: New Map size : %d\n", mapSize );
+    cimplog_debug("WRP-C: ", "New Map size : %d\n", mapSize );
     //Update 1st byte with new MAP size
     buf[0] = *byte;
     return 0;
