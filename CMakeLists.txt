@@ -28,7 +28,8 @@ set(INCLUDE_DIR ${INSTALL_DIR}/include)
 set(LIBRARY_DIR ${INSTALL_DIR}/lib${LIB_SUFFIX})
 include_directories(${INCLUDE_DIR}
                     ${INCLUDE_DIR}/msgpack
-                    ${INCLUDE_DIR}/trower-base64)
+                    ${INCLUDE_DIR}/trower-base64
+                    ${INCLUDE_DIR}/cimplog)
 include_directories (SYSTEM /usr/include)
 link_directories ( ${LIBRARY_DIR} )
 
@@ -55,6 +56,17 @@ ExternalProject_Add(msgpack
     -DMSGPACK_BUILD_EXAMPLES=OFF)
 add_library(libmsgpack STATIC IMPORTED)
 add_dependencies(libmsgpack msgpack)
+
+# cimplog external dependency
+ExternalProject_Add(cimplog
+    PREFIX ${PREFIX_DIR}/cimplog
+    GIT_REPOSITORY https://github.com/Comcast/cimplog.git
+    GIT_TAG "master"
+    CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
+                  -DBUILD_TESTING=OFF
+)
+add_library(libcimplog STATIC IMPORTED)
+add_dependencies(libcimplog cimplog)
 
 endif ()
 

@@ -19,6 +19,7 @@
 #include <string.h>
 #include <CUnit/Basic.h>
 #include <stdbool.h>
+#include <cimplog.h>
 
 #include "../src/wrp-c.h"
 
@@ -556,7 +557,7 @@ void validate_to_strings( const char *expected, ssize_t expected_len,
     }
 
     if( ( NULL != actual ) && ( 0 != strcmp( actual, expected ) ) ) {
-        WrpInfo( "\n\nGot: |%s| Expected: |%s|\n\n", actual, expected );
+        cimplog_info("WRP-C: ", "\n\nGot: |%s| Expected: |%s|\n\n", actual, expected );
     }
 
     CU_ASSERT_STRING_EQUAL( actual, expected );
@@ -625,7 +626,7 @@ void validate_to_bytes( const uint8_t *expected, ssize_t expected_size,
     int tmp;
 
     if( expected_size != actual_size ) {
-        WrpInfo( "\n\nsize: %zd, expected: %zd\n", actual_size, expected_size );
+        cimplog_info("WRP-C: ", "\n\nsize: %zd, expected: %zd\n", actual_size, expected_size );
     }
 
     CU_ASSERT( expected_size == actual_size );
@@ -641,10 +642,10 @@ void validate_to_bytes( const uint8_t *expected, ssize_t expected_size,
                 i++;
             }
 
-            WrpError( "\n\nmemcmp() RV: %d, Mismatch Offset: 0x%zx, expected_size: %zd, actual_size: %zd\n", tmp, i, expected_size, actual_size );
-            WrpInfo( "\nExpected:\n" );
+            cimplog_error("\n\nmemcmp() RV: ", "%d, Mismatch Offset: 0x%zx, expected_size: %zd, actual_size: %zd\n", tmp, i, expected_size, actual_size );
+            cimplog_info("\nWRP-C: ", "Expected:\n" );
             _internal_tva_xxd( expected, expected_size, 0 );
-            WrpInfo( "\nActual:\n" );
+            cimplog_info("\nWRP-C: ", "Actual:\n" );
             _internal_tva_xxd( actual, actual_size, 0 );
         }
 
@@ -664,7 +665,7 @@ void validate_from_bytes( wrp_msg_t *msg, const char *expected )
 
         if( NULL != actual ) {
             if( 0 != strcmp( actual, expected ) ) {
-                WrpInfo( "\n\nGot: |%s| Expected: |%s|\n\n", actual, expected );
+                cimplog_info("\n\nWRP-C: ", "Got: ", "|%s| Expected: |%s|\n\n", actual, expected );
             }
 
             CU_ASSERT_STRING_EQUAL( actual, expected );
@@ -719,26 +720,26 @@ void test_all()
         }
     }
 
-    WrpInfo( "Testing NULL msg handling\n" );
+    cimplog_info("WRP-C: ", "Testing NULL msg handling\n" );
     size = wrp_struct_to( NULL, WRP_BYTES, bytes );
     CU_ASSERT( size < 0 );
-    WrpInfo( "Testing Invalid conversion type handling\n" );
+    cimplog_info("WRP-C: ", "Testing Invalid conversion type handling\n" );
     size = wrp_struct_to( &test[2].in, 911, &bytes );
     CU_ASSERT( size < 0 );
-    WrpInfo( "Testing Invalid message type handling\n" );
+    cimplog_info("WRP-C: ", "Testing Invalid message type handling\n" );
     size = wrp_struct_to( (wrp_msg_t*) "*** Invalid WRP message\n", WRP_BYTES, &bytes );
     CU_ASSERT( size < 0 );
     CU_ASSERT(NULL == bytes);
-    WrpInfo( "Testing NULL data handling\n" );
+    cimplog_info("WRP-C: ", "Testing NULL data handling\n" );
     size = wrp_struct_to( &test[2].in, WRP_BYTES, NULL );
     CU_ASSERT( size < 0 );
-    WrpInfo( "Testing NULL wrp_to_struct handling\n" );
+    cimplog_info("WRP-C: ", "Testing NULL wrp_to_struct handling\n" );
     wrp_to_struct( NULL, 0, WRP_BYTES, NULL );
     CU_ASSERT( size < 0 );
-    WrpInfo( "Testing wrp_to_struct null data handling\n" );
+    cimplog_info("WRP-C: ", "Testing wrp_to_struct null data handling\n" );
     wrp_to_struct( test[3].msgpack, test[3].msgpack_size, WRP_BYTES, NULL );
     CU_ASSERT( size < 0 );
-    WrpInfo( "Testing wrp_to_struct invalid type handling\n" );
+    cimplog_info("WRP-C: ", "Testing wrp_to_struct invalid type handling\n" );
     wrp_to_struct( test[3].msgpack, test[3].msgpack_size, 911, &message );
     CU_ASSERT( size < 0 );
     test_encode_decode();
@@ -751,7 +752,7 @@ void test_encode_decode()
     ssize_t size, base64_size, rv;
     void *bytes;
     wrp_msg_t *message;
-    WrpPrint( "\n WRP-C: Inside test_encode_decode()....\n" );
+    cimplog_debug( "\n WRP-C: ", "Inside test_encode_decode()....\n" );
     const wrp_msg_t msg = { .msg_type = WRP_MSG_TYPE__REQ,
                             .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
                             .u.req.content_type = "application/json",
@@ -805,7 +806,7 @@ void test_encode_decode()
 
     if( NULL != msg.u.req.headers ) {
         size_t n = 0;
-        WrpPrint( "WRP-C: headers count returned is %d\n", ( int ) message->u.req.headers->count );
+        cimplog_debug("WRP-C: ", "headers count returned is %d\n", ( int ) message->u.req.headers->count );
 
         if( NULL != msg.u.req.headers ) {
             while( n < msg.u.req.headers->count ) {
@@ -818,14 +819,14 @@ void test_encode_decode()
         }
     }
 
-    WrpPrint( "WRP-C: decoded msgType:%d\n", message->msg_type );
-    WrpPrint( "WRP-C: decoded source:%s\n", message->u.req.source );
-    WrpPrint( "WRP-C: decoded dest:%s\n", message->u.req.dest );
-    WrpPrint( "WRP-C: decoded content_type:%s\n", message->u.req.content_type );
-    WrpPrint( "WRP-C: decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
-    WrpPrint( "WRP-C: decoded payload:%s\n", ( char* )message->u.req.payload );
+    cimplog_debug("WRP-C: ", "decoded msgType:%d\n", message->msg_type );
+    cimplog_debug("WRP-C: ", "decoded source:%s\n", message->u.req.source );
+    cimplog_debug("WRP-C: ", "decoded dest:%s\n", message->u.req.dest );
+    cimplog_debug("WRP-C: ", "decoded content_type:%s\n", message->u.req.content_type );
+    cimplog_debug("WRP-C: ", "decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
+    cimplog_debug("WRP-C: ", "decoded payload:%s\n", ( char* )message->u.req.payload );
     wrp_free_struct( message );
-    WrpPrint( "WRP-C: Encode-Decode for BASE64\n" );
+    cimplog_debug("WRP-C: ", "Encode-Decode for BASE64\n" );
     // msgpack encode
     base64_size = wrp_struct_to( &msg, WRP_BASE64, &bytes );
     /* print the encoded message */
@@ -840,12 +841,12 @@ void test_encode_decode()
     CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg.u.req.content_type );
     CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg.u.req.transaction_uuid );
     CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg.u.req.payload );
-    WrpPrint( "WRP-C: decoded msgType:%d\n", message->msg_type );
-    WrpPrint( "WRP-C: decoded source:%s\n", message->u.req.source );
-    WrpPrint( "WRP-C: decoded dest:%s\n", message->u.req.dest );
-    WrpPrint( "WRP-C: decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
-    WrpPrint( "WRP-C: decoded content_type:%s\n", message->u.req.content_type );
-    WrpPrint( "WRP-C: decoded payload:%s\n", ( char* )message->u.req.payload );
+    cimplog_debug("WRP-C: ", "decoded msgType:%d\n", message->msg_type );
+    cimplog_debug("WRP-C: ", "decoded source:%s\n", message->u.req.source );
+    cimplog_debug("WRP-C: ", "decoded dest:%s\n", message->u.req.dest );
+    cimplog_debug("WRP-C: ", "decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
+    cimplog_debug("WRP-C: ", "decoded content_type:%s\n", message->u.req.content_type );
+    cimplog_debug("WRP-C: ", "decoded payload:%s\n", ( char* )message->u.req.payload );
     wrp_free_struct( message );
     // msgpack encode
     const wrp_msg_t *event_msg = &test[5].in;
@@ -879,12 +880,12 @@ void test_encode_decode()
     }
 
     wrp_free_struct( message );
-    WrpPrint( "WRP-C: decoded msgType:%d\n", event_msg->msg_type );
-    WrpPrint( "WRP-C: decoded source:%s\n", event_msg->u.event.source );
-    WrpPrint( "WRP-C: decoded dest:%s\n", event_msg->u.event.dest );
-    WrpPrint( "WRP-C: decoded content_type:%s\n", event_msg->u.event.content_type );
-    WrpPrint( "WRP-C: decoded payload:%s\n", ( char* )event_msg->u.event.payload );
-    WrpPrint( "WRP-C: message->u.event.payload_size %zu\n", message->u.event.payload_size );
+    cimplog_debug("WRP-C: ", "decoded msgType:%d\n", event_msg->msg_type );
+    cimplog_debug("WRP-C: ", "decoded source:%s\n", event_msg->u.event.source );
+    cimplog_debug("WRP-C: ", "decoded dest:%s\n", event_msg->u.event.dest );
+    cimplog_debug("WRP-C: ", "decoded content_type:%s\n", event_msg->u.event.content_type );
+    cimplog_debug("WRP-C: ", "decoded payload:%s\n", ( char* )event_msg->u.event.payload );
+    cimplog_debug("WRP-C: ", "message->u.event.payload_size %zu\n", message->u.event.payload_size );
     // msgpack encode
     event_msg = &event_m;
     size = wrp_struct_to( event_msg, WRP_BYTES, &bytes );
@@ -941,7 +942,7 @@ void test_encode_decode()
     }
 
     wrp_free_struct( message );
-    WrpPrint( "WRP-C: msgtype 9--Registration message\n" );
+    cimplog_debug("WRP-C: ", "msgtype 9--Registration message\n" );
     // msgpack encode for msgtype 9--Registration message
     size = wrp_struct_to( &reg, WRP_BYTES, &bytes );
     /* print the encoded message */
@@ -953,12 +954,12 @@ void test_encode_decode()
     CU_ASSERT_EQUAL( message->msg_type, reg.msg_type );
     CU_ASSERT_STRING_EQUAL( message->u.reg.service_name, reg.u.reg.service_name );
     CU_ASSERT_STRING_EQUAL( message->u.reg.url, reg.u.reg.url );
-    WrpPrint( "WRP-C: decoded msgType:%d\n", message->msg_type );
-    WrpPrint( "WRP-C: decoded service_name:%s\n", message->u.reg.service_name );
-    WrpPrint( "WRP-C: decoded dest:%s\n", message->u.reg.url );
+    cimplog_debug("WRP-C: ", "decoded msgType:%d\n", message->msg_type );
+    cimplog_debug("WRP-C: ", "decoded service_name:%s\n", message->u.reg.service_name );
+    cimplog_debug("WRP-C: ", "decoded dest:%s\n", message->u.reg.url );
     wrp_free_struct( message );
     message = ( wrp_msg_t * ) malloc( sizeof( wrp_msg_t ) );
-    WrpPrint( "WRP-C: Testing invalid message type free\n" );
+    cimplog_debug("WRP-C: ", "Testing invalid message type free\n" );
     message->msg_type = WRP_MSG_TYPE__UNKNOWN;
     wrp_free_struct( message );
 }
@@ -968,7 +969,7 @@ void test_crud_message()
     ssize_t size, rv;
     void *bytes;
     wrp_msg_t *message;
-    WrpPrint( "\n WRP-C: Inside Crud_encode_decode()....\n" );
+    cimplog_debug( "\n WRP-C: ", "Inside Crud_encode_decode()....\n" );
     struct data meta_data2[] = {{"firmware", "PROD-DEV"}, {"model", "TG1680"}};
     data_t meta_data = {2, meta_data2};
     const struct money_trace_span crud_spans[] = {
@@ -1051,7 +1052,7 @@ void test_crud_message()
         .u.crud.path = "/Harvester",
         .u.crud.payload = updatePayload
     };
-    WrpPrint( "WRP-C:      **************** CRUD Create*****************     \n" );
+    cimplog_debug("WRP-C: ", "     **************** CRUD Create*****************     \n" );
     // msgpack encode for CRUD
     size = wrp_struct_to( &create, WRP_BYTES, &bytes );
     /* print the encoded message */
@@ -1069,7 +1070,7 @@ void test_crud_message()
     if( message->u.crud.payload != NULL ) 
     {
             CU_ASSERT_STRING_EQUAL( create.u.crud.payload, message->u.crud.payload);
-            WrpInfo("WRP-C: Crud payload : %s\n",message->u.crud.payload);
+            cimplog_info("WRP-C: ", "Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
         size_t n = 0;
@@ -1077,14 +1078,14 @@ void test_crud_message()
         while( n < message->u.crud.metadata->count ) {
             CU_ASSERT_STRING_EQUAL( create.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
             CU_ASSERT_STRING_EQUAL( create.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
-            WrpInfo("Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
+            cimplog_info("WRP-C: ", "Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
             n++;
         }
     }
 
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
-        WrpPrint( "WRP-C: headers count returned is %d\n", ( int ) message->u.req.headers->count );
+        cimplog_debug("WRP-C: ", "headers count returned is %d\n", ( int ) message->u.req.headers->count );
 
         if( NULL != message->u.crud.headers ) {
             while( n < message->u.crud.headers->count ) {
@@ -1097,13 +1098,13 @@ void test_crud_message()
         }
     }
 
-    WrpPrint( "WRP-C: decoded msgType:%d\n", message->msg_type );
-    WrpPrint( "WRP-C: decoded source:%s\n", message->u.crud.source );
-    WrpPrint( "WRP-C: decoded dest:%s\n", message->u.crud.dest );
-    WrpPrint( "WRP-C: decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
-    WrpPrint( "WRP-C: decoded path %s\n", message->u.crud.path );
+    cimplog_debug("WRP-C: ", "decoded msgType:%d\n", message->msg_type );
+    cimplog_debug("WRP-C: ", "decoded source:%s\n", message->u.crud.source );
+    cimplog_debug("WRP-C: ", "decoded dest:%s\n", message->u.crud.dest );
+    cimplog_debug("WRP-C: ", "decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    cimplog_debug("WRP-C: ", "decoded path %s\n", message->u.crud.path );
     wrp_free_struct( message );
-    WrpPrint( "WRP-C:       **************** CRUD retreive*****************     \n" );
+    cimplog_debug("WRP-C: ", "      **************** CRUD retreive*****************     \n" );
     // msgpack encode for CRUD
     size = wrp_struct_to( &retreive, WRP_BYTES, &bytes );
     /* print the encoded message */
@@ -1121,7 +1122,7 @@ void test_crud_message()
      if( message->u.crud.payload != NULL ) 
      {
         CU_ASSERT_STRING_EQUAL( retreive.u.crud.payload, message->u.crud.payload);
-        WrpInfo("WRP-C: Crud payload : %s\n",message->u.crud.payload);
+        cimplog_info("WRP-C: ", "Crud payload : %s\n",message->u.crud.payload);
      }
     if( message->u.crud.metadata != NULL ) {
         size_t n = 0;
@@ -1129,17 +1130,17 @@ void test_crud_message()
         while( n < message->u.crud.metadata->count ) {
             CU_ASSERT_STRING_EQUAL( retreive.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
             CU_ASSERT_STRING_EQUAL( retreive.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
-            WrpInfo("Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
+            cimplog_info("WRP-C: ", "Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
             n++;
         }
     }
     else
     {
-        WrpError("retrieve metadata is NULL.Please fix it\n");
+        cimplog_error("WRP-C: ", "retrieve metadata is NULL.Please fix it\n");
     }
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
-        WrpInfo( "headers count returned is %d\n", ( int ) message->u.req.headers->count );
+        cimplog_info("WRP-C: ", "headers count returned is %d\n", ( int ) message->u.req.headers->count );
 
         if( NULL != message->u.crud.headers ) {
             while( n < message->u.crud.headers->count ) {
@@ -1152,13 +1153,13 @@ void test_crud_message()
         }
     }
 
-    WrpPrint( "WRP-C: decoded msgType:%d\n", message->msg_type );
-    WrpPrint( "WRP-C: decoded source:%s\n", message->u.crud.source );
-    WrpPrint( "WRP-C: decoded dest:%s\n", message->u.crud.dest );
-    WrpPrint( "WRP-C: decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
-    WrpPrint( "WRP-C: decoded path:%s\n", message->u.crud.path );
+    cimplog_debug("WRP-C: ", "decoded msgType:%d\n", message->msg_type );
+    cimplog_debug("WRP-C: ", "decoded source:%s\n", message->u.crud.source );
+    cimplog_debug("WRP-C: ", "decoded dest:%s\n", message->u.crud.dest );
+    cimplog_debug("WRP-C: ", "decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    cimplog_debug("WRP-C: ", "decoded path:%s\n", message->u.crud.path );
     wrp_free_struct( message );
-    WrpPrint( "WRP-C:      **************** CRUD Update*****************     \n" );
+    cimplog_debug("WRP-C: ", "     **************** CRUD Update*****************     \n" );
     // msgpack encode for CRUD
     size = wrp_struct_to( &update, WRP_BYTES, &bytes );
     /* print the encoded message */
@@ -1176,7 +1177,7 @@ void test_crud_message()
     if( message->u.crud.payload != NULL ) 
     {
         CU_ASSERT_STRING_EQUAL( update.u.crud.payload, message->u.crud.payload);
-        WrpInfo("WRP-C: Crud payload : %s\n",message->u.crud.payload);
+        cimplog_info("WRP-C: ", "Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
         size_t n = 0;
@@ -1184,13 +1185,13 @@ void test_crud_message()
         while( n < message->u.crud.metadata->count ) {
             CU_ASSERT_STRING_EQUAL( update.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
             CU_ASSERT_STRING_EQUAL( update.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
-            WrpInfo("WRP-C: Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
+            cimplog_info("WRP-C: ", "Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
             n++;
         }
     }
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
-        WrpPrint( "WRP-C: headers count returned is %d\n", ( int ) message->u.req.headers->count );
+        cimplog_debug("WRP-C: ", "headers count returned is %d\n", ( int ) message->u.req.headers->count );
 
         if( NULL != message->u.crud.headers ) {
             while( n < message->u.crud.headers->count ) {
@@ -1203,13 +1204,13 @@ void test_crud_message()
         }
     }
 
-    WrpPrint( "WRP-C: decoded msgType:%d\n", message->msg_type );
-    WrpPrint( "WRP-C: decoded source:%s\n", message->u.crud.source );
-    WrpPrint( "WRP-C: decoded dest:%s\n", message->u.crud.dest );
-    WrpPrint( "WRP-C: decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
-    WrpPrint( "WRP-C: decoded path:%s\n", message->u.crud.path );
+    cimplog_debug("WRP-C: ", "decoded msgType:%d\n", message->msg_type );
+    cimplog_debug("WRP-C: ", "decoded source:%s\n", message->u.crud.source );
+    cimplog_debug("WRP-C: ", "decoded dest:%s\n", message->u.crud.dest );
+    cimplog_debug("WRP-C: ", "decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    cimplog_debug("WRP-C: ", "decoded path:%s\n", message->u.crud.path );
     wrp_free_struct( message );
-    WrpPrint( "WRP-C:      **************** CRUD Delete*****************     \n" );
+    cimplog_debug("WRP-C: ", "     **************** CRUD Delete*****************     \n" );
     // msgpack encode for CRUD
     size = wrp_struct_to( &delete, WRP_BYTES, &bytes );
     /* print the encoded message */
@@ -1226,7 +1227,7 @@ void test_crud_message()
     if( message->u.crud.payload != NULL ) 
     {
         CU_ASSERT_STRING_EQUAL( delete.u.crud.payload, message->u.crud.payload);
-        WrpInfo("WRP-C: Crud payload : %s\n",message->u.crud.payload);
+        cimplog_info("WRP-C: ", "Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
         size_t n = 0;
@@ -1234,13 +1235,13 @@ void test_crud_message()
         while( n < message->u.crud.metadata->count ) {
             CU_ASSERT_STRING_EQUAL( delete.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
             CU_ASSERT_STRING_EQUAL( delete.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
-            WrpInfo("WRP-C: Delete Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
+            cimplog_info("WRP-C: ", "Delete Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
             n++;
         }
     }
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
-        WrpPrint( "WRP-C: headers count returned is %d\n", ( int ) message->u.req.headers->count );
+        cimplog_debug("WRP-C: ", "headers count returned is %d\n", ( int ) message->u.req.headers->count );
 
         if( NULL != message->u.crud.headers ) {
             while( n < message->u.crud.headers->count ) {
@@ -1253,13 +1254,13 @@ void test_crud_message()
         }
     }
 
-    WrpPrint( "WRP-C: decoded msgType:%d\n", message->msg_type );
-    WrpPrint( "WRP-C: decoded source:%s\n", message->u.crud.source );
-    WrpPrint( "WRP-C: decoded dest:%s\n", message->u.crud.dest );
-    WrpPrint( "WRP-C: decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
-    WrpPrint( "WRP-C: decoded path:%s\n", message->u.crud.path );
+    cimplog_debug("WRP-C: ", "decoded msgType:%d\n", message->msg_type );
+    cimplog_debug("WRP-C: ", "decoded source:%s\n", message->u.crud.source );
+    cimplog_debug("WRP-C: ", "decoded dest:%s\n", message->u.crud.dest );
+    cimplog_debug("WRP-C: ", "decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    cimplog_debug("WRP-C: ", "decoded path:%s\n", message->u.crud.path );
     wrp_free_struct( message );
-    WrpPrint( "WRP-C:      **************** Metadata *****************     \n" );
+    cimplog_debug("WRP-C: ", "     **************** Metadata *****************     \n" );
     // msgpack encode for METADATA
     size = wrp_struct_to( &meta_payload, WRP_BYTES, &bytes );
     /* print the encoded message */
@@ -1276,7 +1277,7 @@ void test_crud_message()
     if( message->u.crud.payload != NULL ) 
     {
         CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.payload, message->u.crud.payload);
-        WrpInfo("WRP-C: Crud payload : %s\n",message->u.crud.payload);
+        cimplog_info("WRP-C: ", "Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
         size_t n = 0;
@@ -1284,13 +1285,13 @@ void test_crud_message()
         while( n < message->u.crud.metadata->count ) {
             CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
             CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
-            WrpInfo("WRP-C: Update Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
+            cimplog_info("WRP-C: ", "Update Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
             n++;
         }
     }
     if( NULL != meta_payload.u.crud.headers ) {
         size_t n = 0;
-        WrpPrint( "WRP-C: headers count returned is %d\n", ( int ) message->u.crud.headers->count );
+        cimplog_debug("WRP-C: ", "headers count returned is %d\n", ( int ) message->u.crud.headers->count );
 
         if( NULL != meta_payload.u.crud.headers ) {
             while( n < meta_payload.u.crud.headers->count ) {
@@ -1303,12 +1304,12 @@ void test_crud_message()
         }
     }
 
-    WrpPrint( "WRP-C: decoded msgType:%d\n", message->msg_type );
-    WrpPrint( "WRP-C: decoded source:%s\n", message->u.crud.source );
-    WrpPrint( "WRP-C: decoded dest:%s\n", message->u.crud.dest );
-    WrpPrint( "WRP-C: decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    cimplog_debug("WRP-C: ", "decoded msgType:%d\n", message->msg_type );
+    cimplog_debug("WRP-C: ", "decoded source:%s\n", message->u.crud.source );
+    cimplog_debug("WRP-C: ", "decoded dest:%s\n", message->u.crud.dest );
+    cimplog_debug("WRP-C: ", "decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
     wrp_free_struct( message );
-    WrpPrint( "WRP-C: ********* Authorization ********\n" );
+    cimplog_debug("WRP-C: ", "********* Authorization ********\n" );
     const wrp_msg_t auth_msg = {
         .msg_type = WRP_MSG_TYPE__AUTH,
         .u.auth.status = 200
@@ -1322,10 +1323,10 @@ void test_crud_message()
     CU_ASSERT_EQUAL( rv, size );
     CU_ASSERT_EQUAL( message->msg_type, auth_msg.msg_type );
     CU_ASSERT_EQUAL( message->u.auth.status, auth_msg.u.auth.status );
-    WrpPrint( "WRP-C: message->msg_type %d\n", message->msg_type );
-    WrpPrint( "WRP-C: message->u.auth.status %d\n", message->u.auth.status );
+    cimplog_debug("WRP-C: ", "message->msg_type %d\n", message->msg_type );
+    cimplog_debug("WRP-C: ", "message->u.auth.status %d\n", message->u.auth.status );
     wrp_free_struct( message );
-    WrpPrint( "WRP-C: ******** METADATA packing **********\n" );
+    cimplog_debug("WRP-C: ", "******** METADATA packing **********\n" );
     // Failure case
     struct data metadata_null[2];
     memset(metadata_null,0,sizeof(struct data));
@@ -1351,11 +1352,11 @@ void test_crud_message()
         CU_ASSERT( true );
         free( bytes );
     } else {
-        WrpError( "WRP-C: Metada Encoding failed\n " );
+        cimplog_error("WRP-C: ", "Metada Encoding failed\n " );
         CU_ASSERT( false );
     }
 
-    WrpPrint( "WRP-C: ******** Append Metadata packing **********\n" );
+    cimplog_debug("WRP-C: ", "******** Append Metadata packing **********\n" );
     // Append Encoded data
     wrp_msg_t eventMsg, *finalMsg;
     void *metadataPack, *encodedData;
@@ -1380,11 +1381,11 @@ void test_crud_message()
         CU_ASSERT_STRING_EQUAL( message->u.event.dest, eventMsg.u.event.dest );
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, eventMsg.u.event.payload );
         CU_ASSERT_EQUAL( message->u.event.payload_size, eventMsg.u.event.payload_size );
-        WrpPrint( "WRP-C: decoded event source:%s\n", message->u.event.source );
-        WrpPrint( "WRP-C: decoded event dest:%s\n", message->u.event.dest );
-        WrpPrint( "WRP-C: decoded event content_type:%s\n", message->u.event.content_type );
-        WrpPrint( "WRP-C: decoded event payload:%s\n", ( char * ) message->u.event.payload );
-        WrpPrint( "WRP-C: decoded event payload_size:%zu\n", message->u.event.payload_size );
+        cimplog_debug("WRP-C: ", "decoded event source:%s\n", message->u.event.source );
+        cimplog_debug("WRP-C: ", "decoded event dest:%s\n", message->u.event.dest );
+        cimplog_debug("WRP-C: ", "decoded event content_type:%s\n", message->u.event.content_type );
+        cimplog_debug("WRP-C: ", "decoded event payload:%s\n", ( char * ) message->u.event.payload );
+        cimplog_debug("WRP-C: ", "decoded event payload_size:%zu\n", message->u.event.payload_size );
         size = wrp_pack_metadata( &metapack , &metadataPack );
 
         if( size > 0 ) {
@@ -1408,18 +1409,18 @@ void test_crud_message()
                         {
                             CU_ASSERT_STRING_EQUAL( metapack.data_items[n].name, finalMsg->u.event.metadata->data_items[n].name );
                             CU_ASSERT_STRING_EQUAL( metapack.data_items[n].value, finalMsg->u.event.metadata->data_items[n].value );
-                            WrpInfo("WRP-C: Append Metadata Key value pair: %s = %s\n",finalMsg->u.event.metadata->data_items[n].name,finalMsg->u.event.metadata->data_items[n].value);
+                            cimplog_info("WRP-C: ", "Append Metadata Key value pair: %s = %s\n",finalMsg->u.event.metadata->data_items[n].name,finalMsg->u.event.metadata->data_items[n].value);
                             n++;
                         }
                     }
-                    WrpPrint( "WRP-C: Complete Encode and Decode for appended metada is successfull ;) \n" );
-                    WrpPrint( "WRP-C: decoded final event source:%s\n", finalMsg->u.event.source );
-                    WrpPrint( "WRP-C: decoded final event dest:%s\n", finalMsg->u.event.dest );
-                    WrpPrint( "WRP-C: decoded final event content_type:%s\n", finalMsg->u.event.content_type );
-                    WrpPrint( "WRP-C: decoded final payload:%s\n", ( char * ) finalMsg->u.event.payload );
-                    WrpPrint( "WRP-C: decoded final payload_size:%zu\n", finalMsg->u.event.payload_size );
+                    cimplog_debug("WRP-C: ", "Complete Encode and Decode for appended metada is successfull ;) \n" );
+                    cimplog_debug("WRP-C: ", "decoded final event source:%s\n", finalMsg->u.event.source );
+                    cimplog_debug("WRP-C: ", "decoded final event dest:%s\n", finalMsg->u.event.dest );
+                    cimplog_debug("WRP-C: ", "decoded final event content_type:%s\n", finalMsg->u.event.content_type );
+                    cimplog_debug("WRP-C: ", "decoded final payload:%s\n", ( char * ) finalMsg->u.event.payload );
+                    cimplog_debug("WRP-C: ", "decoded final payload_size:%zu\n", finalMsg->u.event.payload_size );
                 } else {
-                    WrpError( "WRP-C: Decode failed for appended data\n" );
+                    cimplog_error("WRP-C: ", "Decode failed for appended data\n" );
                     CU_ASSERT( false );
                 }
             }
@@ -1428,7 +1429,7 @@ void test_crud_message()
             free( metadataPack );
             free( encodedData );
         } else {
-            WrpError( "WRP-C: Metada Encoding failed for append encode data\n " );
+            cimplog_error("WRP-C: ", "Metada Encoding failed for append encode data\n " );
             CU_ASSERT( false );
         }
     }
