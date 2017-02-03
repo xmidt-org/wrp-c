@@ -62,9 +62,7 @@ ExternalProject_Add(cimplog
     PREFIX ${PREFIX_DIR}/cimplog
     GIT_REPOSITORY https://github.com/Comcast/cimplog.git
     GIT_TAG "master"
-    CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
-                  -DBUILD_TESTING=OFF
-)
+    CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR})
 add_library(libcimplog STATIC IMPORTED)
 add_dependencies(libcimplog cimplog)
 
