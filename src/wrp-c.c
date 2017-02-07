@@ -21,7 +21,7 @@
 #include <string.h>
 #include <msgpack.h>
 #include <trower-base64/base64.h>
-#include <cimplog.h>
+#include <cimplog/cimplog.h>
 
 #include "wrp-c.h"
 
