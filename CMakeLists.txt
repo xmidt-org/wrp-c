@@ -42,7 +42,7 @@ ExternalProject_Add(trower-base64
     PREFIX ${PREFIX_DIR}/trower-base64
     GIT_REPOSITORY https://github.com/Comcast/trower-base64.git
     GIT_TAG "master"
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR})
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF)
 add_library(libtrower-base64 STATIC IMPORTED)
 add_dependencies(libtrower-base64 trower-base64)
 
@@ -53,7 +53,7 @@ ExternalProject_Add(msgpack
     GIT_TAG "c6e6dbc608366090c12b142b3832604e6aa12f54"
     CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
     -DMSGPACK_ENABLE_CXX=OFF
-    -DMSGPACK_BUILD_EXAMPLES=OFF)
+    -DMSGPACK_BUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF)
 add_library(libmsgpack STATIC IMPORTED)
 add_dependencies(libmsgpack msgpack)
 
