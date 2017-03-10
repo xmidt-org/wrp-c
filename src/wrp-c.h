@@ -112,6 +112,7 @@ struct wrp_crud_msg {
     bool include_spans;
     struct money_trace_spans spans;
     int status;
+    int rdr;
     char *path;
     char *payload;
 };
