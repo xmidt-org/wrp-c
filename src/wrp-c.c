@@ -56,6 +56,7 @@ struct req_res_t {
     struct money_trace_spans spans;
     data_t *metadata;
     int status;
+    int rdr;
     char *path;
     char *service_name;
     char *url;
@@ -420,6 +421,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
             encode->metadata = crud->metadata;
             encode->path = crud->path;
             encode->status = crud->status;
+            encode->rdr = crud->rdr;
             rv = __wrp_pack_structure( encode, bytes );
             break;
         case WRP_MSG_TYPE__SVC_ALIVE:

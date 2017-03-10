@@ -998,6 +998,7 @@ void test_crud_message()
         .u.crud.spans.spans = NULL,
         .u.crud.spans.count = 0,
         .u.crud.status = 1,
+        .u.crud.rdr = 0,
         .u.crud.path = "/Harvester",
         .u.crud.payload = createPayload
     };
@@ -1012,6 +1013,7 @@ void test_crud_message()
         .u.crud.spans.spans = ( struct money_trace_span* ) crud_spans,
         .u.crud.spans.count = sizeof( crud_spans ) / sizeof( struct money_trace_span ),
         .u.crud.status = 1,
+        .u.crud.rdr = 0,
         .u.crud.path = "/IOT",
         .u.crud.payload = NULL
     };
@@ -1026,6 +1028,7 @@ void test_crud_message()
         .u.crud.spans.spans = ( struct money_trace_span* ) spans,
         .u.crud.spans.count = sizeof( spans ) / sizeof( struct money_trace_span ),
         .u.crud.status = 0,
+        .u.crud.rdr = 0,
         .u.crud.path = "/Harvester",
         .u.crud.payload = updatePayload
     };
@@ -1040,6 +1043,7 @@ void test_crud_message()
         .u.crud.spans.spans = NULL,
         .u.crud.spans.count = 0,
         .u.crud.status = 1,
+        .u.crud.rdr = 0,
         .u.crud.path = "/IOT",
         .u.crud.payload = NULL
     };
@@ -1054,6 +1058,7 @@ void test_crud_message()
         .u.crud.spans.spans = ( struct money_trace_span* ) spans,
         .u.crud.spans.count = sizeof( spans ) / sizeof( struct money_trace_span ),
         .u.crud.status = 1,
+        .u.crud.rdr = 0,
         .u.crud.path = "/Harvester",
         .u.crud.payload = updatePayload
     };
