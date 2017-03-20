@@ -1072,6 +1072,7 @@ void test_crud_message()
     free( bytes );
     CU_ASSERT_EQUAL( rv, size );
     CU_ASSERT_EQUAL( message->msg_type, create.msg_type );
+    CU_ASSERT_EQUAL( message->u.crud.status, create.u.crud.status );
     CU_ASSERT_STRING_EQUAL( message->u.crud.source, create.u.crud.source );
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, create.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, create.u.crud.transaction_uuid );
@@ -1124,6 +1125,7 @@ void test_crud_message()
     free( bytes );
     CU_ASSERT_EQUAL( rv, size );
     CU_ASSERT_EQUAL( message->msg_type, retreive.msg_type );
+    CU_ASSERT_EQUAL( message->u.crud.status, retreive.u.crud.status );
     CU_ASSERT_STRING_EQUAL( message->u.crud.source, retreive.u.crud.source );
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, retreive.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, retreive.u.crud.transaction_uuid );
@@ -1179,6 +1181,7 @@ void test_crud_message()
     free( bytes );
     CU_ASSERT_EQUAL( rv, size );
     CU_ASSERT_EQUAL( message->msg_type, update.msg_type );
+    CU_ASSERT_EQUAL( message->u.crud.status, update.u.crud.status );
     CU_ASSERT_STRING_EQUAL( message->u.crud.source, update.u.crud.source );
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, update.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, update.u.crud.transaction_uuid );
@@ -1230,6 +1233,7 @@ void test_crud_message()
     free( bytes );
     CU_ASSERT_EQUAL( rv, size );
     CU_ASSERT_EQUAL( message->msg_type, delete.msg_type );
+    CU_ASSERT_EQUAL( message->u.crud.status, delete.u.crud.status );
     CU_ASSERT_STRING_EQUAL( message->u.crud.source, delete.u.crud.source );
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, delete.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, delete.u.crud.transaction_uuid );

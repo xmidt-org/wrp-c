@@ -1451,6 +1451,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.crud.include_spans = decodeReq->include_spans;
                         msg->u.crud.spans.spans = NULL;   /* not supported */
                         msg->u.crud.spans.count = 0;     /* not supported */
+                        msg->u.crud.status = decodeReq->statusValue;
                         msg->u.crud.payload = decodeReq->crudPayload;//type string
                         msg->u.crud.path = decodeReq->path;
                         free( decodeReq );
