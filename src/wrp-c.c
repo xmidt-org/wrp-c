@@ -1388,8 +1388,8 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 
         switch( unpack_ret ) {
             case MSGPACK_UNPACK_SUCCESS:
-                msgpack_object_print( stdout, deserialized );
-                puts("");
+                //msgpack_object_print( stdout, deserialized );
+                //puts("");
                 if( deserialized.via.map.size != 0 ) {
                     decodeRequest( deserialized, &decodeReq );
                 }
