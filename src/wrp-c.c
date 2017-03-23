@@ -85,6 +85,7 @@ static const struct wrp_token WRP_INCLUDE_SPANS = { .name = "include_spans", .le
 static const struct wrp_token WRP_SERVICE_NAME  = { .name = "service_name", .length = sizeof( "service_name" ) - 1 };
 static const struct wrp_token WRP_URL           = { .name = "url", .length = sizeof( "url" ) - 1 };
 static const struct wrp_token WRP_METADATA      = { .name = "metadata", .length = sizeof( "metadata" ) - 1 };
+static const struct wrp_token WRP_RDR           = { .name = "rdr", .length = sizeof( "rdr" ) - 1 };
 static const struct wrp_token WRP_PATH          = { .name = "path", .length = sizeof( "path" ) - 1 };
 static const int const WRP_MAP_SIZE             = 4; // mandatory msg_type,source,dest,payload
 
@@ -915,6 +916,10 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
                 wrp_map_size++; //status
             }
 
+            if( encodeReqtmp->rdr >= 0 ) {
+                wrp_map_size++; //rdr
+            }
+
             msgpack_pack_map( &pk, wrp_map_size );
             //Pack msgType,source,dest,headers,metadata
             mapCommonString( &pk, encodeReqtmp );
@@ -930,6 +935,11 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             if( encodeReqtmp->status != 0 ) {
                 __msgpack_pack_string( &pk, WRP_STATUS.name, WRP_STATUS.length );
                 msgpack_pack_int( &pk, encodeReqtmp->status );
+            }
+
+            if( encodeReqtmp->rdr >= 0 ) {
+                __msgpack_pack_string( &pk, WRP_RDR.name, WRP_RDR.length );
+                msgpack_pack_int( &pk, encodeReqtmp->rdr );
             }
 
             if( encodeReqtmp->path != NULL ) {
@@ -1100,6 +1110,8 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                             tmpdecodeReq->msgType = ValueType.via.i64;
                         } else if( strcmp( keyName, WRP_STATUS.name ) == 0 ) {
                             tmpdecodeReq->statusValue = ValueType.via.i64;
+                        } else if( strcmp( keyName, WRP_RDR.name ) == 0 ) {
+                            tmpdecodeReq->rdr = ValueType.via.i64;
                         }
                     }
                     break;
@@ -1452,6 +1464,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.crud.spans.spans = NULL;   /* not supported */
                         msg->u.crud.spans.count = 0;     /* not supported */
                         msg->u.crud.status = decodeReq->statusValue;
+                        msg->u.crud.rdr = decodeReq->rdr;
                         msg->u.crud.payload = decodeReq->crudPayload;//type string
                         msg->u.crud.path = decodeReq->path;
                         free( decodeReq );
