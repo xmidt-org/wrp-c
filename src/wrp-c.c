@@ -1234,7 +1234,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                     case MSGPACK_OBJECT_NIL:
 
                         if( strcmp( keyName, WRP_SPANS.name ) == 0 ) {
-                            WRP_ERROR("spans is nil\n" );
+                            WRP_DEBUG("spans is nil\n" );
                         }
 
                         break;
