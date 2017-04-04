@@ -70,6 +70,11 @@ typedef struct headers_struct {
     char *headers[];
 } headers_t;
 
+typedef struct partners_struct {
+    size_t count;
+    char *partner_ids[];
+} partners_t;
+
 struct data {
     char *name;
     char *value;
@@ -85,6 +90,7 @@ struct wrp_req_msg {
     char *content_type;
     char *source;
     char *dest;
+    partners_t *partner_ids;
     headers_t *headers;                         /* NULL terminated list */
     data_t *metadata;
     bool include_spans;
@@ -97,6 +103,7 @@ struct wrp_event_msg {
     char *content_type;
     char *source;
     char *dest;
+    partners_t *partner_ids;
     headers_t *headers;                         /* NULL terminated list */
     data_t *metadata;
     void *payload;

@@ -49,6 +49,7 @@ struct req_res_t {
     char* source ;
     char* dest ;
     char* transaction_uuid;
+    partners_t *partner_ids ;
     headers_t *headers ;
     void *payload ;
     size_t payload_size;
@@ -62,7 +63,6 @@ struct req_res_t {
     char *url;
     char *content_type;
     char *crudPayload;
-
 };
 
 
@@ -87,6 +87,7 @@ static const struct wrp_token WRP_URL           = { .name = "url", .length = siz
 static const struct wrp_token WRP_METADATA      = { .name = "metadata", .length = sizeof( "metadata" ) - 1 };
 static const struct wrp_token WRP_RDR           = { .name = "rdr", .length = sizeof( "rdr" ) - 1 };
 static const struct wrp_token WRP_PATH          = { .name = "path", .length = sizeof( "path" ) - 1 };
+static const struct wrp_token WRP_PARTNER_IDS   = { .name = "partner_ids", .length = sizeof( "partner_ids" ) - 1 };
 static const int const WRP_MAP_SIZE             = 4; // mandatory msg_type,source,dest,payload
 
 
@@ -104,6 +105,7 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
         char **bytes );
 static char* __get_header_string( headers_t *headers );
 static char* __get_spans_string( const struct money_trace_spans *spans );
+static char* __get_partner_ids_string( partners_t *partner_ids );
 static void __msgpack_pack_string_nvp( msgpack_packer *pk,
                                        const struct wrp_token *token,
                                        const char *val );
@@ -233,7 +235,15 @@ void wrp_free_struct( wrp_msg_t *msg )
                 free( msg->u.req.metadata->data_items );
                 free( msg->u.req.metadata );
             }
+            if( NULL != msg->u.req.partner_ids ) {
+                size_t i;
 
+                for( i = 0; i < msg->u.req.partner_ids->count; i++ ) {
+                    free( msg->u.req.partner_ids->partner_ids[i] );
+                }
+
+                free( msg->u.req.partner_ids );
+            }
             break;
         case WRP_MSG_TYPE__EVENT:
             free( msg->u.event.source );
@@ -264,7 +274,15 @@ void wrp_free_struct( wrp_msg_t *msg )
                 free( msg->u.event.metadata->data_items );
                 free( msg->u.event.metadata );
             }
+            if( NULL != msg->u.event.partner_ids ) {
+                size_t i;
 
+                for( i = 0; i < ( msg->u.event.partner_ids->count ); i++ ) {
+                    free( msg->u.event.partner_ids->partner_ids[i] );
+                }
+
+                free( msg->u.event.partner_ids );
+            }
             break;
         case WRP_MSG_TYPE__SVC_REGISTRATION:
             WRP_DEBUG("Free for REGISTRATION \n" );
@@ -381,6 +399,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
             encode->payload_size = req->payload_size;
             encode->headers = req->headers;
             encode->metadata = req->metadata;
+            encode->partner_ids = req->partner_ids;
             encode->msgType = msg->msg_type;
             rv = __wrp_pack_structure( encode, bytes );
             break;
@@ -395,6 +414,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
             encode->payload_size = event->payload_size;
             encode->headers = event->headers;
             encode->metadata = event->metadata;
+            encode->partner_ids = event->partner_ids;
             encode->msgType = msg->msg_type;
             rv = __wrp_pack_structure( encode, bytes );
             break;
@@ -575,6 +595,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
                                 "    .transaction_uuid = %s\n"
                                 "    .source           = %s\n"
                                 "    .dest             = %s\n"
+                                "    .partner_ids      = %s\n"
                                 "    .headers          = %s\n"
                                 "    .content_type     = %s\n"
                                 "    .include_spans    = %s\n"
@@ -584,10 +605,13 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
     size_t length;
     char *headers;
     char *spans;
+    char *partner_ids;
+
     headers = __get_header_string( req->headers );
     spans = __get_spans_string( &req->spans );
+    partner_ids = __get_partner_ids_string( req->partner_ids );
     length = snprintf( NULL, 0, req_fmt, req->transaction_uuid, req->source,
-                       req->dest, headers,req->content_type, ( req->include_spans ? "true" : "false" ),
+                       req->dest, partner_ids, headers,req->content_type, ( req->include_spans ? "true" : "false" ),
                        spans, req->payload_size );
 
     if( NULL != bytes ) {
@@ -596,7 +620,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
 
         if( NULL != data ) {
             sprintf( data, req_fmt, req->transaction_uuid, req->source,
-                     req->dest, headers, req->content_type,( req->include_spans ? "true" : "false" ),
+                     req->dest, partner_ids, headers, req->content_type,( req->include_spans ? "true" : "false" ),
                      spans, req->payload_size );
             data[length] = '\0';
             *bytes = data;
@@ -608,11 +632,14 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
     if( __empty_list != headers ) {
         free( headers );
     }
-
+    
     if( __empty_list != spans ) {
         free( spans );
     }
-
+    
+    if( __empty_list != partner_ids ) {
+        free( partner_ids );
+    }
     return length;
 }
 
@@ -631,14 +658,19 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
     const char const *event_fmt = "wrp_event_msg {\n"
                                   "    .source           = %s\n"
                                   "    .dest             = %s\n"
+                                  "    .partner_ids      = %s\n"
                                   "    .headers          = %s\n"
                                   "    .content_type     = %s\n"
                                   "    .payload_size     = %zd\n"
                                   "}\n";
     size_t length;
     char *headers;
+    char *partner_ids;
+    
     headers = __get_header_string( event->headers );
-    length = snprintf( NULL, 0, event_fmt, event->source, event->dest,
+    partner_ids = __get_partner_ids_string( event->partner_ids );
+    
+    length = snprintf( NULL, 0, event_fmt, event->source, event->dest, partner_ids,
                        headers, event->content_type, event->payload_size );
 
     if( NULL != bytes ) {
@@ -646,7 +678,7 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
         data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
 
         if( NULL != data ) {
-            sprintf( data, event_fmt, event->source, event->dest, headers, event->content_type,
+            sprintf( data, event_fmt, event->source, event->dest, partner_ids, headers, event->content_type,
                      event->payload_size );
             data[length] = '\0';
             *bytes = data;
@@ -658,7 +690,11 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
     if( __empty_list != headers ) {
         free( headers );
     }
-
+    
+    if( __empty_list != partner_ids ) {
+        free( partner_ids );
+    }
+        
     return length;
 }
 
@@ -715,6 +751,46 @@ static char* __get_header_string( headers_t *headers )
     return rv;
 }
 
+static char* __get_partner_ids_string( partners_t *partner_ids )
+{
+    char *rv;
+    rv = ( char* ) __empty_list;
+
+    if( partner_ids ) {
+        char *tmp;
+        size_t i;
+        int comma;
+        size_t length;
+        comma = 0;
+        length = 2; /* For ' characters. */
+
+        for( i = 0; i < partner_ids->count ; i++ ) {
+            length += comma;
+            length += strlen( partner_ids->partner_ids[i] );
+            comma = 2;
+        }
+
+        tmp = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
+
+        if( NULL != tmp ) {
+            const char *comma;
+            rv = tmp;
+            comma = "";
+            *tmp = '\0';
+            tmp = strcat( tmp, "'" );
+
+            for( i = 0; i < partner_ids->count; i++ ) {
+                tmp = strcat( tmp, comma );
+                tmp = strcat( tmp, partner_ids->partner_ids[i] );
+                comma = ", ";
+            }
+
+            tmp = strcat( tmp, "'" );
+        }
+    }
+
+    return rv;
+}
 
 static void __msgpack_headers( msgpack_packer *pk, headers_t *headers )
 {
@@ -726,6 +802,21 @@ static void __msgpack_headers( msgpack_packer *pk, headers_t *headers )
 
         while( count < headers->count ) {
             __msgpack_pack_string( pk, headers->headers[count], strlen( headers->headers[count] ) );
+            count++;
+        }
+    }
+}
+
+static void __msgpack_partner_ids( msgpack_packer *pk, partners_t *partner_ids )
+{
+    if( NULL != partner_ids ) {
+        size_t count = partner_ids->count;
+        __msgpack_pack_string( pk, WRP_PARTNER_IDS.name, WRP_PARTNER_IDS.length );
+        msgpack_pack_array( pk, count );
+        count = 0;
+
+        while( count < partner_ids->count ) {
+            __msgpack_pack_string( pk, partner_ids->partner_ids[count], strlen( partner_ids->partner_ids[count] ) );
             count++;
         }
     }
@@ -848,6 +939,10 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
     if( encodeReqtmp->metadata != NULL ) {
         wrp_map_size++;
     }
+    
+    if( encodeReqtmp->partner_ids ) {
+        wrp_map_size++;
+    }
 
     switch( encodeReqtmp->msgType ) {
         case WRP_MSG_TYPE__AUTH:
@@ -871,6 +966,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             }
 
             __msgpack_spans( &pk, &encodeReqtmp->spans );
+            __msgpack_partner_ids( &pk, encodeReqtmp->partner_ids );
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
             msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
@@ -880,6 +976,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             //Pack msgType,source,dest,headers,metadata
             mapCommonString( &pk, encodeReqtmp );
             __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
+            __msgpack_partner_ids( &pk, encodeReqtmp->partner_ids );
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
             msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
@@ -1182,7 +1279,15 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                             strncpy( crudpayload, StringValue, sLen );
                             crudpayload[sLen] = '\0';
                             tmpdecodeReq->crudPayload = crudpayload;
-                        }
+                        } else if( strcmp( keyName, WRP_PARTNER_IDS.name ) == 0 ) {
+                            sLen = strlen( StringValue );
+                            tmpdecodeReq->partner_ids = ( partners_t * ) malloc( sizeof( partners_t )
+                                                    + sizeof( char * ) * 1 );
+                            tmpdecodeReq->partner_ids->count = 1;
+                            tmpdecodeReq->partner_ids->partner_ids[0] = ( char * ) malloc( sLen );
+                            memset( tmpdecodeReq->partner_ids->partner_ids, 0, sLen );
+                            strncpy( tmpdecodeReq->partner_ids->partner_ids[0], StringValue, sLen );
+                         }
 
                         free( NewStringVal );
                     }
@@ -1220,6 +1325,21 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                                 memset( tmpdecodeReq->headers->headers[cnt], 0, ptr->via.str.size + 1 );
                                 memcpy( tmpdecodeReq->headers->headers[cnt], ptr->via.str.ptr, ptr->via.str.size );
                                 WRP_DEBUG("tmpdecodeReq->headers[%d] %s\n", cnt, tmpdecodeReq->headers->headers[cnt] );
+                            }
+                        }else if( strcmp( keyName, WRP_PARTNER_IDS.name ) == 0 ) {
+                            msgpack_object_array array = ValueType.via.array;
+                            msgpack_object *ptr = array.ptr;
+                            uint32_t cnt = 0;
+                            ptr = array.ptr;
+                            tmpdecodeReq->partner_ids = ( partners_t * ) malloc( sizeof( partners_t )
+                                                    + sizeof( char * ) * array.size );
+                            tmpdecodeReq->partner_ids->count = array.size;
+
+                            for( cnt = 0; cnt < array.size; cnt++, ptr++ ) {
+                                tmpdecodeReq->partner_ids->partner_ids[cnt] = ( char * ) malloc( ptr->via.str.size + 1 );
+                                memset( tmpdecodeReq->partner_ids->partner_ids[cnt], 0, ptr->via.str.size + 1 );
+                                memcpy( tmpdecodeReq->partner_ids->partner_ids[cnt], ptr->via.str.ptr, ptr->via.str.size );
+                                WRP_DEBUG("tmpdecodeReq->partner_ids[%d] %s\n", cnt, tmpdecodeReq->partner_ids->partner_ids[cnt] );
                             }
                         } else {
                             WRP_ERROR("Not Handled MSGPACK_OBJECT_ARRAY %s\n", keyName );
@@ -1420,6 +1540,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.req.spans.count = 0;     /* not supported */
                         msg->u.req.payload = decodeReq->payload;
                         msg->u.req.payload_size = decodeReq->payload_size;
+                        msg->u.req.partner_ids = decodeReq->partner_ids;
                         *msg_ptr = msg;
                         free( decodeReq );
                         return length;
@@ -1432,6 +1553,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.event.payload = decodeReq->payload;
                         msg->u.event.payload_size = decodeReq->payload_size;
                         msg->u.event.headers = decodeReq->headers;
+                        msg->u.event.partner_ids = decodeReq->partner_ids;
                         *msg_ptr = msg;
                         free( decodeReq );
                         return length;

@@ -47,6 +47,8 @@ struct test_vectors {
 
 headers_t headers = { 2, {"Header 1", "Header 2"}};
 headers_t single_headers = { 1, {"Single Header 1"} };
+partners_t partner_ids = {2, {"Partner 1", "Partner 2"}};
+partners_t single_partner_ids = { 1, {"Single Partner 1"} };
 
 const struct money_trace_span spans[] = {
     {
@@ -91,6 +93,7 @@ const struct test_vectors test[] = {
         .in.u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
         .in.u.req.source = "source-address",
         .in.u.req.dest = "dest-address",
+        .in.u.req.partner_ids = NULL,
         .in.u.req.headers = NULL,
         .in.u.req.content_type = "application/json",
         .in.u.req.include_spans = false,
@@ -105,6 +108,7 @@ const struct test_vectors test[] = {
         "    .transaction_uuid = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
         "    .source           = source-address\n"
         "    .dest             = dest-address\n"
+        "    .partner_ids      = ''\n"
         "    .headers          = ''\n"
         "    .content_type     = application/json\n"
         "    .include_spans    = false\n"
@@ -163,6 +167,7 @@ const struct test_vectors test[] = {
         .in.u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
         .in.u.req.source = "source-address",
         .in.u.req.dest = "dest-address",
+        .in.u.req.partner_ids = &partner_ids,
         .in.u.req.headers = &headers,
         .in.u.req.content_type = "application/json",
         .in.u.req.include_spans = true,
@@ -177,6 +182,7 @@ const struct test_vectors test[] = {
         "    .transaction_uuid = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
         "    .source           = source-address\n"
         "    .dest             = dest-address\n"
+        "    .partner_ids      = 'Partner 1, Partner 2'\n"
         "    .headers          = 'Header 1, Header 2'\n"
         "    .content_type     = application/json\n"
         "    .include_spans    = true\n"
@@ -184,9 +190,9 @@ const struct test_vectors test[] = {
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 191,
+        .msgpack_size = 224,
         .msgpack = {
-            0x88,  /* 8 name value pairs */
+            0x89,  /* 9 name value pairs */
 
             /* msg_type -> 3 */
             0xa8,  /* "msg_type" */
@@ -232,6 +238,14 @@ const struct test_vectors test[] = {
             0xad,   /* include_spans -> true */
             'i', 'n', 'c', 'l', 'u', 'd', 'e', '_', 's', 'p', 'a', 'n', 's',
             0xc3, /* true */
+            
+             0xab,   /* partner_ids -> Array[2] */
+            'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
+            0x92,
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '1',
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '2',
 
             /* payload -> data */
             0xa7,   /* payload */
@@ -249,6 +263,7 @@ const struct test_vectors test[] = {
         .in.u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
         .in.u.req.source = "source-address",
         .in.u.req.dest = "dest-address",
+        .in.u.req.partner_ids = &partner_ids,
         .in.u.req.headers = &headers,
         .in.u.req.content_type = "application/json",
         .in.u.req.include_spans = false,
@@ -263,6 +278,7 @@ const struct test_vectors test[] = {
         "    .transaction_uuid = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
         "    .source           = source-address\n"
         "    .dest             = dest-address\n"
+        "    .partner_ids      = 'Partner 1, Partner 2'\n"
         "    .headers          = 'Header 1, Header 2'\n"
         "    .content_type     = application/json\n"
         "    .include_spans    = false\n"
@@ -270,9 +286,9 @@ const struct test_vectors test[] = {
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 176,
+        .msgpack_size = 209,
         .msgpack = {
-            0x87,  /* 7 name value pairs */
+            0x88,  /* 8 name value pairs */
 
             /* msg_type -> 3 */
             0xa8,  /* "msg_type" */
@@ -314,6 +330,14 @@ const struct test_vectors test[] = {
             'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
             0xb0,   /* application/json */
             'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
+            
+            0xab,   /* partner_ids -> Array[2] */
+            'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
+            0x92,
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '1',
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '2',
 
             /* payload -> data */
             0xa7,   /* payload */
@@ -330,6 +354,7 @@ const struct test_vectors test[] = {
         .in.u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
         .in.u.req.source = "source-address",
         .in.u.req.dest = "dest-address",
+        .in.u.req.partner_ids = &partner_ids,
         .in.u.req.headers = &headers,
         .in.u.req.content_type = "application/json",
         .in.u.req.include_spans = false,
@@ -344,6 +369,7 @@ const struct test_vectors test[] = {
         "    .transaction_uuid = c07ee5e1-70be-444c-a156-097c767ad8aa\n"
         "    .source           = source-address\n"
         "    .dest             = dest-address\n"
+        "    .partner_ids      = 'Partner 1, Partner 2'\n"
         "    .headers          = 'Header 1, Header 2'\n"
         "    .content_type     = application/json\n"
         "    .include_spans    = false\n"
@@ -352,9 +378,9 @@ const struct test_vectors test[] = {
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 196,
+        .msgpack_size = 229,
         .msgpack = {
-            0x88,  /* 8 name value pairs */
+            0x89,  /* 9 name value pairs */
 
             /* msg_type -> 3 */
             0xa8,  /* "msg_type" */
@@ -406,7 +432,15 @@ const struct test_vectors test[] = {
             0xce,   /* 123000044 */
             0x07, 0x54, 0xd4, 0xec,
             0x0b,   /* 11 */
-
+            
+            0xab,   /* partner_ids -> Array[2] */
+            'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
+            0x92,
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '1',
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '2',
+            
             /* payload -> data */
             0xa7,   /* payload */
             'p', 'a', 'y', 'l', 'o', 'a', 'd',
@@ -421,6 +455,7 @@ const struct test_vectors test[] = {
         .in.u.event.source = "source-address",
         .in.u.event.dest = "dest-address",
         .in.u.event.content_type = "application/json",
+        .in.u.event.partner_ids = NULL,
         .in.u.event.headers = NULL,
         .in.u.event.payload = "123",
         .in.u.event.payload_size = 3,
@@ -430,6 +465,7 @@ const struct test_vectors test[] = {
         "wrp_event_msg {\n"
         "    .source           = source-address\n"
         "    .dest             = dest-address\n"
+        "    .partner_ids      = ''\n"
         "    .headers          = ''\n"
         "    .content_type     = application/json\n"
         "    .payload_size     = 3\n"
@@ -476,6 +512,7 @@ const struct test_vectors test[] = {
         .in.u.event.source = "source-address",
         .in.u.event.dest = "dest-address",
         .in.u.event.content_type = "application/json",
+        .in.u.event.partner_ids = &partner_ids,
         .in.u.event.headers = &headers,
         .in.u.event.payload = "123",
         .in.u.event.payload_size = 3,
@@ -485,14 +522,15 @@ const struct test_vectors test[] = {
         "wrp_event_msg {\n"
         "    .source           = source-address\n"
         "    .dest             = dest-address\n"
+        "    .partner_ids      = 'Partner 1, Partner 2'\n"
         "    .headers          = 'Header 1, Header 2'\n"
         "    .content_type     = application/json\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 121,
+        .msgpack_size = 154,
         .msgpack = {
-            0x86,  /* 6 name value pairs */
+            0x87,  /* 7 name value pairs */
 
             /* msg_type -> 4 */
             0xa8,  /* "msg_type" */
@@ -524,6 +562,14 @@ const struct test_vectors test[] = {
             'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
             0xb0,   /* application/json */
             'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
+            
+            0xab,   /* partner_ids -> Array[2] */
+            'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
+            0x92,
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '1',
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '2',
 
             /* payload -> data */
             0xa7,   /* payload */
@@ -763,6 +809,7 @@ void test_encode_decode()
                             .u.req.content_type = "application/json",
                             .u.req.source = "source-address",
                             .u.req.dest = "dest-address",
+                            .u.req.partner_ids = &partner_ids,
                             .u.req.headers = &headers,
                             .u.req.include_spans = false,
                             .u.req.spans.spans = NULL,
@@ -774,6 +821,7 @@ void test_encode_decode()
                                 .u.event.source = "source-address",
                                 .u.event.dest = "dest-address",
                                 .u.event.content_type = "application/json",
+                                .u.event.partner_ids = &partner_ids,
                                 .u.event.headers = &headers,
                                 .u.event.payload = "0123456789",
                                 .u.event.payload_size = 10
@@ -783,6 +831,7 @@ void test_encode_decode()
                              .u.req.source = "source-address",
                              .u.req.content_type = NULL,
                              .u.req.dest = "dest-address",
+                             .u.req.partner_ids = &single_partner_ids,
                              .u.req.headers = &single_headers,
                              .u.req.include_spans = false,
                              .u.req.spans.spans = NULL,
@@ -818,6 +867,21 @@ void test_encode_decode()
                 CU_ASSERT_STRING_EQUAL( msg.u.req.headers->headers[n],
                                         message->u.req.headers->headers[n] );
                 n++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+    
+    if( NULL != msg.u.req.partner_ids ) {
+        size_t i = 0;
+        WRP_DEBUG("partner_ids count returned is %d\n", ( int ) message->u.req.partner_ids->count );
+
+        if( NULL != msg.u.req.partner_ids ) {
+            while( i < msg.u.req.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( msg.u.req.partner_ids->partner_ids[i],
+                                        message->u.req.partner_ids->partner_ids[i] );
+                i++;
             }
         } else {
             CU_ASSERT( false );
@@ -882,6 +946,16 @@ void test_encode_decode()
                 n++;
             }
         }
+        
+        if( NULL != event_msg->u.event.partner_ids ) {
+            size_t i = 0;
+
+            while( i < event_msg->u.event.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( message->u.event.partner_ids->partner_ids[i],
+                                        event_msg->u.event.partner_ids->partner_ids[i] );
+                i++;
+            }
+        }
     }
 
     wrp_free_struct( message );
@@ -919,6 +993,16 @@ void test_encode_decode()
                 n++;
             }
         }
+        
+        if( NULL != event_msg->u.event.partner_ids ) {
+            size_t i = 0;
+
+            while( i < event_msg->u.event.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( message->u.event.partner_ids->partner_ids[i],
+                                        event_msg->u.event.partner_ids->partner_ids[i] );
+                i++;
+            }
+        }
     }
 
     wrp_free_struct( message );
@@ -943,6 +1027,16 @@ void test_encode_decode()
             CU_ASSERT_STRING_EQUAL( msg2.u.req.headers->headers[n],
                                     message->u.req.headers->headers[n] );
             n++;
+        }
+    }
+    
+    if( NULL != message->u.req.partner_ids ) {
+        size_t i = 0;
+
+        while( i < message->u.req.partner_ids->count ) {
+            CU_ASSERT_STRING_EQUAL( msg2.u.req.partner_ids->partner_ids[i],
+                                    message->u.req.partner_ids->partner_ids[i] );
+            i++;
         }
     }
 
@@ -1097,7 +1191,7 @@ void test_crud_message()
 
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
-        WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.req.headers->count );
+        WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.crud.headers->count );
 
         if( NULL != message->u.crud.headers ) {
             while( n < message->u.crud.headers->count ) {
@@ -1154,7 +1248,7 @@ void test_crud_message()
     }
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
-        WRP_INFO("headers count returned is %d\n", ( int ) message->u.req.headers->count );
+        WRP_INFO("headers count returned is %d\n", ( int ) message->u.crud.headers->count );
 
         if( NULL != message->u.crud.headers ) {
             while( n < message->u.crud.headers->count ) {
@@ -1207,7 +1301,7 @@ void test_crud_message()
     }
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
-        WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.req.headers->count );
+        WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.crud.headers->count );
 
         if( NULL != message->u.crud.headers ) {
             while( n < message->u.crud.headers->count ) {
@@ -1259,7 +1353,7 @@ void test_crud_message()
     }
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
-        WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.req.headers->count );
+        WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.crud.headers->count );
 
         if( NULL != message->u.crud.headers ) {
             while( n < message->u.crud.headers->count ) {
@@ -1387,6 +1481,7 @@ void test_crud_message()
     eventMsg.u.event.metadata = NULL ;
     eventMsg.u.event.payload = "0123456789";
     eventMsg.u.event.payload_size = 10;
+    eventMsg.u.event.partner_ids = NULL ;
     // msgpck encode
     size = wrp_struct_to( &eventMsg, WRP_BYTES, &bytes );
     // msgpck decode
