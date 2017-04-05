@@ -114,6 +114,7 @@ struct wrp_crud_msg {
     char *transaction_uuid;
     char *source;
     char *dest;
+    partners_t *partner_ids;
     headers_t *headers;                         /* NULL terminated list */
     data_t *metadata;
     bool include_spans;

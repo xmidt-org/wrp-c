@@ -438,6 +438,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
             encode->include_spans = crud->include_spans;
             encode->spans = crud->spans;
             encode->crudPayload = crud->payload;//type string
+            encode->partner_ids = crud->partner_ids;
             encode->headers = crud->headers;
             encode->metadata = crud->metadata;
             encode->path = crud->path;
@@ -878,13 +879,14 @@ static void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_
     msgpack_pack_str_body( pk, string, n );
 }
 
-//Pack msgType,source,dest,headers,metadata
+//Pack msgType,source,dest,headers,metadata,partner_ids
 static void mapCommonString( msgpack_packer *pk, struct req_res_t *encodeComReq )
 {
     __msgpack_pack_string( pk, WRP_MSG_TYPE.name, WRP_MSG_TYPE.length );
     msgpack_pack_int( pk, encodeComReq->msgType );
     __msgpack_pack_string_nvp( pk, &WRP_SOURCE, encodeComReq->source );
     __msgpack_pack_string_nvp( pk, &WRP_DEST, encodeComReq->dest );
+    __msgpack_partner_ids( pk, encodeComReq->partner_ids );
     __msgpack_headers( pk, encodeComReq->headers );
 
     if( encodeComReq->metadata != NULL ) {
@@ -955,7 +957,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             break;
         case WRP_MSG_TYPE__REQ:
             msgpack_pack_map( &pk, wrp_map_size );
-            //Pack msgType,source,dest,headers,metadata
+            //Pack msgType,source,dest,headers,metadata,partner_ids
             mapCommonString( &pk, encodeReqtmp );
             __msgpack_pack_string_nvp( &pk, &WRP_TRANS_ID, encodeReqtmp->transaction_uuid );
             __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
@@ -966,17 +968,15 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             }
 
             __msgpack_spans( &pk, &encodeReqtmp->spans );
-            __msgpack_partner_ids( &pk, encodeReqtmp->partner_ids );
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
             msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
             break;
         case WRP_MSG_TYPE__EVENT:
             msgpack_pack_map( &pk, wrp_map_size );
-            //Pack msgType,source,dest,headers,metadata
+            //Pack msgType,source,dest,headers,metadata,partner_ids
             mapCommonString( &pk, encodeReqtmp );
             __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
-            __msgpack_partner_ids( &pk, encodeReqtmp->partner_ids );
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
             msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
@@ -1018,7 +1018,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             }
 
             msgpack_pack_map( &pk, wrp_map_size );
-            //Pack msgType,source,dest,headers,metadata
+            //Pack msgType,source,dest,headers,metadata,partner_ids
             mapCommonString( &pk, encodeReqtmp );
             __msgpack_pack_string_nvp( &pk, &WRP_TRANS_ID, encodeReqtmp->transaction_uuid );
 
@@ -1580,6 +1580,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.crud.source = decodeReq->source;
                         msg->u.crud.dest = decodeReq->dest;
                         msg->u.crud.transaction_uuid = decodeReq->transaction_uuid;
+                        msg->u.crud.partner_ids = decodeReq->partner_ids;
                         msg->u.crud.headers = decodeReq->headers;
                         msg->u.crud.metadata = decodeReq->metadata;
                         msg->u.crud.include_spans = decodeReq->include_spans;
