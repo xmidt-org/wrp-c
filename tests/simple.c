@@ -211,6 +211,14 @@ const struct test_vectors test[] = {
             0xac,   /* dest-address */
             'd', 'e', 's', 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
 
+            0xab,   /* partner_ids -> Array[2] */
+            'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
+            0x92,
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '1',
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '2',
+
             0xa7,   /* headers -> Array[2] */
             'h', 'e', 'a', 'd', 'e', 'r', 's',
             0x92,
@@ -238,14 +246,6 @@ const struct test_vectors test[] = {
             0xad,   /* include_spans -> true */
             'i', 'n', 'c', 'l', 'u', 'd', 'e', '_', 's', 'p', 'a', 'n', 's',
             0xc3, /* true */
-            
-             0xab,   /* partner_ids -> Array[2] */
-            'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
-            0x92,
-            0xa9,
-            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '1',
-            0xa9,
-            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '2',
 
             /* payload -> data */
             0xa7,   /* payload */
@@ -307,6 +307,14 @@ const struct test_vectors test[] = {
             0xac,   /* dest-address */
             'd', 'e', 's', 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
 
+            0xab,   /* partner_ids -> Array[2] */
+            'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
+            0x92,
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '1',
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '2',
+
             0xa7,   /* headers -> Array[2] */
             'h', 'e', 'a', 'd', 'e', 'r', 's',
             0x92,
@@ -330,14 +338,6 @@ const struct test_vectors test[] = {
             'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
             0xb0,   /* application/json */
             'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
-            
-            0xab,   /* partner_ids -> Array[2] */
-            'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
-            0x92,
-            0xa9,
-            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '1',
-            0xa9,
-            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '2',
 
             /* payload -> data */
             0xa7,   /* payload */
@@ -399,6 +399,14 @@ const struct test_vectors test[] = {
             0xac,   /* dest-address */
             'd', 'e', 's', 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
 
+            0xab,   /* partner_ids -> Array[2] */
+            'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
+            0x92,
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '1',
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '2',
+
             0xa7,   /* headers -> Array[2] */
             'h', 'e', 'a', 'd', 'e', 'r', 's',
             0x92,
@@ -432,15 +440,7 @@ const struct test_vectors test[] = {
             0xce,   /* 123000044 */
             0x07, 0x54, 0xd4, 0xec,
             0x0b,   /* 11 */
-            
-            0xab,   /* partner_ids -> Array[2] */
-            'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
-            0x92,
-            0xa9,
-            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '1',
-            0xa9,
-            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '2',
-            
+
             /* payload -> data */
             0xa7,   /* payload */
             'p', 'a', 'y', 'l', 'o', 'a', 'd',
@@ -549,6 +549,14 @@ const struct test_vectors test[] = {
             0xac,   /* dest-address */
             'd', 'e', 's', 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
 
+            0xab,   /* partner_ids -> Array[2] */
+            'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
+            0x92,
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '1',
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '2',
+
             0xa7,   /* headers -> Array[2] */
             'h', 'e', 'a', 'd', 'e', 'r', 's',
             0x92,
@@ -562,14 +570,6 @@ const struct test_vectors test[] = {
             'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
             0xb0,   /* application/json */
             'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
-            
-            0xab,   /* partner_ids -> Array[2] */
-            'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
-            0x92,
-            0xa9,
-            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '1',
-            0xa9,
-            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '2',
 
             /* payload -> data */
             0xa7,   /* payload */
@@ -1086,6 +1086,7 @@ void test_crud_message()
         .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
         .u.crud.source = "source-address",
         .u.crud.dest = "dest-address",
+        .u.crud.partner_ids = &single_partner_ids,
         .u.crud.headers = &single_headers,
         .u.crud.metadata = NULL,
         .u.crud.include_spans = false,
@@ -1101,6 +1102,7 @@ void test_crud_message()
         .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
         .u.crud.source = "source-address",
         .u.crud.dest = "dest-address",
+        .u.crud.partner_ids = &partner_ids,
         .u.crud.headers = &headers,
         .u.crud.metadata = &meta_data,
         .u.crud.include_spans = false,
@@ -1116,6 +1118,7 @@ void test_crud_message()
         .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
         .u.crud.source = "source-address",
         .u.crud.dest = "dest-address",
+        .u.crud.partner_ids = NULL,
         .u.crud.headers = NULL,
         .u.crud.metadata = NULL,
         .u.crud.include_spans = false,
@@ -1131,6 +1134,7 @@ void test_crud_message()
         .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
         .u.crud.source = "source-address",
         .u.crud.dest = "dest-address",
+        .u.crud.partner_ids = NULL,
         .u.crud.headers = NULL,
         .u.crud.metadata = NULL,
         .u.crud.include_spans = false,
@@ -1146,6 +1150,7 @@ void test_crud_message()
         .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
         .u.crud.source = "source-address",
         .u.crud.dest = "dest-address",
+        .u.crud.partner_ids = &partner_ids,
         .u.crud.headers = &headers,
         .u.crud.metadata = &meta_data,
         .u.crud.include_spans = false,
@@ -1186,6 +1191,21 @@ void test_crud_message()
             CU_ASSERT_STRING_EQUAL( create.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
             WRP_INFO("Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
             n++;
+        }
+    }
+
+    if( NULL != message->u.crud.partner_ids ) {
+        size_t i = 0;
+        WRP_DEBUG("partner_ids count returned is %d\n", ( int ) message->u.crud.partner_ids->count );
+
+        if( NULL != message->u.crud.partner_ids ) {
+            while( i < message->u.crud.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( create.u.crud.partner_ids->partner_ids[i],
+                                        message->u.crud.partner_ids->partner_ids[i] );
+                i++;
+            }
+        } else {
+            CU_ASSERT( false );
         }
     }
 
@@ -1246,6 +1266,21 @@ void test_crud_message()
     {
         WRP_ERROR("retrieve metadata is NULL.Please fix it\n");
     }
+    if( NULL != message->u.crud.partner_ids ) {
+        size_t i = 0;
+        WRP_INFO("partner_ids count returned is %d\n", ( int ) message->u.crud.partner_ids->count );
+
+        if( NULL != message->u.crud.partner_ids ) {
+            while( i < message->u.crud.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( retreive.u.crud.partner_ids->partner_ids[i],
+                                        message->u.crud.partner_ids->partner_ids[i] );
+                i++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
         WRP_INFO("headers count returned is %d\n", ( int ) message->u.crud.headers->count );
@@ -1297,6 +1332,20 @@ void test_crud_message()
             CU_ASSERT_STRING_EQUAL( update.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
             WRP_INFO("Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
             n++;
+        }
+    }
+    if( NULL != message->u.crud.partner_ids ) {
+        size_t i = 0;
+        WRP_DEBUG("partner_ids count returned is %d\n", ( int ) message->u.crud.partner_ids->count );
+
+        if( NULL != message->u.crud.partner_ids ) {
+            while( i < message->u.crud.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( update.u.crud.partner_ids->partner_ids[i],
+                                        message->u.crud.partner_ids->partner_ids[i] );
+                i++;
+            }
+        } else {
+            CU_ASSERT( false );
         }
     }
     if( NULL != message->u.crud.headers ) {
@@ -1351,6 +1400,20 @@ void test_crud_message()
             n++;
         }
     }
+    if( NULL != message->u.crud.partner_ids ) {
+        size_t i = 0;
+        WRP_DEBUG("partner_ids count returned is %d\n", ( int ) message->u.crud.partner_ids->count );
+
+        if( NULL != message->u.crud.partner_ids ) {
+            while( i < message->u.crud.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( delete.u.crud.partner_ids->partner_ids[i],
+                                        message->u.crud.partner_ids->partner_ids[i] );
+                i++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
     if( NULL != message->u.crud.headers ) {
         size_t n = 0;
         WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.crud.headers->count );
@@ -1399,6 +1462,20 @@ void test_crud_message()
             CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
             WRP_INFO("Update Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
             n++;
+        }
+    }
+    if( NULL != meta_payload.u.crud.partner_ids ) {
+        size_t i = 0;
+        WRP_DEBUG("partner_ids count returned is %d\n", ( int ) message->u.crud.partner_ids->count );
+
+        if( NULL != meta_payload.u.crud.partner_ids ) {
+            while( i < meta_payload.u.crud.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.partner_ids->partner_ids[i],
+                                        message->u.crud.partner_ids->partner_ids[i] );
+                i++;
+            }
+        } else {
+            CU_ASSERT( false );
         }
     }
     if( NULL != meta_payload.u.crud.headers ) {
