@@ -311,6 +311,16 @@ void wrp_free_struct( wrp_msg_t *msg )
                 free( msg->u.crud.path );
             }
 
+            if( NULL != msg->u.crud.partner_ids ) {
+                size_t i;
+
+                for( i = 0; i < ( msg->u.crud.partner_ids->count ); i++ ) {
+                    free( msg->u.crud.partner_ids->partner_ids[i] );
+                }
+
+                free( msg->u.crud.partner_ids );
+            }
+
             if( NULL != msg->u.crud.headers ) {
                 size_t cnt;
 
