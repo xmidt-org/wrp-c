@@ -22,12 +22,12 @@ before_install:
 
 install:
     - sudo apt-get update -qq
-    - sudo apt-get install -y -qq libcunit1 libcunit1-dev lcov
+    - sudo apt-get install -y -qq libcunit1 libcunit1-dev lcov valgrind
 
 script:
     - mkdir build
     - cd build
-    - cmake ..
+    - cmake .. -DDISABLE_VALGRIND:BOOL=true
     - make
     - make test
     - make coverage

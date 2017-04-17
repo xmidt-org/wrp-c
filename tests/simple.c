@@ -958,13 +958,13 @@ void test_encode_decode()
         }
     }
 
-    wrp_free_struct( message );
     WRP_DEBUG("decoded msgType:%d\n", event_msg->msg_type );
     WRP_DEBUG("decoded source:%s\n", event_msg->u.event.source );
     WRP_DEBUG("decoded dest:%s\n", event_msg->u.event.dest );
     WRP_DEBUG("decoded content_type:%s\n", event_msg->u.event.content_type );
     WRP_DEBUG("decoded payload:%s\n", ( char* )event_msg->u.event.payload );
     WRP_DEBUG("message->u.event.payload_size %zu\n", message->u.event.payload_size );
+    wrp_free_struct( message );
     // msgpack encode
     event_msg = &event_m;
     size = wrp_struct_to( event_msg, WRP_BYTES, &bytes );
