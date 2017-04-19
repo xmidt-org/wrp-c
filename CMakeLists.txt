@@ -26,18 +26,32 @@ set(INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/_install)
 set(PREFIX_DIR ${CMAKE_CURRENT_BINARY_DIR}/_prefix)
 set(INCLUDE_DIR ${INSTALL_DIR}/include)
 set(LIBRARY_DIR ${INSTALL_DIR}/lib${LIB_SUFFIX})
+
 include_directories(${INCLUDE_DIR}
                     ${INCLUDE_DIR}/msgpack
                     ${INCLUDE_DIR}/trower-base64
                     ${INCLUDE_DIR}/cimplog)
+
 include_directories (SYSTEM /usr/include)
-link_directories ( ${LIBRARY_DIR} )
+link_directories ( ${LIBRARY_DIR})
+                   
+if (MAIN_PROJ_BUILD) 
+include_directories(
+                    ${MAIN_PROJ_INCLUDE_PATH}
+                    ${MAIN_PROJ_INCLUDE_PATH}/msgpack
+                    ${MAIN_PROJ_INCLUDE_PATH}/trower-base64
+                    ${MAIN_PROJ_INCLUDE_PATH}/cimplog)
+link_directories ( ${LIBRARY_DIR} ${MAIN_PROJ_LIB_PATH})                    
+endif ()                    
+
 
 enable_testing()
 
 if (NOT BUILD_YOCTO)
 
 # base64 external dependency
+if (NOT MAIN_PROJ_BUILD)
+
 ExternalProject_Add(trower-base64
     PREFIX ${PREFIX_DIR}/trower-base64
     GIT_REPOSITORY https://github.com/Comcast/trower-base64.git
@@ -68,6 +82,7 @@ ExternalProject_Add(cimplog
 add_library(libcimplog STATIC IMPORTED)
 add_dependencies(libcimplog cimplog)
 
+endif ()
 endif ()
 
 add_subdirectory(src)
