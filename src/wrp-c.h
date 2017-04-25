@@ -243,4 +243,15 @@ ssize_t wrp_pack_metadata( const data_t *packData, void **data );
  */
 
 size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encodedSize, void *metadataPack, size_t metadataSize );
+
+
+/**
+ *  Find the destination of a wrp_msg_t 
+ *
+ *  @param msg [in] the wrp_msg_t structure to examine
+ *  @return pointer to destination, or NULL if there is no
+ *    destination for this message type
+ */
+const char *wrp_get_msg_dest (const wrp_msg_t *wrp_msg);
+
 #endif

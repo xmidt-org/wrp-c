@@ -361,6 +361,25 @@ void wrp_free_struct( wrp_msg_t *msg )
     free( msg );
 }
 
+/* See wrp-c.h for details. */
+const char *wrp_get_msg_dest (const wrp_msg_t *wrp_msg)
+{
+	if (wrp_msg->msg_type == WRP_MSG_TYPE__REQ)
+		return (const char *)wrp_msg->u.req.dest;
+	if (wrp_msg->msg_type == WRP_MSG_TYPE__EVENT)
+		return (const char *)wrp_msg->u.event.dest;
+	if (wrp_msg->msg_type == WRP_MSG_TYPE__CREATE)
+		return (const char *)wrp_msg->u.crud.dest;
+	if (wrp_msg->msg_type == WRP_MSG_TYPE__RETREIVE)
+		return (const char *)wrp_msg->u.crud.dest;
+	if (wrp_msg->msg_type == WRP_MSG_TYPE__UPDATE)
+		return (const char *)wrp_msg->u.crud.dest;
+	if (wrp_msg->msg_type == WRP_MSG_TYPE__DELETE)
+		return (const char *)wrp_msg->u.crud.dest;
+	return NULL;
+}
+
+
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
