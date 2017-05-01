@@ -600,6 +600,59 @@ const struct test_vectors test[] = {
     },
 };
 
+const wrp_msg_t crud_test[] = {
+    {/* Index 0 */
+        .msg_type = WRP_MSG_TYPE__CREATE,
+        .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+        .u.crud.source = "source-address",
+        .u.crud.dest = "dest-address",
+        .u.crud.partner_ids = &partner_ids,
+        .u.crud.headers = &headers,
+        .u.crud.include_spans = true,
+        .u.crud.spans.spans = NULL,
+        .u.crud.spans.count = 0,
+        .u.crud.payload = "123"
+    },
+    {/* Index 1 */
+        .msg_type = WRP_MSG_TYPE__RETREIVE,
+        .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+        .u.crud.source = "source-address",
+        .u.crud.dest = "dest-address",
+        .u.crud.partner_ids = &partner_ids,
+        .u.crud.headers = &headers,
+        .u.crud.include_spans = true,
+        .u.crud.spans.spans = NULL,
+        .u.crud.spans.count = 0,
+        .u.crud.payload = "123"
+    },
+    {/* Index 2 */
+        .msg_type = WRP_MSG_TYPE__UPDATE,
+        .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+        .u.crud.source = "source-address",
+        .u.crud.dest = "dest-address",
+        .u.crud.partner_ids = &partner_ids,
+        .u.crud.headers = &headers,
+        .u.crud.include_spans = true,
+        .u.crud.spans.spans = NULL,
+        .u.crud.spans.count = 0,
+        .u.crud.payload = "123"
+    },
+    {/* Index 3 */
+        .msg_type = WRP_MSG_TYPE__DELETE,
+        .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+        .u.crud.source = "source-address",
+        .u.crud.dest = "dest-address",
+        .u.crud.partner_ids = &partner_ids,
+        .u.crud.headers = &headers,
+        .u.crud.include_spans = true,
+        .u.crud.spans.spans = NULL,
+        .u.crud.spans.count = 0,
+        .u.crud.payload = "123"
+    }
+
+};
+
+
 void validate_to_strings( const char *expected, ssize_t expected_len,
                           const char *actual, size_t actual_len )
 {
@@ -734,6 +787,9 @@ void test_all()
 
     for( i = 0; i < sizeof( test ) / sizeof( struct test_vectors ); i++ ) {
         char *string;
+        const char *dest;
+        int msg_type;
+
         /* Testing wrp_struct_to_string(). */
         string = wrp_struct_to_string( &test[i].in );
         validate_to_strings( test[i].string, test[i].string_size, string, strlen( string ) );
@@ -758,6 +814,21 @@ void test_all()
             free( bytes );
         }
 
+        /* Testing wrp_get_msg_dest(). */
+        dest = wrp_get_msg_dest (&test[i].in);
+        msg_type = test[i].in.msg_type;
+        if ((msg_type == WRP_MSG_TYPE__REQ) ||
+            (msg_type == WRP_MSG_TYPE__EVENT) ||
+            (msg_type == WRP_MSG_TYPE__CREATE) ||
+            (msg_type == WRP_MSG_TYPE__RETREIVE) ||
+            (msg_type == WRP_MSG_TYPE__UPDATE) ||
+            (msg_type == WRP_MSG_TYPE__DELETE))
+        {
+           CU_ASSERT (strcmp (dest, "dest-address") == 0);
+        } else {
+           CU_ASSERT (dest == NULL);
+        }
+
         /* Testing wrp_to_struct() --> from bytes. */
         if( 1 == i ) {
             wrp_msg_t *msg;
@@ -769,6 +840,11 @@ void test_all()
                 wrp_free_struct( msg );
             }
         }
+    }
+
+    for( i = 0; i < sizeof( crud_test ) / sizeof( wrp_msg_t ); i++ ) {
+        const char *dest = wrp_get_msg_dest (&crud_test[i]);
+        CU_ASSERT (strcmp (dest, "dest-address") == 0);
     }
 
     WRP_INFO("Testing NULL msg handling\n" );
