@@ -1631,29 +1631,34 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 
             case MSGPACK_UNPACK_EXTRA_BYTES: {
                 WRP_ERROR("MSGPACK_UNPACK_EXTRA_BYTES\n" );
+		msgpack_zone_destroy( &mempool );
                 free( decodeReq->metadata );
                 free( decodeReq );
                 return -1;
             }
             case MSGPACK_UNPACK_CONTINUE: {
                 WRP_ERROR("MSGPACK_UNPACK_CONTINUE\n" );
+		msgpack_zone_destroy( &mempool );
                 free( decodeReq->metadata );
                 free( decodeReq );
                 return -1;
             }
             case MSGPACK_UNPACK_PARSE_ERROR: {
                 WRP_ERROR("MSGPACK_UNPACK_PARSE_ERROR\n" );
+		msgpack_zone_destroy( &mempool );
                 free( decodeReq->metadata );
                 free( decodeReq );
                 return -1;
             }
             case MSGPACK_UNPACK_NOMEM_ERROR: {
                 WRP_ERROR("MSGPACK_UNPACK_NOMEM_ERROR\n" );
+		msgpack_zone_destroy( &mempool );
                 free( decodeReq->metadata );
                 free( decodeReq );
                 return -1;
             }
             default:
+		msgpack_zone_destroy( &mempool );
                 free( decodeReq->metadata );
                 free( decodeReq );
                 return -1;
