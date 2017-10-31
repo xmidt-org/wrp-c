@@ -62,7 +62,6 @@ struct req_res_t {
     char *service_name;
     char *url;
     char *content_type;
-    char *crudPayload;
 };
 
 
@@ -1035,8 +1034,8 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
         case WRP_MSG_TYPE__UPDATE:
         case WRP_MSG_TYPE__DELETE:
 
-            if( encodeReqtmp->crudPayload == NULL ) {
-                wrp_map_size--; 
+            if( encodeReqtmp->payload == NULL ) {
+                wrp_map_size--;
                 WRP_INFO("CRUD payload is NULL map size is %d\n", wrp_map_size );
             }
 
@@ -1078,8 +1077,14 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
                 __msgpack_pack_string_nvp( &pk, &WRP_PATH, encodeReqtmp->path );
             }
             
-            if( encodeReqtmp->crudPayload != NULL ) {
-                 __msgpack_pack_string_nvp( &pk, &WRP_PAYLOAD, encodeReqtmp->crudPayload );
+            if( encodeReqtmp->content_type != NULL) {
+                __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
+            }
+
+            if( encodeReqtmp->payload != NULL ) {
+                __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
+                msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
+                msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
             }
 
             break;
@@ -1222,7 +1227,6 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
     char *url = NULL;
     char *path = NULL;
     char *content_type = NULL;
-    char *crudpayload = NULL;
     struct req_res_t *tmpdecodeReq = *decodeReq;
     msgpack_object_kv* p = deserialized.via.map.ptr;
 
@@ -1308,12 +1312,6 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                             strncpy( content_type, StringValue, sLen );
                             content_type[sLen] = '\0';
                             tmpdecodeReq->content_type = content_type;
-                        } else if( strcmp( keyName, WRP_PAYLOAD.name ) == 0 ) {
-                            sLen = strlen( StringValue );
-                            crudpayload = ( char * ) malloc( sLen + 1 );
-                            strncpy( crudpayload, StringValue, sLen );
-                            crudpayload[sLen] = '\0';
-                            tmpdecodeReq->crudPayload = crudpayload;
                         } else if( strcmp( keyName, WRP_PARTNER_IDS.name ) == 0 ) {
                             sLen = strlen( StringValue );
                             tmpdecodeReq->partner_ids = ( partners_t * ) malloc( sizeof( partners_t )
