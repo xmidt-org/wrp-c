@@ -111,6 +111,7 @@ struct wrp_event_msg {
 };
 
 struct wrp_crud_msg {
+    char *content_type;
     char *transaction_uuid;
     char *source;
     char *dest;
@@ -122,7 +123,8 @@ struct wrp_crud_msg {
     int status;
     int rdr;
     char *path;
-    char *payload;
+    void *payload;
+    size_t payload_size;
 };
 
 struct wrp_svc_registration_msg {
