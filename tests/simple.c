@@ -1266,7 +1266,8 @@ void test_crud_message()
 
     if( message->u.crud.payload != NULL ) 
     {
-            CU_ASSERT_STRING_EQUAL( create.u.crud.payload, message->u.crud.payload);
+            CU_ASSERT_EQUAL( create.u.crud.payload_size, message->u.crud.payload_size);
+            CU_ASSERT_EQUAL( 0, memcmp(create.u.crud.payload, message->u.crud.payload, create.u.crud.payload_size) );
             WRP_INFO("Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
@@ -1407,7 +1408,8 @@ void test_crud_message()
 
     if( message->u.crud.payload != NULL ) 
     {
-        CU_ASSERT_STRING_EQUAL( update.u.crud.payload, message->u.crud.payload);
+        CU_ASSERT_EQUAL( update.u.crud.payload_size, message->u.crud.payload_size);
+        CU_ASSERT_EQUAL( 0, memcmp(update.u.crud.payload, message->u.crud.payload, update.u.crud.payload_size) );
         WRP_INFO("Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
@@ -1537,7 +1539,8 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.path, meta_payload.u.crud.path );
     if( message->u.crud.payload != NULL ) 
     {
-        CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.payload, message->u.crud.payload);
+        CU_ASSERT_EQUAL( meta_payload.u.crud.payload_size, message->u.crud.payload_size);
+        CU_ASSERT_EQUAL( 0, memcmp(meta_payload.u.crud.payload, message->u.crud.payload, meta_payload.u.crud.payload_size) );
         WRP_INFO("Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
