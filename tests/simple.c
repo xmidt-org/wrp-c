@@ -611,7 +611,8 @@ const wrp_msg_t crud_test[] = {
         .u.crud.include_spans = true,
         .u.crud.spans.spans = NULL,
         .u.crud.spans.count = 0,
-        .u.crud.payload = "123"
+        .u.crud.payload = "123",
+        .u.crud.payload_size = 3
     },
     {/* Index 1 */
         .msg_type = WRP_MSG_TYPE__RETREIVE,
@@ -623,7 +624,8 @@ const wrp_msg_t crud_test[] = {
         .u.crud.include_spans = true,
         .u.crud.spans.spans = NULL,
         .u.crud.spans.count = 0,
-        .u.crud.payload = "123"
+        .u.crud.payload = "123",
+        .u.crud.payload_size = 3
     },
     {/* Index 2 */
         .msg_type = WRP_MSG_TYPE__UPDATE,
@@ -635,7 +637,8 @@ const wrp_msg_t crud_test[] = {
         .u.crud.include_spans = true,
         .u.crud.spans.spans = NULL,
         .u.crud.spans.count = 0,
-        .u.crud.payload = "123"
+        .u.crud.payload = "123",
+        .u.crud.payload_size = 3
     },
     {/* Index 3 */
         .msg_type = WRP_MSG_TYPE__DELETE,
@@ -647,7 +650,8 @@ const wrp_msg_t crud_test[] = {
         .u.crud.include_spans = true,
         .u.crud.spans.spans = NULL,
         .u.crud.spans.count = 0,
-        .u.crud.payload = "123"
+        .u.crud.payload = "123",
+        .u.crud.payload_size = 3
     }
 
 };
@@ -1171,7 +1175,8 @@ void test_crud_message()
         .u.crud.status = 1,
         .u.crud.rdr = 0,
         .u.crud.path = "/Harvester",
-        .u.crud.payload = createPayload
+        .u.crud.payload = createPayload,
+        .u.crud.payload_size = sizeof(createPayload)
     };
     const wrp_msg_t retreive = {
         .msg_type = WRP_MSG_TYPE__RETREIVE,
@@ -1187,7 +1192,8 @@ void test_crud_message()
         .u.crud.status = 1,
         .u.crud.rdr = 0,
         .u.crud.path = "/IOT",
-        .u.crud.payload = NULL
+        .u.crud.payload = NULL,
+        .u.crud.payload_size = 0
     };
     const wrp_msg_t update = {
         .msg_type = WRP_MSG_TYPE__UPDATE,
@@ -1203,7 +1209,8 @@ void test_crud_message()
         .u.crud.status = 0,
         .u.crud.rdr = 0,
         .u.crud.path = "/Harvester",
-        .u.crud.payload = updatePayload
+        .u.crud.payload = updatePayload,
+        .u.crud.payload_size = sizeof(updatePayload)
     };
     const wrp_msg_t delete = {
         .msg_type = WRP_MSG_TYPE__DELETE,
@@ -1219,7 +1226,8 @@ void test_crud_message()
         .u.crud.status = 1,
         .u.crud.rdr = 0,
         .u.crud.path = "/IOT",
-        .u.crud.payload = NULL
+        .u.crud.payload = NULL,
+        .u.crud.payload_size = 0
     };
     const wrp_msg_t meta_payload = {
         .msg_type = WRP_MSG_TYPE__UPDATE,
@@ -1228,6 +1236,7 @@ void test_crud_message()
         .u.crud.dest = "dest-address",
         .u.crud.partner_ids = &partner_ids,
         .u.crud.headers = &headers,
+        .u.crud.content_type = "json",
         .u.crud.metadata = &meta_data,
         .u.crud.include_spans = false,
         .u.crud.spans.spans = ( struct money_trace_span* ) spans,
@@ -1235,7 +1244,8 @@ void test_crud_message()
         .u.crud.status = 1,
         .u.crud.rdr = 0,
         .u.crud.path = "/Harvester",
-        .u.crud.payload = updatePayload
+        .u.crud.payload = updatePayload,
+        .u.crud.payload_size = sizeof(updatePayload)
     };
     WRP_DEBUG("     **************** CRUD Create*****************     \n" );
     // msgpack encode for CRUD
@@ -1256,7 +1266,8 @@ void test_crud_message()
 
     if( message->u.crud.payload != NULL ) 
     {
-            CU_ASSERT_STRING_EQUAL( create.u.crud.payload, message->u.crud.payload);
+            CU_ASSERT_EQUAL( create.u.crud.payload_size, message->u.crud.payload_size);
+            CU_ASSERT_EQUAL( 0, memcmp(create.u.crud.payload, message->u.crud.payload, create.u.crud.payload_size) );
             WRP_INFO("Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
@@ -1397,7 +1408,8 @@ void test_crud_message()
 
     if( message->u.crud.payload != NULL ) 
     {
-        CU_ASSERT_STRING_EQUAL( update.u.crud.payload, message->u.crud.payload);
+        CU_ASSERT_EQUAL( update.u.crud.payload_size, message->u.crud.payload_size);
+        CU_ASSERT_EQUAL( 0, memcmp(update.u.crud.payload, message->u.crud.payload, update.u.crud.payload_size) );
         WRP_INFO("Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
@@ -1527,7 +1539,8 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.path, meta_payload.u.crud.path );
     if( message->u.crud.payload != NULL ) 
     {
-        CU_ASSERT_STRING_EQUAL( meta_payload.u.crud.payload, message->u.crud.payload);
+        CU_ASSERT_EQUAL( meta_payload.u.crud.payload_size, message->u.crud.payload_size);
+        CU_ASSERT_EQUAL( 0, memcmp(meta_payload.u.crud.payload, message->u.crud.payload, meta_payload.u.crud.payload_size) );
         WRP_INFO("Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {

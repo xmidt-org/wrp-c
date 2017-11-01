@@ -62,7 +62,6 @@ struct req_res_t {
     char *service_name;
     char *url;
     char *content_type;
-    char *crudPayload;
 };
 
 
@@ -331,6 +330,10 @@ void wrp_free_struct( wrp_msg_t *msg )
                 free( msg->u.crud.headers );
             }
 
+            if(NULL != msg->u.crud.content_type)
+            {
+                free(msg->u.crud.content_type);
+            }
             if( NULL != msg->u.crud.payload ) {
                 free( msg->u.crud.payload );
             }
@@ -466,7 +469,9 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
             encode->transaction_uuid = crud->transaction_uuid;
             encode->include_spans = crud->include_spans;
             encode->spans = crud->spans;
-            encode->crudPayload = crud->payload;//type string
+            encode->content_type = crud->content_type;
+            encode->payload = crud->payload;//void
+            encode->payload_size = crud->payload_size;
             encode->partner_ids = crud->partner_ids;
             encode->headers = crud->headers;
             encode->metadata = crud->metadata;
@@ -1029,8 +1034,8 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
         case WRP_MSG_TYPE__UPDATE:
         case WRP_MSG_TYPE__DELETE:
 
-            if( encodeReqtmp->crudPayload == NULL ) {
-                wrp_map_size--; 
+            if( encodeReqtmp->payload == NULL ) {
+                wrp_map_size--;
                 WRP_INFO("CRUD payload is NULL map size is %d\n", wrp_map_size );
             }
 
@@ -1072,8 +1077,14 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
                 __msgpack_pack_string_nvp( &pk, &WRP_PATH, encodeReqtmp->path );
             }
             
-            if( encodeReqtmp->crudPayload != NULL ) {
-                 __msgpack_pack_string_nvp( &pk, &WRP_PAYLOAD, encodeReqtmp->crudPayload );
+            if( encodeReqtmp->content_type != NULL) {
+                __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
+            }
+
+            if( encodeReqtmp->payload != NULL ) {
+                __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
+                msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
+                msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
             }
 
             break;
@@ -1216,7 +1227,6 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
     char *url = NULL;
     char *path = NULL;
     char *content_type = NULL;
-    char *crudpayload = NULL;
     struct req_res_t *tmpdecodeReq = *decodeReq;
     msgpack_object_kv* p = deserialized.via.map.ptr;
 
@@ -1302,12 +1312,6 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                             strncpy( content_type, StringValue, sLen );
                             content_type[sLen] = '\0';
                             tmpdecodeReq->content_type = content_type;
-                        } else if( strcmp( keyName, WRP_PAYLOAD.name ) == 0 ) {
-                            sLen = strlen( StringValue );
-                            crudpayload = ( char * ) malloc( sLen + 1 );
-                            strncpy( crudpayload, StringValue, sLen );
-                            crudpayload[sLen] = '\0';
-                            tmpdecodeReq->crudPayload = crudpayload;
                         } else if( strcmp( keyName, WRP_PARTNER_IDS.name ) == 0 ) {
                             sLen = strlen( StringValue );
                             tmpdecodeReq->partner_ids = ( partners_t * ) malloc( sizeof( partners_t )
@@ -1613,11 +1617,13 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.crud.headers = decodeReq->headers;
                         msg->u.crud.metadata = decodeReq->metadata;
                         msg->u.crud.include_spans = decodeReq->include_spans;
+                        msg->u.crud.content_type = decodeReq->content_type;
                         msg->u.crud.spans.spans = NULL;   /* not supported */
                         msg->u.crud.spans.count = 0;     /* not supported */
                         msg->u.crud.status = decodeReq->statusValue;
                         msg->u.crud.rdr = decodeReq->rdr;
-                        msg->u.crud.payload = decodeReq->crudPayload;//type string
+                        msg->u.crud.payload = decodeReq->payload;
+                        msg->u.crud.payload_size = decodeReq->payload_size;
                         msg->u.crud.path = decodeReq->path;
                         free( decodeReq );
                         *msg_ptr = msg;
