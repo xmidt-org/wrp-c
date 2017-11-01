@@ -38,7 +38,7 @@
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
 struct wrp_token {
-    const char const *name;
+    const char *name;
     size_t length;
 };
 
@@ -68,7 +68,7 @@ struct req_res_t {
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
-static const char const *__empty_list = "''";
+static const char *__empty_list = "''";
 #define METADATA_MAP_SIZE                          1
 /* Reminder: sizeof("string") includes the trailing '\0', which we don't want. */
 static const struct wrp_token WRP_MSG_TYPE      = { .name = "msg_type", .length = sizeof( "msg_type" ) - 1 };
@@ -87,7 +87,7 @@ static const struct wrp_token WRP_METADATA      = { .name = "metadata", .length 
 static const struct wrp_token WRP_RDR           = { .name = "rdr", .length = sizeof( "rdr" ) - 1 };
 static const struct wrp_token WRP_PATH          = { .name = "path", .length = sizeof( "path" ) - 1 };
 static const struct wrp_token WRP_PARTNER_IDS   = { .name = "partner_ids", .length = sizeof( "partner_ids" ) - 1 };
-static const int const WRP_MAP_SIZE             = 4; // mandatory msg_type,source,dest,payload
+static const int WRP_MAP_SIZE                   = 4; // mandatory msg_type,source,dest,payload
 
 
 /*----------------------------------------------------------------------------*/
@@ -560,7 +560,7 @@ static ssize_t __wrp_struct_to_string( const wrp_msg_t *msg, char **bytes )
 
 static ssize_t __wrp_keep_alive_to_string (char **bytes )
 {
-    const char const *keep_alive_fmt =
+    const char *keep_alive_fmt =
         "wrp_keep_alive_msg {\n"
         "}\n";
     char *data;
@@ -593,9 +593,9 @@ static ssize_t __wrp_keep_alive_to_string (char **bytes )
 static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth,
         char **bytes )
 {
-    const char const *auth_fmt = "wrp_auth_msg {\n"
-                                 "    .status = %d\n"
-                                 "}\n";
+    const char *auth_fmt = "wrp_auth_msg {\n"
+                           "    .status = %d\n"
+                           "}\n";
     char *data;
     size_t length;
     length = snprintf( NULL, 0, auth_fmt, auth->status );
@@ -626,17 +626,17 @@ static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth,
  */
 static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char **bytes )
 {
-    const char const *req_fmt = "wrp_req_msg {\n"
-                                "    .transaction_uuid = %s\n"
-                                "    .source           = %s\n"
-                                "    .dest             = %s\n"
-                                "    .partner_ids      = %s\n"
-                                "    .headers          = %s\n"
-                                "    .content_type     = %s\n"
-                                "    .include_spans    = %s\n"
-                                "    .spans            = %s\n"
-                                "    .payload_size     = %zd\n"
-                                "}\n";
+    const char *req_fmt = "wrp_req_msg {\n"
+                          "    .transaction_uuid = %s\n"
+                          "    .source           = %s\n"
+                          "    .dest             = %s\n"
+                          "    .partner_ids      = %s\n"
+                          "    .headers          = %s\n"
+                          "    .content_type     = %s\n"
+                          "    .include_spans    = %s\n"
+                          "    .spans            = %s\n"
+                          "    .payload_size     = %zd\n"
+                          "}\n";
     size_t length;
     char *headers;
     char *spans;
@@ -690,14 +690,14 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
 static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
         char **bytes )
 {
-    const char const *event_fmt = "wrp_event_msg {\n"
-                                  "    .source           = %s\n"
-                                  "    .dest             = %s\n"
-                                  "    .partner_ids      = %s\n"
-                                  "    .headers          = %s\n"
-                                  "    .content_type     = %s\n"
-                                  "    .payload_size     = %zd\n"
-                                  "}\n";
+    const char *event_fmt = "wrp_event_msg {\n"
+                            "    .source           = %s\n"
+                            "    .dest             = %s\n"
+                            "    .partner_ids      = %s\n"
+                            "    .headers          = %s\n"
+                            "    .content_type     = %s\n"
+                            "    .payload_size     = %zd\n"
+                            "}\n";
     size_t length;
     char *headers;
     char *partner_ids;
