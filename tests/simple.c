@@ -1795,8 +1795,10 @@ void test_wrp_get_msg_dest_element()
             CU_ASSERT( NULL != actual );
             if( NULL != actual ) {
                 CU_ASSERT_STRING_EQUAL( actual, tests[i].expected );
-                free( actual );
             }
+        }
+        if( NULL != actual ) {
+            free( actual );
         }
     }
 }
