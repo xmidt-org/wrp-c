@@ -1717,6 +1717,90 @@ void test_crud_message()
     wrp_free_struct( message );
 }
 
+void test_wrp_get_msg_dest_element()
+{
+    struct test_parameters {
+        wrp_msg_t wrp;
+        enum wrp_device_id_element element;
+        const char *expected;
+    } tests[] = {
+        /* Normal cases */
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.dest = "mac:112233445566/simple/example",
+          .element = WRP_ID_ELEMENT__SCHEME,
+          .expected = "mac" },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.dest = "mac:112233445566/simple/example",
+          .element = WRP_ID_ELEMENT__ID,
+          .expected = "112233445566" },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.dest = "mac:112233445566/simple/example",
+          .element = WRP_ID_ELEMENT__SERVICE,
+          .expected = "simple" },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.dest = "mac:112233445566/simple/example",
+          .element = WRP_ID_ELEMENT__APPLICATION,
+          .expected = "example" },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.dest = "mac:112233445566/simple/",
+          .element = WRP_ID_ELEMENT__APPLICATION,
+          .expected = NULL },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.dest = "mac:112233445566/simple",
+          .element = WRP_ID_ELEMENT__APPLICATION,
+          .expected = NULL },
+
+        /* Border line cases */
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.dest = "mac:112233445566//example",
+          .element = WRP_ID_ELEMENT__SERVICE,
+          .expected = NULL },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.dest = "://",
+          .element = WRP_ID_ELEMENT__SCHEME,
+          .expected = NULL },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.dest = "://",
+          .element = WRP_ID_ELEMENT__SERVICE,
+          .expected = NULL },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.dest = "://",
+          .element = WRP_ID_ELEMENT__APPLICATION,
+          .expected = NULL },
+
+        /* Boundary cases */
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.dest = "mac:112233445566/simple/example",
+          .element = (enum wrp_device_id_element) -1,
+          .expected = NULL },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.dest = "mac:112233445566/simple/example",
+          .element = (enum wrp_device_id_element) 99,
+          .expected = NULL },
+    };
+
+    size_t count = sizeof(tests)/sizeof(struct test_parameters);
+    size_t i;
+
+    for( i = 0; i < count; i++ ) {
+        char *actual;
+
+        actual = wrp_get_msg_dest_element(tests[i].element, &tests[i].wrp);
+
+        //printf( "expected: %s ? actual: %s\n", tests[i].expected, actual );
+
+        if( NULL == tests[i].expected ) {
+            CU_ASSERT( NULL == actual );
+        } else {
+            CU_ASSERT( NULL != actual );
+            if( NULL != actual ) {
+                CU_ASSERT_STRING_EQUAL( actual, tests[i].expected );
+                free( actual );
+            }
+        }
+    }
+}
+
 void add_suites( CU_pSuite *suite )
 {
     *suite = CU_add_suite( "wrp-c encoding tests", NULL, NULL );
@@ -1724,6 +1808,7 @@ void add_suites( CU_pSuite *suite )
     //CU_add_test( *suite, "Test struct_to_bytes()", test_to_bytes );
     //CU_add_test( *suite, "Test encode_decode()", test_encode_decode );
     CU_add_test( *suite, "Test CRUD message", test_crud_message );
+    CU_add_test( *suite, "Test wrp_get_msg_dest_element", test_wrp_get_msg_dest_element );
 }
 
 /*----------------------------------------------------------------------------*/

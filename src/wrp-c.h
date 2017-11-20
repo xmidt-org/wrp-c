@@ -48,6 +48,13 @@ enum wrp_format {
     WRP_STRING = 2
 };
 
+enum wrp_device_id_element {
+    WRP_ID_ELEMENT__SCHEME      = 0,
+    WRP_ID_ELEMENT__ID          = 1,
+    WRP_ID_ELEMENT__SERVICE     = 2,
+    WRP_ID_ELEMENT__APPLICATION = 3
+};
+
 struct wrp_auth_msg {
     int status;
 };
@@ -254,6 +261,19 @@ size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encoded
  *  @return pointer to destination, or NULL if there is no
  *    destination for this message type
  */
-const char *wrp_get_msg_dest (const wrp_msg_t *wrp_msg);
+const char *wrp_get_msg_dest( const wrp_msg_t *wrp_msg );
+
+/**
+ *  Find an element of the destination of a wrp_msg_t 
+ *
+ *  @note Returned memory must be freed using free().
+ *
+ *  @param msg [in] the wrp_msg_t structure to examine
+ *
+ *  @return pointer to the element requested, or NULL otherwise
+ */
+char *wrp_get_msg_dest_element( const enum wrp_device_id_element element,
+                                const wrp_msg_t *wrp_msg );
+
 
 #endif
