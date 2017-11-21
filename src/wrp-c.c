@@ -127,6 +127,7 @@ static void __msgpack_maps( msgpack_packer *pk, const data_t *dataMap );
 static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **decodeMapReq );
 static void mapCommonString( msgpack_packer *pk, struct req_res_t *encodeComReq );
 static int alterMap( char * buf );
+static char* strdupptr( const char *s, const char *e );
 
 
 /*----------------------------------------------------------------------------*/
@@ -382,6 +383,55 @@ const char *wrp_get_msg_dest (const wrp_msg_t *wrp_msg)
 	return NULL;
 }
 
+/* See wrp-c.h for details. */
+char *wrp_get_msg_dest_element( const enum wrp_device_id_element element,
+                                const wrp_msg_t *wrp_msg )
+{
+    const char *dest;
+    char *rv = NULL;
+
+    dest = wrp_get_msg_dest(wrp_msg);
+
+    if (NULL != dest ) {
+        const char *start, *end;
+
+        start = dest;
+        end = strchr(start, ':');
+        if (NULL != end) {
+            if (WRP_ID_ELEMENT__SCHEME == element) {
+                rv = strdupptr(start, end);
+            } else {
+                start = end;
+                start++;
+                end = strchr(start, '/');
+                if (NULL != end) {
+                    if (WRP_ID_ELEMENT__ID == element) {
+                        rv = strdupptr(start, end);
+                    } else {
+                        start = end;
+                        start++;
+                        end = strchr(start, '/');
+                        if (NULL != end) {
+                            if (WRP_ID_ELEMENT__SERVICE == element) {
+                                rv = strdupptr(start, end);
+                            } else {
+                                if (WRP_ID_ELEMENT__APPLICATION == element) {
+                                    start = end;
+                                    start++;
+                                    if (0 < strlen(start)) {
+                                        rv = strdup(start);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return rv;
+}
 
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
@@ -1759,4 +1809,21 @@ size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encoded
     }
 
     return ( encodedSize + metadataSize );
+}
+
+/**
+ *  @brief Helper function that copies a portion of a string defined by pointers
+ *
+ *  @param s the start of the string to copy
+ *  @param e the last character of the string to copy
+ *
+ *  @return the allocated buffer with the substring
+ */
+static char* strdupptr( const char *s, const char *e )
+{
+    if (s == e) {
+        return NULL;
+    }
+
+    return strndup(s, (size_t) (((uintptr_t)e) - ((uintptr_t)s)));
 }
