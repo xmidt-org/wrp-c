@@ -932,12 +932,13 @@ static void __msgpack_maps( msgpack_packer *pk, const data_t *dataMap )
 
     if( dataMap != NULL ) {
         struct data *tmpdata;
-        struct wrp_token WRP_MAP_NAME = {'\0'};
         msgpack_pack_map( pk, dataMap->count );
         tmpdata = dataMap->data_items;
         WRP_DEBUG("dataMap->count is %zu\n", dataMap->count );
 
         for( i = 0; i < dataMap->count; i++ ) {
+            struct wrp_token WRP_MAP_NAME;
+
             WRP_MAP_NAME.name = tmpdata[i].name;
             WRP_MAP_NAME.length = strlen( tmpdata[i].name );
             __msgpack_pack_string_nvp( pk, &WRP_MAP_NAME, tmpdata[i].value );
