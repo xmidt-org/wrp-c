@@ -14,6 +14,7 @@
  * limitations under the License.
  *
  */
+#define _GNU_SOURCE 1
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
