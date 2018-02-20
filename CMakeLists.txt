@@ -45,7 +45,7 @@ include_directories(
                     ${MAIN_PROJ_INCLUDE_PATH}/msgpack
                     ${MAIN_PROJ_INCLUDE_PATH}/trower-base64
                     ${MAIN_PROJ_INCLUDE_PATH}/cimplog)
-link_directories ( ${LIBRARY_DIR} ${MAIN_PROJ_LIB_PATH})
+link_directories ( ${LIBRARY_DIR} ${MAIN_PROJ_LIB_PATH})                    
 endif ()                    
 
 
