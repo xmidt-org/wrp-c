@@ -24,9 +24,11 @@ add_executable(simple simple.c ../src/wrp-c.c)
 set_property(TARGET simple PROPERTY C_STANDARD 99)
 
 target_link_libraries (simple -lmsgpackc -ltrower-base64 -lcimplog)
-target_link_libraries (simple gcov)
 target_link_libraries (simple cunit)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (simple gcov)
 target_link_libraries (simple rt)
+endif()
 
 add_custom_target(coverage
                   COMMAND lcov -q --capture --directory ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/simple.dir/__/src --output-file coverage.info

@@ -12,7 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 3.4)
 
 project(wrp-c)
 include(ExternalProject)
@@ -21,6 +21,10 @@ include(CTest)
 add_definitions(-std=c99)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g -Werror -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -g -Werror -Wall")
+
+if(APPLE)
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -undefined dynamic_lookup")
+endif(APPLE)
 
 set(INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/_install)
 set(PREFIX_DIR ${CMAKE_CURRENT_BINARY_DIR}/_prefix)
@@ -41,7 +45,7 @@ include_directories(
                     ${MAIN_PROJ_INCLUDE_PATH}/msgpack
                     ${MAIN_PROJ_INCLUDE_PATH}/trower-base64
                     ${MAIN_PROJ_INCLUDE_PATH}/cimplog)
-link_directories ( ${LIBRARY_DIR} ${MAIN_PROJ_LIB_PATH})                    
+link_directories ( ${LIBRARY_DIR} ${MAIN_PROJ_LIB_PATH})
 endif ()                    
 
 
