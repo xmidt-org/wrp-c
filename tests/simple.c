@@ -1636,8 +1636,8 @@ void test_crud_message()
 
     WRP_DEBUG("******** Append Metadata packing **********\n" );
     // Append Encoded data
-    wrp_msg_t eventMsg, *finalMsg;
-    void *metadataPack, *encodedData;
+    wrp_msg_t eventMsg, *finalMsg = NULL;
+    void *metadataPack = NULL, *encodedData = NULL;
     size_t encodedSize;
     eventMsg.msg_type = WRP_MSG_TYPE__EVENT;
     eventMsg.u.event.source = "mac:format/iot" ;
