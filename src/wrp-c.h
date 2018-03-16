@@ -30,10 +30,15 @@
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
 enum wrp_msg_type {
-    WRP_MSG_TYPE__AUTH    = 2,
-    WRP_MSG_TYPE__REQ     = 3,
-    WRP_MSG_TYPE__EVENT   = 4,
-
+    WRP_MSG_TYPE__AUTH          = 2,
+    WRP_MSG_TYPE__REQ           = 3,
+    WRP_MSG_TYPE__EVENT         = 4,
+    WRP_MSG_TYPE__CREATE        = 5,
+    WRP_MSG_TYPE__RETREIVE      = 6,
+    WRP_MSG_TYPE__UPDATE        = 7,
+    WRP_MSG_TYPE__DELETE        = 8,
+    WRP_MSG_TYPE__SVC_REGISTRATION      = 9,
+    WRP_MSG_TYPE__SVC_ALIVE     = 10,
     WRP_MSG_TYPE__UNKNOWN = 200
 };
 
@@ -41,6 +46,13 @@ enum wrp_format {
     WRP_BYTES = 0,
     WRP_BASE64 = 1,
     WRP_STRING = 2
+};
+
+enum wrp_device_id_element {
+    WRP_ID_ELEMENT__SCHEME      = 0,
+    WRP_ID_ELEMENT__ID          = 1,
+    WRP_ID_ELEMENT__SERVICE     = 2,
+    WRP_ID_ELEMENT__APPLICATION = 3
 };
 
 struct wrp_auth_msg {
@@ -65,11 +77,29 @@ typedef struct headers_struct {
     char *headers[];
 } headers_t;
 
+typedef struct partners_struct {
+    size_t count;
+    char *partner_ids[];
+} partners_t;
+
+struct data {
+    char *name;
+    char *value;
+};
+
+typedef struct data_struct {
+    size_t count;
+    struct data *data_items;
+} data_t;
+
 struct wrp_req_msg {
     char *transaction_uuid;
+    char *content_type;
     char *source;
     char *dest;
+    partners_t *partner_ids;
     headers_t *headers;                         /* NULL terminated list */
+    data_t *metadata;
     bool include_spans;
     struct money_trace_spans spans;
     void *payload;
@@ -77,11 +107,36 @@ struct wrp_req_msg {
 };
 
 struct wrp_event_msg {
+    char *content_type;
     char *source;
     char *dest;
+    partners_t *partner_ids;
     headers_t *headers;                         /* NULL terminated list */
+    data_t *metadata;
     void *payload;
     size_t payload_size;
+};
+
+struct wrp_crud_msg {
+    char *content_type;
+    char *transaction_uuid;
+    char *source;
+    char *dest;
+    partners_t *partner_ids;
+    headers_t *headers;                         /* NULL terminated list */
+    data_t *metadata;
+    bool include_spans;
+    struct money_trace_spans spans;
+    int status;
+    int rdr;
+    char *path;
+    void *payload;
+    size_t payload_size;
+};
+
+struct wrp_svc_registration_msg {
+    char *service_name;
+    char *url;
 };
 
 typedef struct {
@@ -91,6 +146,8 @@ typedef struct {
         struct wrp_auth_msg  auth;
         struct wrp_req_msg   req;
         struct wrp_event_msg event;
+        struct wrp_crud_msg crud;
+        struct wrp_svc_registration_msg reg;
     } u;
 } wrp_msg_t;
 
@@ -168,5 +225,56 @@ char* wrp_struct_to_string( const wrp_msg_t *msg );
  *  @param msg [in] the wrp_msg_t structure to free
  */
 void wrp_free_struct( wrp_msg_t *msg );
+
+/**
+ *  Encode/pack only metadata from wrp_msg_t structure.
+ *
+ *  @note Do not call free of output data in failure case!
+ *
+ *  @param msg [in] packData the data_t structure to pack/encode
+ *  @param msg [out] the encoded output
+ *  @return encoded buffer size or less than 1 in failure case
+ */
+
+ssize_t wrp_pack_metadata( const data_t *packData, void **data );
+
+/**
+ * @brief appendEncodedData function to append two encoded buffer and change MAP size accordingly.
+ *
+ * @note appendEncodedData function allocates memory for buffer, caller needs to free the buffer(appendData)in
+ * both success or failure case. use wrp_free_struct() for free
+ *
+ * @param[in] encodedBuffer msgpack object (first buffer)
+ * @param[in] encodedSize is size of first buffer
+ * @param[in] metadataPack msgpack object (second buffer)
+ * @param[in] metadataSize is size of second buffer
+ * @param[out] appendData final encoded buffer after append
+ * @return  appended total buffer size or less than 1 in failure case
+ */
+
+size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encodedSize, void *metadataPack, size_t metadataSize );
+
+
+/**
+ *  Find the destination of a wrp_msg_t 
+ *
+ *  @param msg [in] the wrp_msg_t structure to examine
+ *  @return pointer to destination, or NULL if there is no
+ *    destination for this message type
+ */
+const char *wrp_get_msg_dest( const wrp_msg_t *wrp_msg );
+
+/**
+ *  Find an element of the destination of a wrp_msg_t 
+ *
+ *  @note Returned memory must be freed using free().
+ *
+ *  @param msg [in] the wrp_msg_t structure to examine
+ *
+ *  @return pointer to the element requested, or NULL otherwise
+ */
+char *wrp_get_msg_dest_element( const enum wrp_device_id_element element,
+                                const wrp_msg_t *wrp_msg );
+
 
 #endif

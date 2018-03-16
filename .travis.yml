@@ -1,6 +1,17 @@
 language: c
+os:
+    - linux
+    - osx
+
+matrix:
+    include:
+        - os: linux
+          dist: trusty
+          sudo: required
 compiler:
     - gcc
+    - clang
+
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
@@ -15,22 +26,22 @@ addons:
     notification_email: weston_schmidt@alumni.purdue.edu
     build_command_prepend: "mkdir coverity_build && cd coverity_build && cmake .."
     build_command:   "make"
-    branch_pattern: coverity_scan
+    branch_pattern: master
 
 before_install:
-    - sudo pip install codecov
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo pip install codecov; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install cunit valgrind; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y -qq libcunit1 libcunit1-dev lcov valgrind; fi
 
 install:
-    - sudo apt-get update -qq
-    - sudo apt-get install -y -qq libcunit1 libcunit1-dev lcov
 
 script:
     - mkdir build
     - cd build
-    - cmake ..
+    - cmake .. -DDISABLE_VALGRIND:BOOL=true
     - make
     - make test
-    - make coverage
 
 after_success:
-    - codecov
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then codecov; fi
