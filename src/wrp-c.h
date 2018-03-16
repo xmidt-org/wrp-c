@@ -165,6 +165,7 @@ typedef struct {
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
 
+
 /**
  *  Converts one of the wrp data structures into the sequence of bytes
  *  representation.
