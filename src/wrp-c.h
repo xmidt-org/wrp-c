@@ -102,6 +102,8 @@ struct wrp_req_msg {
     data_t *metadata;
     bool include_spans;
     struct money_trace_spans spans;
+    int status;
+    int rdr;
     void *payload;
     size_t payload_size;
 };

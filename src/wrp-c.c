@@ -483,6 +483,8 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
             encode->headers = req->headers;
             encode->metadata = req->metadata;
             encode->partner_ids = req->partner_ids;
+            encode->status = req->status;
+            encode->rdr = req->rdr;
             encode->msgType = msg->msg_type;
             rv = __wrp_pack_structure( encode, bytes );
             break;
@@ -686,6 +688,8 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
                           "    .content_type     = %s\n"
                           "    .include_spans    = %s\n"
                           "    .spans            = %s\n"
+                          "    .status           = %d\n"
+                          "    .rdr              = %d\n"
                           "    .payload_size     = %zd\n"
                           "}\n";
     size_t length;
@@ -698,7 +702,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
     partner_ids = __get_partner_ids_string( req->partner_ids );
     length = snprintf( NULL, 0, req_fmt, req->transaction_uuid, req->source,
                        req->dest, partner_ids, headers,req->content_type, ( req->include_spans ? "true" : "false" ),
-                       spans, req->payload_size );
+                       spans, req->status, req->rdr, req->payload_size );
 
     if( NULL != bytes ) {
         char *data;
@@ -707,7 +711,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
         if( NULL != data ) {
             sprintf( data, req_fmt, req->transaction_uuid, req->source,
                      req->dest, partner_ids, headers, req->content_type,( req->include_spans ? "true" : "false" ),
-                     spans, req->payload_size );
+                     spans, req->status, req->rdr, req->payload_size );
             data[length] = '\0';
             *bytes = data;
         } else {
@@ -1042,6 +1046,12 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             msgpack_pack_int( &pk, encodeReqtmp->statusValue );
             break;
         case WRP_MSG_TYPE__REQ:
+            if( encodeReqtmp->status != 0 ) {
+                wrp_map_size++; //status
+            }
+            if( encodeReqtmp->rdr >= 0 ) {
+                wrp_map_size++; //rdr
+            }
             msgpack_pack_map( &pk, wrp_map_size );
             //Pack msgType,source,dest,headers,metadata,partner_ids
             mapCommonString( &pk, encodeReqtmp );
@@ -1054,6 +1064,15 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             }
 
             __msgpack_spans( &pk, &encodeReqtmp->spans );
+            if( encodeReqtmp->status != 0 ) {
+                __msgpack_pack_string( &pk, WRP_STATUS.name, WRP_STATUS.length );
+                msgpack_pack_int( &pk, encodeReqtmp->status );
+            }
+
+            if( encodeReqtmp->rdr >= 0 ) {
+                __msgpack_pack_string( &pk, WRP_RDR.name, WRP_RDR.length );
+                msgpack_pack_int( &pk, encodeReqtmp->rdr );
+            }
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
             msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
@@ -1623,6 +1642,8 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.req.include_spans = decodeReq->include_spans;
                         msg->u.req.spans.spans = NULL;   /* not supported */
                         msg->u.req.spans.count = 0;     /* not supported */
+                        msg->u.req.status = decodeReq->statusValue;
+                        msg->u.req.rdr = decodeReq->rdr;
                         msg->u.req.payload = decodeReq->payload;
                         msg->u.req.payload_size = decodeReq->payload_size;
                         msg->u.req.partner_ids = decodeReq->partner_ids;

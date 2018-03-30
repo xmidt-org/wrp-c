@@ -99,6 +99,8 @@ const struct test_vectors test[] = {
         .in.u.req.include_spans = false,
         .in.u.req.spans.spans = NULL,
         .in.u.req.spans.count = 0,
+        .in.u.req.status = 1,
+        .in.u.req.rdr = 0,
         .in.u.req.payload = "123",
         .in.u.req.payload_size = 3,
 
@@ -113,12 +115,14 @@ const struct test_vectors test[] = {
         "    .content_type     = application/json\n"
         "    .include_spans    = false\n"
         "    .spans            = ''\n"
+        "    .status           = 1\n"
+        "    .rdr              = 0\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 149,
+        .msgpack_size = 162,
         .msgpack = {
-            0x86,  /* 6 name value pairs */
+            0x88,  /* 8 name value pairs */
 
             /* msg_type -> 3 */
             0xa8,  /* "msg_type" */
@@ -153,6 +157,16 @@ const struct test_vectors test[] = {
             0xb0,   /* application/json */
             'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
 
+            /* status -> 1 */
+            0xa6,   /* status */
+            's', 't', 'a', 't', 'u', 's',
+            0x01,
+
+            /* rdr -> 0 */
+            0xa3,   /* rdr */
+            'r', 'd', 'r',
+            0x00,
+
             /* payload -> data */
             0xa7,   /* payload */
             'p', 'a', 'y', 'l', 'o', 'a', 'd',
@@ -173,6 +187,8 @@ const struct test_vectors test[] = {
         .in.u.req.include_spans = true,
         .in.u.req.spans.spans = NULL,
         .in.u.req.spans.count = 0,
+        .in.u.req.status = 1,
+        .in.u.req.rdr = 0,
         .in.u.req.payload = "123",
         .in.u.req.payload_size = 3,
 
@@ -187,12 +203,14 @@ const struct test_vectors test[] = {
         "    .content_type     = application/json\n"
         "    .include_spans    = true\n"
         "    .spans            = ''\n"
+        "    .status           = 1\n"
+        "    .rdr              = 0\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 224,
+        .msgpack_size = 237,
         .msgpack = {
-            0x89,  /* 9 name value pairs */
+            0x8b,  /* 11 name value pairs */
 
             /* msg_type -> 3 */
             0xa8,  /* "msg_type" */
@@ -247,6 +265,16 @@ const struct test_vectors test[] = {
             'i', 'n', 'c', 'l', 'u', 'd', 'e', '_', 's', 'p', 'a', 'n', 's',
             0xc3, /* true */
 
+            /* status -> 1 */
+            0xa6,   /* status */
+            's', 't', 'a', 't', 'u', 's',
+            0x01,
+
+            /* rdr -> 0 */
+            0xa3,   /* rdr */
+            'r', 'd', 'r',
+            0x00,
+
             /* payload -> data */
             0xa7,   /* payload */
             'p', 'a', 'y', 'l', 'o', 'a', 'd',
@@ -269,6 +297,8 @@ const struct test_vectors test[] = {
         .in.u.req.include_spans = false,
         .in.u.req.spans.spans = NULL,
         .in.u.req.spans.count = 0,
+        .in.u.req.status = 1,
+        .in.u.req.rdr = 0,
         .in.u.req.payload = "123",
         .in.u.req.payload_size = 3,
 
@@ -283,12 +313,14 @@ const struct test_vectors test[] = {
         "    .content_type     = application/json\n"
         "    .include_spans    = false\n"
         "    .spans            = ''\n"
+        "    .status           = 1\n"
+        "    .rdr              = 0\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 209,
+        .msgpack_size = 222,
         .msgpack = {
-            0x88,  /* 8 name value pairs */
+            0x8a,  /* 10 name value pairs */
 
             /* msg_type -> 3 */
             0xa8,  /* "msg_type" */
@@ -339,6 +371,16 @@ const struct test_vectors test[] = {
             0xb0,   /* application/json */
             'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
 
+            /* status -> 1 */
+            0xa6,   /* status */
+            's', 't', 'a', 't', 'u', 's',
+            0x01,
+
+            /* rdr -> 0 */
+            0xa3,   /* rdr */
+            'r', 'd', 'r',
+            0x00,
+
             /* payload -> data */
             0xa7,   /* payload */
             'p', 'a', 'y', 'l', 'o', 'a', 'd',
@@ -360,6 +402,8 @@ const struct test_vectors test[] = {
         .in.u.req.include_spans = false,
         .in.u.req.spans.spans = ( struct money_trace_span* ) spans,
         .in.u.req.spans.count = sizeof( spans ) / sizeof( struct money_trace_span ),
+        .in.u.req.status = 1,
+        .in.u.req.rdr = 0,
         .in.u.req.payload = "123",
         .in.u.req.payload_size = 3,
 
@@ -375,12 +419,14 @@ const struct test_vectors test[] = {
         "    .include_spans    = false\n"
         "    .spans            = \n"
         "        hop-1: 123000044 - 11\n"
+        "    .status           = 1\n"
+        "    .rdr              = 0\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 229,
+        .msgpack_size = 242,
         .msgpack = {
-            0x89,  /* 9 name value pairs */
+            0x8b,  /* 11 name value pairs */
 
             /* msg_type -> 3 */
             0xa8,  /* "msg_type" */
@@ -440,6 +486,16 @@ const struct test_vectors test[] = {
             0xce,   /* 123000044 */
             0x07, 0x54, 0xd4, 0xec,
             0x0b,   /* 11 */
+
+            /* status -> 1 */
+            0xa6,   /* status */
+            's', 't', 'a', 't', 'u', 's',
+            0x01,
+
+            /* rdr -> 0 */
+            0xa3,   /* rdr */
+            'r', 'd', 'r',
+            0x00,
 
             /* payload -> data */
             0xa7,   /* payload */
@@ -894,6 +950,8 @@ void test_encode_decode()
                             .u.req.include_spans = false,
                             .u.req.spans.spans = NULL,
                             .u.req.spans.count = 0,
+                            .u.req.status = 1,
+                            .u.req.rdr = 0,
                             .u.req.payload = "123",
                             .u.req.payload_size = 3
                           };
@@ -916,6 +974,8 @@ void test_encode_decode()
                              .u.req.include_spans = false,
                              .u.req.spans.spans = NULL,
                              .u.req.spans.count = 0,
+                             .u.req.status = 1,
+                             .u.req.rdr = 0,
                              .u.req.payload = "123",
                              .u.req.payload_size = 3
                            };
@@ -932,6 +992,8 @@ void test_encode_decode()
     free( bytes );
     CU_ASSERT_EQUAL( rv, size );
     CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
+    CU_ASSERT_EQUAL( message->u.req.status, msg.u.req.status );
+    CU_ASSERT_EQUAL( message->u.req.rdr, msg.u.req.rdr );
     CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
     CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
     CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg.u.req.content_type );
@@ -1095,6 +1157,8 @@ void test_encode_decode()
     free( bytes );
     CU_ASSERT_EQUAL( rv, size );
     CU_ASSERT_EQUAL( message->msg_type, msg2.msg_type );
+    CU_ASSERT_EQUAL( message->u.req.status, msg2.u.req.status );
+    CU_ASSERT_EQUAL( message->u.req.rdr, msg2.u.req.rdr );
     CU_ASSERT_STRING_EQUAL( message->u.req.source, msg2.u.req.source );
     CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg2.u.req.dest );
     CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg2.u.req.transaction_uuid );
