@@ -1592,7 +1592,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
         WRP_DEBUG("unpack_ret:%d\n", unpack_ret );
 
         switch( unpack_ret ) {
-            case MSGPACK_UNPACK_SUCCESS:
+            case MSGPACK_UNPACK_SUCCESS: {
                 //msgpack_object_print( stdout, deserialized );
                 //puts("");
                 if( deserialized.via.map.size != 0 ) {
@@ -1684,8 +1684,11 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         free( decodeReq->metadata->data_items );
                         free( decodeReq->metadata );
                         free( decodeReq );
+                        free(msg);
                         return -1;
                 }
+                break; 
+            }
 
             case MSGPACK_UNPACK_EXTRA_BYTES: {
                 WRP_ERROR("MSGPACK_UNPACK_EXTRA_BYTES\n" );
