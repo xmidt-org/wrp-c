@@ -52,7 +52,8 @@ enum wrp_device_id_element {
     WRP_ID_ELEMENT__SCHEME      = 0,
     WRP_ID_ELEMENT__ID          = 1,
     WRP_ID_ELEMENT__SERVICE     = 2,
-    WRP_ID_ELEMENT__APPLICATION = 3
+    WRP_ID_ELEMENT__APPLICATION = 3,
+    WRP_ID_ELEMENT__OBJECT = 4
 };
 
 struct wrp_auth_msg {
