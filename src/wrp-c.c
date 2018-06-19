@@ -416,13 +416,22 @@ char *wrp_get_msg_dest_element( const enum wrp_device_id_element element,
                             if (WRP_ID_ELEMENT__SERVICE == element) {
                                 rv = strdupptr(start, end);
                             } else {
-                                if (WRP_ID_ELEMENT__APPLICATION == element) {
-                                    start = end;
-                                    start++;
-                                    if (0 < strlen(start)) {
-                                        rv = strdup(start);
-                                    }
-                                }
+								start = end;
+								start++;
+								end = strchr(start, '/');
+								if (NULL != end) {
+								        if (WRP_ID_ELEMENT__APPLICATION == element) {
+										rv = strdupptr(start, end);
+									} else {
+										if (WRP_ID_ELEMENT__OBJECT == element) {
+										    start = end;
+										    start++;
+										    if (0 < strlen(start)) {
+										        rv = strdup(start);
+										    }
+										}
+									}
+								 }
                             }
                         }
                     }
