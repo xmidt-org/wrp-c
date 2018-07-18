@@ -129,6 +129,7 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
 static void mapCommonString( msgpack_packer *pk, struct req_res_t *encodeComReq );
 static int alterMap( char * buf );
 static char* strdupptr( const char *s, const char *e );
+static void decodeSpansArray( msgpack_object deserialized, struct req_res_t **decodeMapReq );
 
 
 /*----------------------------------------------------------------------------*/
@@ -244,6 +245,14 @@ void wrp_free_struct( wrp_msg_t *msg )
                 }
 
                 free( msg->u.req.partner_ids );
+            }
+            if( NULL != msg->u.req.spans.spans && msg->u.req.spans.count > 0)
+            {
+                size_t i;
+                for ( i = 0; i < msg->u.req.spans.count; i++ ) {
+                    free( msg->u.req.spans.spans[i].name );
+                }
+                free(msg->u.req.spans.spans);
             }
             break;
         case WRP_MSG_TYPE__EVENT:
@@ -1426,7 +1435,10 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                                 memcpy( tmpdecodeReq->partner_ids->partner_ids[cnt], ptr->via.str.ptr, ptr->via.str.size );
                                 WRP_DEBUG("tmpdecodeReq->partner_ids[%d] %s\n", cnt, tmpdecodeReq->partner_ids->partner_ids[cnt] );
                             }
-                        } else {
+                        }else if( strcmp( keyName, WRP_SPANS.name ) == 0 ) {
+                            decodeSpansArray( ValueType, decodeReq );
+                        }
+                        else {
                             WRP_ERROR("Not Handled MSGPACK_OBJECT_ARRAY %s\n", keyName );
                         }
 
@@ -1621,8 +1633,8 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.req.headers = decodeReq->headers;
                         msg->u.req.metadata = decodeReq->metadata;
                         msg->u.req.include_spans = decodeReq->include_spans;
-                        msg->u.req.spans.spans = NULL;   /* not supported */
-                        msg->u.req.spans.count = 0;     /* not supported */
+                        msg->u.req.spans.spans = decodeReq->spans.spans;
+                        msg->u.req.spans.count = decodeReq->spans.count;
                         msg->u.req.payload = decodeReq->payload;
                         msg->u.req.payload_size = decodeReq->payload_size;
                         msg->u.req.partner_ids = decodeReq->partner_ids;
@@ -1831,4 +1843,55 @@ static char* strdupptr( const char *s, const char *e )
     }
 
     return strndup(s, (size_t) (((uintptr_t)e) - ((uintptr_t)s)));
+}
+
+static void decodeSpansArray( msgpack_object deserialized, struct req_res_t **decodeReq )
+{
+    msgpack_object_array array = deserialized.via.array;
+    msgpack_object *ptr = array.ptr;
+    uint32_t cnt = 0;
+    ptr = array.ptr;
+    struct req_res_t *tmpdecodeReq = *decodeReq;
+    tmpdecodeReq->spans.spans = (struct money_trace_span * ) malloc( sizeof(struct money_trace_span ) * array.size );
+    tmpdecodeReq->spans.count = array.size;
+
+    for( cnt = 0; cnt < array.size; cnt++, ptr++ )
+    {
+        msgpack_object_array array1 = ptr->via.array;
+        msgpack_object *ptr1 = array1.ptr;
+        uint32_t j = 0;
+        for(j=0; j< array1.size; j++, ptr1++)
+        {
+            switch(ptr1->type)
+            {
+                case MSGPACK_OBJECT_STR: {
+                    tmpdecodeReq->spans.spans[cnt].name = ( char * ) malloc( ptr1->via.str.size + 1 );
+                    memset( tmpdecodeReq->spans.spans[cnt].name, 0, ptr1->via.str.size + 1 );
+                    memcpy( tmpdecodeReq->spans.spans[cnt].name, ptr1->via.str.ptr, ptr1->via.str.size );
+                    WRP_DEBUG("tmpdecodeReq->spans.spans[%d].name %s\n", cnt, tmpdecodeReq->spans.spans[cnt].name );
+                }
+                break;
+
+                case MSGPACK_OBJECT_POSITIVE_INTEGER: {
+                    switch(j)
+                    {
+                        case 1:
+                            tmpdecodeReq->spans.spans[cnt].start = ptr1->via.u64;
+                            WRP_DEBUG("tmpdecodeReq->spans.spans[%d].start %llu\n", cnt, tmpdecodeReq->spans.spans[cnt].start );
+                            break;
+                        case 2:
+                            tmpdecodeReq->spans.spans[cnt].duration = ptr1->via.u64;
+                            WRP_DEBUG("tmpdecodeReq->spans.spans[%d].duration %lu\n", cnt, tmpdecodeReq->spans.spans[cnt].duration );
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                break;
+
+                default:
+                    break;
+            }
+        }
+    }
 }
