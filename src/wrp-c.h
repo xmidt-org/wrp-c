@@ -55,6 +55,11 @@ enum wrp_device_id_element {
     WRP_ID_ELEMENT__APPLICATION = 3
 };
 
+enum wrp_token_name {
+    SOURCE = 0,
+    DEST = 1
+};
+
 struct wrp_auth_msg {
     int status;
 };
@@ -265,16 +270,27 @@ size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encoded
 const char *wrp_get_msg_dest( const wrp_msg_t *wrp_msg );
 
 /**
- *  Find an element of the destination of a wrp_msg_t 
+ *  Find the source of a wrp_msg_t
+ *
+ *  @param msg [in] the wrp_msg_t structure to examine
+ *  @return pointer to source, or NULL if there is no
+ *    source for this message type
+ */
+const char *wrp_get_msg_source( const wrp_msg_t *wrp_msg );
+
+/**
+ *  Find an element of the source or destination of a wrp_msg_t
  *
  *  @note Returned memory must be freed using free().
  *
- *  @param msg [in] the wrp_msg_t structure to examine
+ * @param [in] the element requested to parse
+ * @param msg [in] the wrp_msg_t structure to examine
+ * @param [in] the wrp_token source or destination to examine
  *
  *  @return pointer to the element requested, or NULL otherwise
  */
-char *wrp_get_msg_dest_element( const enum wrp_device_id_element element,
-                                const wrp_msg_t *wrp_msg );
+char *wrp_get_msg_element( const enum wrp_device_id_element element,
+                                const wrp_msg_t *wrp_msg, const enum wrp_token_name wrp_token );
 
 
 #endif
