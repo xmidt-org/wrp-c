@@ -792,6 +792,7 @@ void test_all()
     for( i = 0; i < sizeof( test ) / sizeof( struct test_vectors ); i++ ) {
         char *string;
         const char *dest;
+        const char *source;
         int msg_type;
 
         /* Testing wrp_struct_to_string(). */
@@ -832,6 +833,21 @@ void test_all()
         } else {
            CU_ASSERT (dest == NULL);
         }
+        
+        /* Testing wrp_get_msg_source(). */
+        source = wrp_get_msg_source (&test[i].in);
+        msg_type = test[i].in.msg_type;
+        if ((msg_type == WRP_MSG_TYPE__REQ) ||
+            (msg_type == WRP_MSG_TYPE__EVENT) ||
+            (msg_type == WRP_MSG_TYPE__CREATE) ||
+            (msg_type == WRP_MSG_TYPE__RETREIVE) ||
+            (msg_type == WRP_MSG_TYPE__UPDATE) ||
+            (msg_type == WRP_MSG_TYPE__DELETE))
+        {
+           CU_ASSERT (strcmp (source, "source-address") == 0);
+        } else {
+           CU_ASSERT (source == NULL);
+        }
 
         /* Testing wrp_to_struct() --> from bytes. */
         if( 1 == i ) {
@@ -849,6 +865,11 @@ void test_all()
     for( i = 0; i < sizeof( crud_test ) / sizeof( wrp_msg_t ); i++ ) {
         const char *dest = wrp_get_msg_dest (&crud_test[i]);
         CU_ASSERT (strcmp (dest, "dest-address") == 0);
+    }
+    
+    for( i = 0; i < sizeof( crud_test ) / sizeof( wrp_msg_t ); i++ ) {
+        const char *source = wrp_get_msg_source (&crud_test[i]);
+        CU_ASSERT (strcmp (source, "source-address") == 0);
     }
 
     WRP_INFO("Testing NULL msg handling\n" );
@@ -1717,65 +1738,103 @@ void test_crud_message()
     wrp_free_struct( message );
 }
 
-void test_wrp_get_msg_dest_element()
+void test_wrp_get_msg_element()
 {
     struct test_parameters {
         wrp_msg_t wrp;
         enum wrp_device_id_element element;
+        enum wrp_token_name token;
         const char *expected;
     } tests[] = {
         /* Normal cases */
         { .wrp.msg_type = WRP_MSG_TYPE__REQ,
           .wrp.u.req.dest = "mac:112233445566/simple/example",
           .element = WRP_ID_ELEMENT__SCHEME,
+          .token = DEST,
           .expected = "mac" },
         { .wrp.msg_type = WRP_MSG_TYPE__REQ,
           .wrp.u.req.dest = "mac:112233445566/simple/example",
           .element = WRP_ID_ELEMENT__ID,
+          .token = DEST,
           .expected = "112233445566" },
         { .wrp.msg_type = WRP_MSG_TYPE__REQ,
           .wrp.u.req.dest = "mac:112233445566/simple/example",
           .element = WRP_ID_ELEMENT__SERVICE,
+          .token = DEST,
           .expected = "simple" },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.source = "mac:112233445566/simple/example",
+          .element = WRP_ID_ELEMENT__SERVICE,
+          .token = SOURCE,
+          .expected = "simple" },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.source = "mac:112233445566/simple",
+          .element = WRP_ID_ELEMENT__SERVICE,
+          .token = SOURCE,
+          .expected = "simple" },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.source = "mac:112233445566/",
+          .element = WRP_ID_ELEMENT__ID,
+          .token = SOURCE,
+          .expected = "112233445566" },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.source = "mac:112233445566",
+          .element = WRP_ID_ELEMENT__ID,
+          .token = SOURCE,
+          .expected = "112233445566" },
+        { .wrp.msg_type = WRP_MSG_TYPE__REQ,
+          .wrp.u.req.dest = "mac",
+          .element = WRP_ID_ELEMENT__SCHEME,
+          .token = DEST,
+          .expected = "mac" },
         { .wrp.msg_type = WRP_MSG_TYPE__REQ,
           .wrp.u.req.dest = "mac:112233445566/simple/example",
           .element = WRP_ID_ELEMENT__APPLICATION,
+          .token = DEST,
           .expected = "example" },
         { .wrp.msg_type = WRP_MSG_TYPE__REQ,
           .wrp.u.req.dest = "mac:112233445566/simple/",
           .element = WRP_ID_ELEMENT__APPLICATION,
+          .token = DEST,
           .expected = NULL },
         { .wrp.msg_type = WRP_MSG_TYPE__REQ,
           .wrp.u.req.dest = "mac:112233445566/simple",
           .element = WRP_ID_ELEMENT__APPLICATION,
+          .token = DEST,
           .expected = NULL },
 
         /* Border line cases */
         { .wrp.msg_type = WRP_MSG_TYPE__REQ,
           .wrp.u.req.dest = "mac:112233445566//example",
           .element = WRP_ID_ELEMENT__SERVICE,
+          .token = DEST,
           .expected = NULL },
         { .wrp.msg_type = WRP_MSG_TYPE__REQ,
           .wrp.u.req.dest = "://",
           .element = WRP_ID_ELEMENT__SCHEME,
+          .token = DEST,
           .expected = NULL },
         { .wrp.msg_type = WRP_MSG_TYPE__REQ,
           .wrp.u.req.dest = "://",
           .element = WRP_ID_ELEMENT__SERVICE,
+          .token = DEST,
           .expected = NULL },
         { .wrp.msg_type = WRP_MSG_TYPE__REQ,
           .wrp.u.req.dest = "://",
           .element = WRP_ID_ELEMENT__APPLICATION,
+          .token = DEST,
           .expected = NULL },
 
         /* Boundary cases */
         { .wrp.msg_type = WRP_MSG_TYPE__REQ,
           .wrp.u.req.dest = "mac:112233445566/simple/example",
           .element = (enum wrp_device_id_element) -1,
+          .token = DEST,
           .expected = NULL },
         { .wrp.msg_type = WRP_MSG_TYPE__REQ,
           .wrp.u.req.dest = "mac:112233445566/simple/example",
           .element = (enum wrp_device_id_element) 99,
+          .token = DEST,
           .expected = NULL },
     };
 
@@ -1784,8 +1843,7 @@ void test_wrp_get_msg_dest_element()
 
     for( i = 0; i < count; i++ ) {
         char *actual;
-
-        actual = wrp_get_msg_dest_element(tests[i].element, &tests[i].wrp);
+        actual = wrp_get_msg_element(tests[i].element, &tests[i].wrp, tests[i].token);
 
         //printf( "expected: %s ? actual: %s\n", tests[i].expected, actual );
 
@@ -1810,7 +1868,7 @@ void add_suites( CU_pSuite *suite )
     //CU_add_test( *suite, "Test struct_to_bytes()", test_to_bytes );
     //CU_add_test( *suite, "Test encode_decode()", test_encode_decode );
     CU_add_test( *suite, "Test CRUD message", test_crud_message );
-    CU_add_test( *suite, "Test wrp_get_msg_dest_element", test_wrp_get_msg_dest_element );
+    CU_add_test( *suite, "Test wrp_get_msg_element", test_wrp_get_msg_element );
 }
 
 /*----------------------------------------------------------------------------*/

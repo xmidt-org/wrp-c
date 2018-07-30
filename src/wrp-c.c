@@ -385,18 +385,44 @@ const char *wrp_get_msg_dest (const wrp_msg_t *wrp_msg)
 }
 
 /* See wrp-c.h for details. */
-char *wrp_get_msg_dest_element( const enum wrp_device_id_element element,
-                                const wrp_msg_t *wrp_msg )
+const char *wrp_get_msg_source (const wrp_msg_t *wrp_msg)
+{
+        if (wrp_msg->msg_type == WRP_MSG_TYPE__REQ)
+                return (const char *)wrp_msg->u.req.source;
+        if (wrp_msg->msg_type == WRP_MSG_TYPE__EVENT)
+                return (const char *)wrp_msg->u.event.source;
+        if (wrp_msg->msg_type == WRP_MSG_TYPE__CREATE)
+                return (const char *)wrp_msg->u.crud.source;
+        if (wrp_msg->msg_type == WRP_MSG_TYPE__RETREIVE)
+                return (const char *)wrp_msg->u.crud.source;
+        if (wrp_msg->msg_type == WRP_MSG_TYPE__UPDATE)
+                return (const char *)wrp_msg->u.crud.source;
+        if (wrp_msg->msg_type == WRP_MSG_TYPE__DELETE)
+                return (const char *)wrp_msg->u.crud.source;
+        return NULL;
+}
+
+/* See wrp-c.h for details. */
+char *wrp_get_msg_element( const enum wrp_device_id_element element,
+                                const wrp_msg_t *wrp_msg, const enum wrp_token_name wrp_token )
 {
     const char *dest;
+    const char *source;
+    const char *start = NULL, *end = NULL;
     char *rv = NULL;
 
-    dest = wrp_get_msg_dest(wrp_msg);
-
-    if (NULL != dest ) {
-        const char *start, *end;
-
-        start = dest;
+	if (wrp_token == DEST) {
+		dest = wrp_get_msg_dest(wrp_msg);
+		if (NULL != dest ) {
+			start = dest;
+		}
+	} else if(wrp_token == SOURCE) {
+		source = wrp_get_msg_source(wrp_msg);
+		if (NULL != source ) {
+			start = source;
+		}
+	}
+    if (NULL != start ) {
         end = strchr(start, ':');
         if (NULL != end) {
             if (WRP_ID_ELEMENT__SCHEME == element) {
@@ -425,9 +451,33 @@ char *wrp_get_msg_dest_element( const enum wrp_device_id_element element,
                                 }
                             }
                         }
+                        else
+                        {
+							if (WRP_ID_ELEMENT__SERVICE == element) {
+								if (0 < strlen(start)) {
+									rv = strdup(start);
+								}
+							 }
+                        }
                     }
                 }
+                else
+                {
+					if (WRP_ID_ELEMENT__ID == element) {
+						if (0 < strlen(start)) {
+							rv = strdup(start);
+						}
+					 }
+                }
             }
+        }
+        else
+        {
+			if (WRP_ID_ELEMENT__SCHEME == element) {
+				if (0 < strlen(start)) {
+					rv = strdup(start);
+				}
+			}
         }
     }
 
