@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 - Fixed memory leak
 - Added support for Mac / Apple build
+- Modified wrp dest parse function to support both source/dest parsing
 
 ## [1.0.0] - 2017-12-13
 ### Added
