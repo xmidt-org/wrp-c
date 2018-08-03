@@ -13,5 +13,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial stable release.
 
+## [0.0.1] - 2016-06-15
+### Added
+- Initial creation
+
 [Unreleased]: https://github.com/Comcast/wrp-c/compare/1.0.0...HEAD
-[1.0.0]: https://github.com/olivierlacan/keep-a-changelog/compare/0.0.1...1.0.0
+[1.0.0]: https://github.com/Comcast/wrp-c/compare/40cd45f5ce6723fa8d4aaf6e66fc3e3302758ec4...1.0.0
