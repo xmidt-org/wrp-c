@@ -292,5 +292,13 @@ const char *wrp_get_msg_source( const wrp_msg_t *wrp_msg );
 char *wrp_get_msg_element( const enum wrp_device_id_element element,
                                 const wrp_msg_t *wrp_msg, const enum wrp_token_name wrp_token );
 
-
+/**
+ *  Check to see if the service matches based on the specified device_id.
+ *
+ *  @param [in] service   the service name check the device_id for
+ *  @param [in] device_id the device-id string to examine looking for the service
+ *
+ *  @return 0 if there is a match, -1 otherwise.
+ */
+int wrp_does_service_match( const char *service, const char *device_id );
 #endif

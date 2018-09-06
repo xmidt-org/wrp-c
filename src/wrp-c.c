@@ -484,6 +484,28 @@ char *wrp_get_msg_element( const enum wrp_device_id_element element,
     return rv;
 }
 
+/* See wrp-c.h for details. */
+int wrp_does_service_match( const char *service, const char *device_id )
+{
+    const char *p;
+
+    p = strchr( device_id, '/' );
+    if( (NULL != p) && ('/' == *p) ) {
+        size_t len;
+        p++;
+
+        len = strlen( service );
+        if( 0 == strncmp(p, service, len) ) {
+            p += len;
+            if( ('\0' == *p) || ('/' == *p) ) {
+                return 0;
+            }
+        }
+    }
+
+    return -1;
+}
+
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
