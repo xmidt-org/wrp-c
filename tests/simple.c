@@ -1861,6 +1861,48 @@ void test_wrp_get_msg_element()
     }
 }
 
+void test_wrp_does_service_match()
+{
+    struct test_parameters {
+        int result;
+        const char *service;
+        const char *device_id;
+    } tests[] = {
+        { .result    = 0,
+          .service   = "parodus",
+          .device_id = "mac:112233445566/parodus" },
+        { .result    = 0,
+          .service   = "parodus",
+          .device_id = "mac:112233445566/parodus/" },
+        { .result    = -1,
+          .service   = "par",
+          .device_id = "mac:112233445566/parodus/" },
+        { .result    = -1,
+          .service   = "foo",
+          .device_id = "mac:112233445566/parodus/" },
+        { .result    = -1,
+          .service   = "parodus",
+          .device_id = "mac:112233445566/not-parodus/parodus/" },
+    };
+
+    size_t count = sizeof(tests)/sizeof(struct test_parameters);
+    size_t i;
+
+    for( i = 0; i < count; i++ ) {
+        int got;
+        struct test_parameters *t;
+
+        t = &tests[i];
+
+        got = wrp_does_service_match( t->service, t->device_id );
+        CU_ASSERT( t->result == got );
+        if( t->result != got ) {
+            printf( "got: %d, service: '%s', device_id: '%s'\n",
+                    got, t->service, t->device_id );
+        }
+    }
+}
+
 void add_suites( CU_pSuite *suite )
 {
     *suite = CU_add_suite( "wrp-c encoding tests", NULL, NULL );
@@ -1869,6 +1911,7 @@ void add_suites( CU_pSuite *suite )
     //CU_add_test( *suite, "Test encode_decode()", test_encode_decode );
     CU_add_test( *suite, "Test CRUD message", test_crud_message );
     CU_add_test( *suite, "Test wrp_get_msg_element", test_wrp_get_msg_element );
+    CU_add_test( *suite, "Test wrp_does_service_match", test_wrp_does_service_match );
 }
 
 /*----------------------------------------------------------------------------*/
