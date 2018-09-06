@@ -30,7 +30,8 @@ addons:
 
 before_install:
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo pip install codecov; fi
-    - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install cunit valgrind; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install cunit; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install --HEAD valgrind; fi
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y -qq libcunit1 libcunit1-dev lcov valgrind; fi
 
