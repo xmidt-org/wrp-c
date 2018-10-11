@@ -100,6 +100,7 @@ typedef struct data_struct {
 struct wrp_req_msg {
     char *transaction_uuid;
     char *content_type;
+    char *accept;
     char *source;
     char *dest;
     partners_t *partner_ids;
@@ -124,6 +125,7 @@ struct wrp_event_msg {
 
 struct wrp_crud_msg {
     char *content_type;
+    char *accept;
     char *transaction_uuid;
     char *source;
     char *dest;

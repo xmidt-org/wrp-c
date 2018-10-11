@@ -111,6 +111,7 @@ const struct test_vectors test[] = {
         "    .partner_ids      = ''\n"
         "    .headers          = ''\n"
         "    .content_type     = application/json\n"
+        "    .accept           = (null)\n"
         "    .include_spans    = false\n"
         "    .spans            = ''\n"
         "    .payload_size     = 3\n"
@@ -185,6 +186,7 @@ const struct test_vectors test[] = {
         "    .partner_ids      = 'Partner 1, Partner 2'\n"
         "    .headers          = 'Header 1, Header 2'\n"
         "    .content_type     = application/json\n"
+        "    .accept           = (null)\n"
         "    .include_spans    = true\n"
         "    .spans            = ''\n"
         "    .payload_size     = 3\n"
@@ -266,6 +268,7 @@ const struct test_vectors test[] = {
         .in.u.req.partner_ids = &partner_ids,
         .in.u.req.headers = &headers,
         .in.u.req.content_type = "application/json",
+        .in.u.req.accept = "json",
         .in.u.req.include_spans = false,
         .in.u.req.spans.spans = NULL,
         .in.u.req.spans.count = 0,
@@ -281,14 +284,15 @@ const struct test_vectors test[] = {
         "    .partner_ids      = 'Partner 1, Partner 2'\n"
         "    .headers          = 'Header 1, Header 2'\n"
         "    .content_type     = application/json\n"
+        "    .accept           = json\n"
         "    .include_spans    = false\n"
         "    .spans            = ''\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 209,
+        .msgpack_size = 221,
         .msgpack = {
-            0x88,  /* 8 name value pairs */
+            0x89,  /* 9 name value pairs */
 
             /* msg_type -> 3 */
             0xa8,  /* "msg_type" */
@@ -339,6 +343,12 @@ const struct test_vectors test[] = {
             0xb0,   /* application/json */
             'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
 
+            /* accept -> json */
+            0xa6,   /* accept */
+            'a', 'c', 'c', 'e', 'p', 't',
+            0xa4,
+            'j', 's', 'o', 'n',
+
             /* payload -> data */
             0xa7,   /* payload */
             'p', 'a', 'y', 'l', 'o', 'a', 'd',
@@ -372,6 +382,7 @@ const struct test_vectors test[] = {
         "    .partner_ids      = 'Partner 1, Partner 2'\n"
         "    .headers          = 'Header 1, Header 2'\n"
         "    .content_type     = application/json\n"
+        "    .accept           = (null)\n"
         "    .include_spans    = false\n"
         "    .spans            = \n"
         "        hop-1: 123000044 - 11\n"
