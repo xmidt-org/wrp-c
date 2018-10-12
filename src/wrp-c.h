@@ -110,6 +110,7 @@ struct wrp_req_msg {
     struct money_trace_spans spans;
     void *payload;
     size_t payload_size;
+    int status;
 };
 
 struct wrp_event_msg {
