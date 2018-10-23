@@ -1884,7 +1884,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 						            msg->u.req.payload = decodeReq->payload;
 						            msg->u.req.payload_size = decodeReq->payload_size;
 						            msg->u.req.partner_ids = decodeReq->partner_ids;
-						            msg->u.req.status = decodeReq->req_res_status;
+						            msg->u.req.status = decodeReq->statusValue;
 						            *msg_ptr = msg;
 						            free( decodeReq );
 						            return length;
