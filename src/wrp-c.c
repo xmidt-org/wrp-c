@@ -64,6 +64,7 @@ struct req_res_t {
     char *url;
     char *content_type;
     char *accept;
+    int req_res_status;
 };
 
 
@@ -568,6 +569,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 		        encode->metadata = req->metadata;
 		        encode->partner_ids = req->partner_ids;
 		        encode->msgType = msg->msg_type;
+			encode->req_res_status = req->status;
 		        rv = __wrp_pack_structure( encode, bytes );
 		        break;
 		    case WRP_MSG_TYPE__EVENT:
@@ -1139,6 +1141,10 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             msgpack_pack_int( &pk, encodeReqtmp->statusValue );
             break;
         case WRP_MSG_TYPE__REQ:
+
+	       if( encodeReqtmp->req_res_status > 0 ) {
+                wrp_map_size++; //response status
+            }
             msgpack_pack_map( &pk, wrp_map_size );
             //Pack msgType,source,dest,headers,metadata,partner_ids
             mapCommonString( &pk, encodeReqtmp );
@@ -1146,6 +1152,10 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
             if( encodeReqtmp->accept ) {
                 __msgpack_pack_string_nvp( &pk, &WRP_ACCEPT, encodeReqtmp->accept );
+            }
+	            if( encodeReqtmp->req_res_status > 0 ) {
+                __msgpack_pack_string( &pk, WRP_STATUS.name, WRP_STATUS.length );
+                msgpack_pack_int( &pk, encodeReqtmp->req_res_status );
             }
 
             if( encodeReqtmp->include_spans ) {
@@ -1873,6 +1883,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 						            msg->u.req.payload = decodeReq->payload;
 						            msg->u.req.payload_size = decodeReq->payload_size;
 						            msg->u.req.partner_ids = decodeReq->partner_ids;
+							    msg->u.req.status = decodeReq->statusValue;	
 						            *msg_ptr = msg;
 						            free( decodeReq );
 						            return length;

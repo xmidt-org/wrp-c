@@ -929,6 +929,21 @@ void test_encode_decode()
                             .u.req.payload = "123",
                             .u.req.payload_size = 3
                           };
+    const wrp_msg_t msg_status = { .msg_type = WRP_MSG_TYPE__REQ,
+                            .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+                            .u.req.content_type = "application/json",
+                            .u.req.source = "source-address",
+                            .u.req.dest = "dest-address",
+                            .u.req.partner_ids = &partner_ids,
+                            .u.req.headers = &headers,
+			    .u.req.status = 200,
+                            .u.req.include_spans = false,
+                            .u.req.spans.spans = NULL,
+                            .u.req.spans.count = 0,
+                            .u.req.payload = "123",
+                            .u.req.payload_size = 3
+                          };
+
     const wrp_msg_t event_m = { .msg_type = WRP_MSG_TYPE__EVENT,
                                 .u.event.source = "source-address",
                                 .u.event.dest = "dest-address",
@@ -1028,6 +1043,38 @@ void test_encode_decode()
     WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
     WRP_DEBUG("decoded content_type:%s\n", message->u.req.content_type );
     WRP_DEBUG("decoded payload:%s\n", ( char* )message->u.req.payload );
+   wrp_free_struct( message );
+    // msgpack encode
+    size = wrp_struct_to( &msg_status, WRP_BYTES, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( message->msg_type, msg_status.msg_type );
+    CU_ASSERT_EQUAL( message->u.req.status, msg_status.u.req.status );
+    CU_ASSERT_STRING_EQUAL( message->u.req.source, msg_status.u.req.source );
+    CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg_status.u.req.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg_status.u.req.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg_status.u.req.payload );
+    if( NULL != message->u.req.headers ) {
+        size_t n = 0;
+        while( n < message->u.req.headers->count ) {
+            CU_ASSERT_STRING_EQUAL( msg_status.u.req.headers->headers[n],
+                                    message->u.req.headers->headers[n] );
+            n++;
+        }
+    }
+    
+    if( NULL != message->u.req.partner_ids ) {
+        size_t i = 0;
+        while( i < message->u.req.partner_ids->count ) {
+            CU_ASSERT_STRING_EQUAL( msg_status.u.req.partner_ids->partner_ids[i],
+                                    message->u.req.partner_ids->partner_ids[i] );
+            i++;
+        }
+    }
     wrp_free_struct( message );
     // msgpack encode
     const wrp_msg_t *event_msg = &test[5].in;
