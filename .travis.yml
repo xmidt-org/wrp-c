@@ -34,13 +34,15 @@ before_install:
     - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install --HEAD valgrind; fi
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y -qq libcunit1 libcunit1-dev lcov valgrind; fi
+    - DISABLE_VALGRIND=$(if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo "false"; else echo "true"; fi)
+
 
 install:
 
 script:
     - mkdir build
     - cd build
-    - cmake .. -DDISABLE_VALGRIND:BOOL=true
+    - cmake .. -DDISABLE_VALGRIND:BOOL=${DISABLE_VALGRIND}
     - make
     - make test
 
