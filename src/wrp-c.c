@@ -1815,181 +1815,161 @@ static char* getKey_MsgtypeBin( const msgpack_object key, const size_t binSize,
 static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                                       wrp_msg_t **msg_ptr )
 {
-    msgpack_zone mempool;
-    msgpack_object deserialized;
-    msgpack_unpack_return unpack_ret;
+    struct req_res_t *decodeReq;
+    wrp_msg_t *msg;
+    struct req_res_t *metadata;
 
-    if( bytes != NULL ) 
-    {
-        struct req_res_t *decodeReq = malloc( sizeof( struct req_res_t ) );
-        wrp_msg_t *msg = ( wrp_msg_t * ) malloc( sizeof( wrp_msg_t ) );
-
-        memset( msg, 0, sizeof( wrp_msg_t ) );
-
-		if( (decodeReq != NULL) && (NULL != msg) )
-		{
-		    memset( decodeReq, 0, sizeof( struct req_res_t ) );
-		    decodeReq->metadata = malloc( sizeof( data_t ) );
-			if(decodeReq->metadata != NULL)
-			{
-				memset( decodeReq->metadata, 0, sizeof( data_t ) );
-				WRP_DEBUG("unpacking encoded data\n" );
-				msgpack_zone_init( &mempool, 2048 );
-				unpack_ret = msgpack_unpack( bytes, length, NULL, &mempool, &deserialized );
-				WRP_DEBUG("unpack_ret:%d\n", unpack_ret );
-
-				switch( unpack_ret ) {
-				    case MSGPACK_UNPACK_SUCCESS: {
-				        //msgpack_object_print( stdout, deserialized );
-				        //puts("");
-				        if( deserialized.via.map.size != 0 ) {
-				            decodeRequest( deserialized, &decodeReq );
-				        }
-
-				        msgpack_zone_destroy( &mempool );
-
-                        switch( decodeReq->msgType ) {
-                            case WRP_MSG_TYPE__AUTH:
-                                msg->msg_type = decodeReq->msgType;
-                                msg->u.auth.status = decodeReq->statusValue;
-                                *msg_ptr = msg;
-                                free( decodeReq->metadata->data_items );
-                                free( decodeReq->metadata );
-                                free( decodeReq );
-                                return length;
-                            case WRP_MSG_TYPE__REQ:
-                                msg->msg_type = decodeReq->msgType;
-                                msg->u.req.source = decodeReq->source;
-                                msg->u.req.dest = decodeReq->dest;
-                                msg->u.req.transaction_uuid = decodeReq->transaction_uuid;
-                                msg->u.req.content_type = decodeReq->content_type;
-                                msg->u.req.accept = decodeReq->accept;
-                                msg->u.req.headers = decodeReq->headers;
-                                msg->u.req.metadata = decodeReq->metadata;
-                                msg->u.req.include_spans = decodeReq->include_spans;
-                                msg->u.req.spans.spans = NULL;   /* not supported */
-                                msg->u.req.spans.count = 0;     /* not supported */
-                                msg->u.req.payload = decodeReq->payload;
-                                msg->u.req.payload_size = decodeReq->payload_size;
-                                msg->u.req.partner_ids = decodeReq->partner_ids;
-                                *msg_ptr = msg;
-                                free( decodeReq );
-                                return length;
-                            case WRP_MSG_TYPE__EVENT:
-                                msg->msg_type = decodeReq->msgType;
-                                msg->u.event.source = decodeReq->source;
-                                msg->u.event.dest = decodeReq->dest;
-                                msg->u.event.content_type = decodeReq->content_type;
-                                msg->u.event.metadata = decodeReq->metadata;
-                                msg->u.event.payload = decodeReq->payload;
-                                msg->u.event.payload_size = decodeReq->payload_size;
-                                msg->u.event.headers = decodeReq->headers;
-                                msg->u.event.partner_ids = decodeReq->partner_ids;
-                                *msg_ptr = msg;
-                                free( decodeReq );
-                                return length;
-                            case WRP_MSG_TYPE__SVC_REGISTRATION:
-                                msg->msg_type = decodeReq->msgType;
-                                msg->u.reg.service_name = decodeReq->service_name;
-                                msg->u.reg.url = decodeReq->url;
-                                *msg_ptr = msg;
-                                free( decodeReq->metadata->data_items );
-                                free( decodeReq->metadata );
-                                free( decodeReq );
-                                return length;
-                            case WRP_MSG_TYPE__SVC_ALIVE:
-                                msg->msg_type = decodeReq->msgType;
-                                *msg_ptr = msg;
-                                free( decodeReq->metadata );
-                                free( decodeReq );
-                                return length;
-                            case WRP_MSG_TYPE__CREATE:
-                            case WRP_MSG_TYPE__RETREIVE:
-                            case WRP_MSG_TYPE__UPDATE:
-                            case WRP_MSG_TYPE__DELETE:
-                                msg->msg_type = decodeReq->msgType;
-                                msg->u.crud.source = decodeReq->source;
-                                msg->u.crud.dest = decodeReq->dest;
-                                msg->u.crud.transaction_uuid = decodeReq->transaction_uuid;
-                                msg->u.crud.partner_ids = decodeReq->partner_ids;
-                                msg->u.crud.headers = decodeReq->headers;
-                                msg->u.crud.metadata = decodeReq->metadata;
-                                msg->u.crud.include_spans = decodeReq->include_spans;
-                                msg->u.crud.content_type = decodeReq->content_type;
-                                msg->u.crud.accept = decodeReq->accept;
-                                msg->u.crud.spans.spans = NULL;   /* not supported */
-                                msg->u.crud.spans.count = 0;     /* not supported */
-                                msg->u.crud.status = decodeReq->statusValue;
-                                msg->u.crud.rdr = decodeReq->rdr;
-                                msg->u.crud.payload = decodeReq->payload;
-                                msg->u.crud.payload_size = decodeReq->payload_size;
-                                msg->u.crud.path = decodeReq->path;
-                                free( decodeReq );
-                                *msg_ptr = msg;
-                                return length;
-                            default:
-                                free( decodeReq->metadata->data_items );
-                                free( decodeReq->metadata );
-                                free( decodeReq );
-                                free(msg);
-                                return -1;
-                        }
-				        break; 
-				    }
-
-				    case MSGPACK_UNPACK_EXTRA_BYTES: {
-				        WRP_ERROR("MSGPACK_UNPACK_EXTRA_BYTES\n" );
-				msgpack_zone_destroy( &mempool );
-				        free( decodeReq->metadata );
-				        free( decodeReq );
-				        return -1;
-				    }
-				    case MSGPACK_UNPACK_CONTINUE: {
-				        WRP_ERROR("MSGPACK_UNPACK_CONTINUE\n" );
-				msgpack_zone_destroy( &mempool );
-				        free( decodeReq->metadata );
-				        free( decodeReq );
-				        return -1;
-				    }
-				    case MSGPACK_UNPACK_PARSE_ERROR: {
-				        WRP_ERROR("MSGPACK_UNPACK_PARSE_ERROR\n" );
-				msgpack_zone_destroy( &mempool );
-				        free( decodeReq->metadata );
-				        free( decodeReq );
-				        return -1;
-				    }
-				    case MSGPACK_UNPACK_NOMEM_ERROR: {
-				        WRP_ERROR("MSGPACK_UNPACK_NOMEM_ERROR\n" );
-				msgpack_zone_destroy( &mempool );
-				        free( decodeReq->metadata );
-				        free( decodeReq );
-				        return -1;
-				    }
-				    default:
-				msgpack_zone_destroy( &mempool );
-				        free( decodeReq->metadata );
-				        free( decodeReq );
-				        return -1;
-				}
-			}
-			else
-			{
-				WRP_ERROR("Memory allocation failed\n" );
-			}
-		}
-		else
-		{
-            if( NULL != decodeReq ) {
-                free( decodeReq );
-            }
-            if( NULL != msg ) {
-                free( msg );
-            }
-			WRP_ERROR("Memory allocation failed\n" );
-		}
+    if( NULL == bytes ) {
+        WRP_ERROR("bytes is NULL\n" );
+        return -1;
     }
 
-    WRP_ERROR("bytes is NULL\n" );
+    decodeReq = malloc( sizeof( struct req_res_t ) );
+    msg       = malloc( sizeof( wrp_msg_t ) );
+    metadata  = malloc( sizeof( data_t ) );
+
+    if( (decodeReq != NULL) && (NULL != msg) && (NULL != metadata) )
+    {
+        msgpack_zone mempool;
+        msgpack_object deserialized;
+        msgpack_unpack_return unpack_ret;
+
+        memset( msg, 0, sizeof( wrp_msg_t ) );
+        memset( decodeReq, 0, sizeof( struct req_res_t ) );
+        memset( metadata, 0, sizeof( data_t ) );
+
+        decodeReq->metadata = (struct data_struct *) metadata;
+        WRP_DEBUG("unpacking encoded data\n" );
+        msgpack_zone_init( &mempool, 2048 );
+        unpack_ret = msgpack_unpack( bytes, length, NULL, &mempool, &deserialized );
+        WRP_DEBUG("unpack_ret:%d\n", unpack_ret );
+
+        switch( unpack_ret ) {
+            case MSGPACK_UNPACK_SUCCESS:
+                //msgpack_object_print( stdout, deserialized );
+                //puts("");
+                if( deserialized.via.map.size != 0 ) {
+                    decodeRequest( deserialized, &decodeReq );
+                }
+
+                msgpack_zone_destroy( &mempool );
+
+                switch( decodeReq->msgType ) {
+                    case WRP_MSG_TYPE__AUTH:
+                        msg->msg_type = decodeReq->msgType;
+                        msg->u.auth.status = decodeReq->statusValue;
+                        *msg_ptr = msg;
+                        free( decodeReq->metadata->data_items );
+                        free( decodeReq->metadata );
+                        free( decodeReq );
+                        return length;
+                    case WRP_MSG_TYPE__REQ:
+                        msg->msg_type = decodeReq->msgType;
+                        msg->u.req.source = decodeReq->source;
+                        msg->u.req.dest = decodeReq->dest;
+                        msg->u.req.transaction_uuid = decodeReq->transaction_uuid;
+                        msg->u.req.content_type = decodeReq->content_type;
+                        msg->u.req.accept = decodeReq->accept;
+                        msg->u.req.headers = decodeReq->headers;
+                        msg->u.req.metadata = decodeReq->metadata;
+                        msg->u.req.include_spans = decodeReq->include_spans;
+                        msg->u.req.spans.spans = NULL;   /* not supported */
+                        msg->u.req.spans.count = 0;     /* not supported */
+                        msg->u.req.payload = decodeReq->payload;
+                        msg->u.req.payload_size = decodeReq->payload_size;
+                        msg->u.req.partner_ids = decodeReq->partner_ids;
+                        *msg_ptr = msg;
+                        free( decodeReq );
+                        return length;
+                    case WRP_MSG_TYPE__EVENT:
+                        msg->msg_type = decodeReq->msgType;
+                        msg->u.event.source = decodeReq->source;
+                        msg->u.event.dest = decodeReq->dest;
+                        msg->u.event.content_type = decodeReq->content_type;
+                        msg->u.event.metadata = decodeReq->metadata;
+                        msg->u.event.payload = decodeReq->payload;
+                        msg->u.event.payload_size = decodeReq->payload_size;
+                        msg->u.event.headers = decodeReq->headers;
+                        msg->u.event.partner_ids = decodeReq->partner_ids;
+                        *msg_ptr = msg;
+                        free( decodeReq );
+                        return length;
+                    case WRP_MSG_TYPE__SVC_REGISTRATION:
+                        msg->msg_type = decodeReq->msgType;
+                        msg->u.reg.service_name = decodeReq->service_name;
+                        msg->u.reg.url = decodeReq->url;
+                        *msg_ptr = msg;
+                        free( decodeReq->metadata->data_items );
+                        free( decodeReq->metadata );
+                        free( decodeReq );
+                        return length;
+                    case WRP_MSG_TYPE__SVC_ALIVE:
+                        msg->msg_type = decodeReq->msgType;
+                        *msg_ptr = msg;
+                        free( decodeReq->metadata );
+                        free( decodeReq );
+                        return length;
+                    case WRP_MSG_TYPE__CREATE:
+                    case WRP_MSG_TYPE__RETREIVE:
+                    case WRP_MSG_TYPE__UPDATE:
+                    case WRP_MSG_TYPE__DELETE:
+                        msg->msg_type = decodeReq->msgType;
+                        msg->u.crud.source = decodeReq->source;
+                        msg->u.crud.dest = decodeReq->dest;
+                        msg->u.crud.transaction_uuid = decodeReq->transaction_uuid;
+                        msg->u.crud.partner_ids = decodeReq->partner_ids;
+                        msg->u.crud.headers = decodeReq->headers;
+                        msg->u.crud.metadata = decodeReq->metadata;
+                        msg->u.crud.include_spans = decodeReq->include_spans;
+                        msg->u.crud.content_type = decodeReq->content_type;
+                        msg->u.crud.accept = decodeReq->accept;
+                        msg->u.crud.spans.spans = NULL;   /* not supported */
+                        msg->u.crud.spans.count = 0;     /* not supported */
+                        msg->u.crud.status = decodeReq->statusValue;
+                        msg->u.crud.rdr = decodeReq->rdr;
+                        msg->u.crud.payload = decodeReq->payload;
+                        msg->u.crud.payload_size = decodeReq->payload_size;
+                        msg->u.crud.path = decodeReq->path;
+                        free( decodeReq );
+                        *msg_ptr = msg;
+                        return length;
+                    default:
+                        free( decodeReq->metadata->data_items );
+                        break;
+                }
+                break; 
+
+            case MSGPACK_UNPACK_EXTRA_BYTES:
+                WRP_ERROR("MSGPACK_UNPACK_EXTRA_BYTES\n" );
+                break;
+            case MSGPACK_UNPACK_CONTINUE:
+                WRP_ERROR("MSGPACK_UNPACK_CONTINUE\n" );
+                break;
+            case MSGPACK_UNPACK_PARSE_ERROR:
+                WRP_ERROR("MSGPACK_UNPACK_PARSE_ERROR\n" );
+                break;
+            case MSGPACK_UNPACK_NOMEM_ERROR:
+                WRP_ERROR("MSGPACK_UNPACK_NOMEM_ERROR\n" );
+                break;
+            default:
+                break;
+        }
+
+        msgpack_zone_destroy( &mempool );
+    } else {
+        WRP_ERROR("Memory allocation failed\n" );
+    }
+
+    if( NULL != decodeReq ) {
+        free( decodeReq );
+    }
+    if( NULL != msg ) {
+        free( msg );
+    }
+    if( NULL != metadata ) {
+        free( metadata );
+    }
+
     return -1;
 }
 
@@ -2074,7 +2054,7 @@ size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encoded
 {
     //Allocate size for final buffer
     *appendData = ( void * )malloc( sizeof( char * ) * ( encodedSize + metadataSize ) );
-	if(appendData != NULL)
+	if(*appendData != NULL)
 	{
 		memcpy( *appendData, encodedBuffer, encodedSize );
 		//Append 2nd encoded buf with 1st encoded buf
