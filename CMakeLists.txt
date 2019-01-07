@@ -60,7 +60,7 @@ if (NOT MAIN_PROJ_BUILD)
 ExternalProject_Add(trower-base64
     PREFIX ${PREFIX_DIR}/trower-base64
     GIT_REPOSITORY https://github.com/Comcast/trower-base64.git
-    GIT_TAG "fbb9440ae2bc1118866baefcea7ff814f16613dd"
+    GIT_TAG "v1.1.2"
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF)
 add_library(libtrower-base64 STATIC IMPORTED)
 add_dependencies(libtrower-base64 trower-base64)
