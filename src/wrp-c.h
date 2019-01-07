@@ -34,7 +34,8 @@ enum wrp_msg_type {
     WRP_MSG_TYPE__REQ           = 3,
     WRP_MSG_TYPE__EVENT         = 4,
     WRP_MSG_TYPE__CREATE        = 5,
-    WRP_MSG_TYPE__RETREIVE      = 6,
+    WRP_MSG_TYPE__RETREIVE      = 6, // Leave this for backwards compatability
+    WRP_MSG_TYPE__RETRIEVE      = 6,
     WRP_MSG_TYPE__UPDATE        = 7,
     WRP_MSG_TYPE__DELETE        = 8,
     WRP_MSG_TYPE__SVC_REGISTRATION      = 9,

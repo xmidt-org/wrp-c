@@ -297,7 +297,7 @@ void wrp_free_struct( wrp_msg_t *msg )
             free( msg->u.reg.url );
             break;
         case WRP_MSG_TYPE__CREATE:
-        case WRP_MSG_TYPE__RETREIVE:
+        case WRP_MSG_TYPE__RETRIEVE:
         case WRP_MSG_TYPE__UPDATE:
         case WRP_MSG_TYPE__DELETE:
             WRP_DEBUG("Free for CRUD \n" );
@@ -385,7 +385,7 @@ const char *wrp_get_msg_dest (const wrp_msg_t *wrp_msg)
 		return (const char *)wrp_msg->u.event.dest;
 	if (wrp_msg->msg_type == WRP_MSG_TYPE__CREATE)
 		return (const char *)wrp_msg->u.crud.dest;
-	if (wrp_msg->msg_type == WRP_MSG_TYPE__RETREIVE)
+	if (wrp_msg->msg_type == WRP_MSG_TYPE__RETRIEVE)
 		return (const char *)wrp_msg->u.crud.dest;
 	if (wrp_msg->msg_type == WRP_MSG_TYPE__UPDATE)
 		return (const char *)wrp_msg->u.crud.dest;
@@ -403,7 +403,7 @@ const char *wrp_get_msg_source (const wrp_msg_t *wrp_msg)
                 return (const char *)wrp_msg->u.event.source;
         if (wrp_msg->msg_type == WRP_MSG_TYPE__CREATE)
                 return (const char *)wrp_msg->u.crud.source;
-        if (wrp_msg->msg_type == WRP_MSG_TYPE__RETREIVE)
+        if (wrp_msg->msg_type == WRP_MSG_TYPE__RETRIEVE)
                 return (const char *)wrp_msg->u.crud.source;
         if (wrp_msg->msg_type == WRP_MSG_TYPE__UPDATE)
                 return (const char *)wrp_msg->u.crud.source;
@@ -595,7 +595,7 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 		        rv = __wrp_pack_structure( encode, bytes );
 		        break;
 		    case WRP_MSG_TYPE__CREATE:
-		    case WRP_MSG_TYPE__RETREIVE:
+		    case WRP_MSG_TYPE__RETRIEVE:
 		    case WRP_MSG_TYPE__UPDATE:
 		    case WRP_MSG_TYPE__DELETE:
 		        encode->msgType = msg->msg_type;
@@ -1182,7 +1182,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             msgpack_pack_int( &pk, encodeReqtmp->msgType );
             break;
         case WRP_MSG_TYPE__CREATE:
-        case WRP_MSG_TYPE__RETREIVE:
+        case WRP_MSG_TYPE__RETRIEVE:
         case WRP_MSG_TYPE__UPDATE:
         case WRP_MSG_TYPE__DELETE:
 
@@ -1905,7 +1905,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 						            free( decodeReq );
 						            return length;
 						        case WRP_MSG_TYPE__CREATE:
-						        case WRP_MSG_TYPE__RETREIVE:
+						        case WRP_MSG_TYPE__RETRIEVE:
 						        case WRP_MSG_TYPE__UPDATE:
 						        case WRP_MSG_TYPE__DELETE:
 						            msg->msg_type = decodeReq->msgType;
