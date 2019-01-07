@@ -667,6 +667,34 @@ const wrp_msg_t crud_test[] = {
 
 };
 
+void CU_ASSERT_BYTES_EQUAL( const void *expected, size_t expected_len,
+                            const void *actual, size_t actual_len )
+{
+    if( (NULL == expected) && (NULL == actual)) {
+        CU_ASSERT( true );
+        return;
+    }
+
+    if( (NULL == expected) || (NULL == actual)) {
+        CU_ASSERT( false );
+        return;
+    }
+
+    CU_ASSERT_EQUAL( expected_len, actual_len );
+    if( expected_len ==  actual_len ) {
+        size_t i;
+
+        for( i = 0; i < expected_len; i++ ) {
+            unsigned char a, b;
+            a = ((unsigned char*) expected)[i];
+            b = ((unsigned char*) actual)[i];
+            CU_ASSERT_EQUAL( a, b );
+            if( a != b ) {
+                WRP_INFO("Expected[%d]: 0x%02x != Got[%d]: 0x%02x\n", i, a, i, b );
+            }
+        }
+    }
+}
 
 void validate_to_strings( const char *expected, ssize_t expected_len,
                           const char *actual, size_t actual_len )
@@ -675,7 +703,9 @@ void validate_to_strings( const char *expected, ssize_t expected_len,
         expected_len = strlen( expected );
     }
 
-    if( ( NULL != actual ) && ( 0 != strcmp( actual, expected ) ) ) {
+    if( ( NULL != actual ) && ( NULL != expected ) &&
+        ( 0 != strcmp( actual, expected ) ) )
+    {
         WRP_INFO("\n\nGot: |%s| Expected: |%s|\n\n", actual, expected );
     }
 
@@ -1438,12 +1468,8 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, update.u.crud.transaction_uuid );
     CU_ASSERT_STRING_EQUAL( message->u.crud.path, update.u.crud.path );
 
-    if( message->u.crud.payload != NULL ) 
-    {
-        CU_ASSERT_EQUAL( update.u.crud.payload_size, message->u.crud.payload_size);
-        CU_ASSERT_EQUAL( 0, memcmp(update.u.crud.payload, message->u.crud.payload, update.u.crud.payload_size) );
-        WRP_INFO("Crud payload : %s\n",message->u.crud.payload);
-    }
+    CU_ASSERT_BYTES_EQUAL( message->u.crud.payload, message->u.crud.payload_size,
+                           update.u.crud.payload, update.u.crud.payload_size );
     if( message->u.crud.metadata != NULL ) {
         size_t n = 0;
 
@@ -1458,7 +1484,7 @@ void test_crud_message()
         size_t i = 0;
         WRP_DEBUG("partner_ids count returned is %d\n", ( int ) message->u.crud.partner_ids->count );
 
-        if( NULL != message->u.crud.partner_ids ) {
+        if( (NULL != message->u.crud.partner_ids) && (NULL != message->u.crud.partner_ids) ) {
             while( i < message->u.crud.partner_ids->count ) {
                 CU_ASSERT_STRING_EQUAL( update.u.crud.partner_ids->partner_ids[i],
                                         message->u.crud.partner_ids->partner_ids[i] );
@@ -1472,7 +1498,7 @@ void test_crud_message()
         size_t n = 0;
         WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.crud.headers->count );
 
-        if( NULL != message->u.crud.headers ) {
+        if( (NULL != message->u.crud.headers) && (NULL != update.u.crud.headers) ) {
             while( n < message->u.crud.headers->count ) {
                 CU_ASSERT_STRING_EQUAL( update.u.crud.headers->headers[n],
                                         message->u.crud.headers->headers[n] );
@@ -1569,12 +1595,9 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, meta_payload.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, meta_payload.u.crud.transaction_uuid );
     CU_ASSERT_STRING_EQUAL( message->u.crud.path, meta_payload.u.crud.path );
-    if( message->u.crud.payload != NULL ) 
-    {
-        CU_ASSERT_EQUAL( meta_payload.u.crud.payload_size, message->u.crud.payload_size);
-        CU_ASSERT_EQUAL( 0, memcmp(meta_payload.u.crud.payload, message->u.crud.payload, meta_payload.u.crud.payload_size) );
-        WRP_INFO("Crud payload : %s\n",message->u.crud.payload);
-    }
+    CU_ASSERT_BYTES_EQUAL( message->u.crud.payload, message->u.crud.payload_size,
+                           update.u.crud.payload, update.u.crud.payload_size );
+
     if( message->u.crud.metadata != NULL ) {
         size_t n = 0;
 
