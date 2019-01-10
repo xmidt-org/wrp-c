@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 - Fixed memory leak
+- Fixed memory leak coverity found
 - Added support for Mac / Apple build
 - Modified wrp dest parse function to support both source/dest parsing
 - Added NULL checks for malloc
