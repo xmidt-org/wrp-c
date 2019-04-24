@@ -716,7 +716,7 @@ static ssize_t __wrp_keep_alive_to_string (char **bytes )
         data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
 
         if( NULL != data ) {
-            strncpy( data, keep_alive_fmt, length );
+            memcpy( data, keep_alive_fmt, length );
             data[length] = '\0';
             *bytes = data;
         } else {
