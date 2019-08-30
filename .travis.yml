@@ -21,12 +21,12 @@ env:
 addons:
   coverity_scan:
     project:
-      name: "Comcast/wrp-c"
+      name: "xmidt-org/wrp-c"
       description: " C implementation of the WebPA Routing Protocol"
     notification_email: weston_schmidt@alumni.purdue.edu
     build_command_prepend: "mkdir coverity_build && cd coverity_build && cmake .."
     build_command:   "make"
-    branch_pattern: master
+    branch_pattern: coverity
 
 before_install:
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo pip install codecov; fi
