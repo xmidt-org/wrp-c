@@ -626,7 +626,7 @@ const wrp_msg_t crud_test[] = {
         .u.crud.payload_size = 3
     },
     {/* Index 1 */
-        .msg_type = WRP_MSG_TYPE__RETREIVE,
+        .msg_type = WRP_MSG_TYPE__RETRIEVE,
         .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
         .u.crud.source = "source-address",
         .u.crud.dest = "dest-address",
@@ -836,7 +836,7 @@ void test_all()
         if ((msg_type == WRP_MSG_TYPE__REQ) ||
             (msg_type == WRP_MSG_TYPE__EVENT) ||
             (msg_type == WRP_MSG_TYPE__CREATE) ||
-            (msg_type == WRP_MSG_TYPE__RETREIVE) ||
+            (msg_type == WRP_MSG_TYPE__RETRIEVE) ||
             (msg_type == WRP_MSG_TYPE__UPDATE) ||
             (msg_type == WRP_MSG_TYPE__DELETE))
         {
@@ -851,7 +851,7 @@ void test_all()
         if ((msg_type == WRP_MSG_TYPE__REQ) ||
             (msg_type == WRP_MSG_TYPE__EVENT) ||
             (msg_type == WRP_MSG_TYPE__CREATE) ||
-            (msg_type == WRP_MSG_TYPE__RETREIVE) ||
+            (msg_type == WRP_MSG_TYPE__RETRIEVE) ||
             (msg_type == WRP_MSG_TYPE__UPDATE) ||
             (msg_type == WRP_MSG_TYPE__DELETE))
         {
@@ -1211,7 +1211,7 @@ void test_crud_message()
         .u.crud.payload_size = sizeof(createPayload)
     };
     const wrp_msg_t retreive = {
-        .msg_type = WRP_MSG_TYPE__RETREIVE,
+        .msg_type = WRP_MSG_TYPE__RETRIEVE,
         .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
         .u.crud.source = "source-address",
         .u.crud.dest = "dest-address",
