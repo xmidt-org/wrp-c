@@ -12,13 +12,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added NULL checks for malloc
 - Added 'accept' wrp field 
 
-## [1.0.0] - 2017-12-13
+## [v1.0.0] - 2017-12-13
 ### Added
 - Initial stable release.
 
-## [0.0.1] - 2016-06-15
+## [v0.0.1] - 2016-06-15
 ### Added
 - Initial creation
 
-[Unreleased]: https://github.com/Comcast/wrp-c/compare/1.0.0...HEAD
-[1.0.0]: https://github.com/Comcast/wrp-c/compare/40cd45f5ce6723fa8d4aaf6e66fc3e3302758ec4...1.0.0
+[Unreleased]: https://github.com/Comcast/wrp-c/compare/v1.0.0...HEAD
+[v1.0.0]: https://github.com/Comcast/wrp-c/compare/40cd45f5ce6723fa8d4aaf6e66fc3e3302758ec4...v1.0.0
