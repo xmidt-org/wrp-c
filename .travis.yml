@@ -1,50 +1,163 @@
 language: c
-os:
-    - linux
-    - osx
 
-matrix:
-    include:
-        - os: linux
-          dist: trusty
-          sudo: required
-compiler:
-    - gcc
-    - clang
+branches:
+  only:
+    - master
+    - /^v[0-9]+\.[0-9]+\.[0-9]+$/
 
 env:
   global:
-   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
-   #   via the "travis encrypt" command using the project repo's public key
-   - secure: "C/fEi7szrUH0WcV//X52T3BY6Cuyhqosd7cioOo3WNEMiXQRM5QLOzxpGDuyMi2z21eBbZqSCvFcUTvEp/frHxM0qIFfBeWs1vsF3app09Y3D99QYQudb6x/c0a5uDgRp8ftYUUhF6xf4Y4ns9Bh2iwaEEtOZDH5z9WSpO9KzPf7QuI6lTqb4bTSC3dGiwbGLxL8RsthKccl5Ti9z4bAW2VdnUD3wgxpZWZ9qrX72/SrfG4KwqK70HLm1Y/ds5KvpWV8AVJzMpYqIfx2WqkQuvnfC377VBieyA4iCFkoq1hue5i7Vq8AZ7yNXOzhur+v9Rm/8zuNRz7gTPDQscy1YHdmE+UGK5hYDUu420PkG708KjnnnT5LlCUa+KtX2Wi3/B37kHGiUUH5cPOnZ6UAjaOk4c7CWZt3CIZjF3FN0GnMKDUc69UU7TYEN3JOauPbFe8iBLnnNlGd6Yysa1Voh3NSg7VKF8DZIgSuahOxi7NTqPrVtoMzC0v/HzfMmOH9OvWv8IR/55YqurdeFsNJ8p3a2yU8Uz1pnn5cPoXHXb88bS2gvnivigDxSU/9C852U8gd1qpIfb6+YMuD4G9i/FmypUas89PjfImn/rYv9sk7RBjvdi8Idz5jLxvYMgLUq4Yd1MlhBXOAfB8LsK2f78gQYNBvuVwQ93k4K3tVJHU="
-
-addons:
-  coverity_scan:
-    project:
-      name: "xmidt-org/wrp-c"
-      description: " C implementation of the WebPA Routing Protocol"
-    notification_email: weston_schmidt@alumni.purdue.edu
-    build_command_prepend: "mkdir coverity_build && cd coverity_build && cmake .."
-    build_command:   "make"
-    branch_pattern: coverity
+    - DISABLE_VALGRIND="false"
+    - TRAVIS_REPO_OWNER=${TRAVIS_REPO_SLUG%/*}
+    - TRAVIS_REPO_NAME=${TRAVIS_REPO_SLUG#*/}
 
 before_install:
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo pip install codecov; fi
-    - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install cunit; fi
-    - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install --HEAD valgrind; fi
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y -qq libcunit1 libcunit1-dev lcov valgrind; fi
-    - DISABLE_VALGRIND=$(if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo "false"; else echo "true"; fi)
-
 
 install:
 
 script:
     - mkdir build
-    - cd build
+    - pushd build
     - cmake .. -DDISABLE_VALGRIND:BOOL=${DISABLE_VALGRIND}
-    - make
-    - make test
+    - build-wrapper-linux-x86-64 --out-dir bw-output make all test
+    - popd
 
 after_success:
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then codecov; fi
+    - find . -type f -name '*.gcda' -exec gcov -p {} +
+    - sonar-scanner -Dproject.settings=.sonar-project.properties
+    - bash <(curl -s https://codecov.io/bash) -F unittests || echo "Codecov did not collect coverage reports"
+
+stages:
+  - test
+  - coverity
+  - tag
+  - release
+
+jobs:
+  include:
+    - stage: test
+      name: "Trusty gcc build"
+      os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - libcunit1
+            - libcunit1-doc
+            - libcunit1-dev
+            - libtool
+            - valgrind
+            - lcov
+        sonarcloud:
+          organization: "xmidt-org"
+          token: "$SONAR_TOKEN"
+
+    - stage: test
+      name: "Trusty clang build"
+      os: linux
+      dist: trusty
+      compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - libcunit1
+            - libcunit1-doc
+            - libcunit1-dev
+            - libtool
+            - valgrind
+            - lcov
+        sonarcloud:
+          organization: "xmidt-org"
+          token: "$SONAR_TOKEN"
+      after_success: skip
+
+    # How the tag and release targets work
+    #
+    # Each time a build is run on the main branch the CHANGELOG.md file is
+    # checked To see if there is a new version tag with details under it.  If a
+    # version with details is found then **tag** creates a new tag with the
+    # proper version.
+    #
+    # The creation of the tag branch triggers the **release** stage.
+    #
+    # The release stage builds tar.gz and zip artificts as well as creates a
+    # SHA256 checksum of the files.  The process then pushes these files up to
+    # Github for hosting.
+    #
+    # Why do this?  Yocto and other build systems depend on the artifacts being
+    # consistent each time they are downloaded, but there is an issue with the
+    # way Github generates the artifacts on the fly where on occasion the
+    # checksum changes.  By explicitly producing our own artifacts we eliminate
+    # this issue for systems that rely on the checksum being constant
+    - stage: tag
+      name: "Tag For Release"
+      if: branch = master && type = push
+      before_script:
+        - echo -e "machine github.com\n  login $GH_TOKEN" > ~/.netrc
+      script:
+        - export OLD_VERSION=$(git describe --tags `git rev-list --tags --max-count=1` | tail -1 | sed 's/v\(.*\)/\1/')
+        - git config --global user.name "xmidt-bot"
+        - git config --global user.email "$BOT_EMAIL"
+        - export TAG=$(cat CHANGELOG.md | perl -0777 -ne 'print "$1" if /.*## \[Unreleased\]\s+## \[(v\d+.\d+.\d+)\].*/s')
+        - export TODAY=`date +'%m/%d/%Y'`
+        - export NOTES=$(cat CHANGELOG.md | perl -0777 -ne 'print "$ENV{TODAY}\n\n$1\n" if /.*## \[$ENV{TAG}\]\s(.*?)\s+## \[(v\d+.\d+.\d+)\].*/s')
+        - if [[ "$TAG" != "" && "$TAG" != "$OLD_VERSION" ]]; then git tag -a "$TAG" -m "$NOTES"; git push origin --tags; echo $?; fi
+      addons:
+      before_install: skip
+      after_success: skip
+
+    - stage: release
+      name: "Make a Release"
+      if: branch != master
+      script:
+        - export VERSION=${TRAVIS_TAG##*v}
+        - git archive --format=tar.gz --prefix=${TRAVIS_REPO_NAME}-${VERSION}/ -o ${TRAVIS_REPO_NAME}-${VERSION}.tar.gz ${TRAVIS_TAG}
+        - git archive --format=zip    --prefix=${TRAVIS_REPO_NAME}-${VERSION}/ -o ${TRAVIS_REPO_NAME}-${VERSION}.zip    ${TRAVIS_TAG}
+        - sha256sum  ${TRAVIS_REPO_NAME}-${VERSION}.tar.gz  ${TRAVIS_REPO_NAME}-${VERSION}.zip > sha256sum.txt
+      deploy:
+        cleanup: false
+        on:
+          all_branches: true
+          tags: true
+        provider: releases
+        api_key: "$GH_TOKEN"
+        file:
+          - "${TRAVIS_REPO_NAME}-${VERSION}.tar.gz"
+          - "${TRAVIS_REPO_NAME}-${VERSION}.zip"
+          - "sha256sum.txt"
+      addons:
+      before_install: skip
+
+    - stage: coverity
+      name: "Coverity build"
+      if: branch = master
+      os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - libcunit1
+            - libcunit1-doc
+            - libcunit1-dev
+            - libtool
+            - valgrind
+            - lcov
+        coverity_scan:
+          project:
+            name: ${TRAVIS_REPO_SLUG}
+          notification_email: weston_schmidt@alumni.purdue.edu
+          build_command_prepend: "mkdir coverity_build && cd coverity_build && cmake .."
+          build_command: "make"
+          branch_pattern: master
+      after_success: skip
+
+  allow_failures:
+    - stage: coverity
