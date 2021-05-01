@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v1.1.0] - 2021-04-40
+- Migrate to new CI infrastructure
 - Fixed memory leak
 - Fixed memory leak coverity found
 - Added support for Mac / Apple build
@@ -20,5 +23,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial creation
 
-[Unreleased]: https://github.com/Comcast/wrp-c/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Comcast/wrp-c/compare/v1.1.0...HEAD
+[v1.1.0]: https://github.com/Comcast/wrp-c/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/Comcast/wrp-c/compare/40cd45f5ce6723fa8d4aaf6e66fc3e3302758ec4...v1.0.0
