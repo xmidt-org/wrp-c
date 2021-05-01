@@ -1,0 +1,18 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: wrp-c
+Upstream-Contact: Weston Schmidt <weston_schmidt@alumni.purdue.edu>
+Source: https://github.com/xmidt-org/wrp-c
+
+Files: .whitesource
+Copyright: 2021 Comcast Cable Communications Managem
+License: Apache-2.0
+
+Files: NOTICE
+Copyright: 2021 Comcast Cable Communications Managem
+License: Apache-2.0
+
+# Sample paragraph, commented out:
+#
+# Files: src/*
+# Copyright: $YEAR $NAME <$CONTACT>
+# License: ...

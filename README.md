@@ -1,3 +1,7 @@
+<!--
+SPDX-FileCopyrightText: 2016-2021 Comcast Cable Communications Management, LLC
+SPDX-License-Identifier: Apache-2.0
+-->
 # wrp-c
 
 C implementation of the Web Routing Protocol
