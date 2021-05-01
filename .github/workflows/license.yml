@@ -1,10 +1,9 @@
 # SPDX-FileCopyrightText: 2021 Comcast Cable Communications Management, LLC
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 
 name: REUSE Compliance Check
 
-# For now, don't enable this check.
-#on: [push, pull_request]
+on: [push, pull_request]
 
 jobs:
   test:

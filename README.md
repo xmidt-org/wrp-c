@@ -1,3 +1,7 @@
+<!--
+SPDX-FileCopyrightText: 2016-2021 Comcast Cable Communications Management, LLC
+SPDX-License-Identifier: Apache-2.0
+-->
 # wrp-c
 
 C implementation of the Web Routing Protocol
@@ -7,7 +11,7 @@ C implementation of the Web Routing Protocol
 [![Coverity](https://img.shields.io/coverity/scan/9155.svg)]("https://scan.coverity.com/projects/comcast-wrp-c)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=xmidt-org_wrp-c&metric=alert_status)](https://sonarcloud.io/dashboard?id=xmidt-org_wrp-c)
 [![Language Grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/xmidt-org/wrp-c.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/xmidt-org/wrp-c/context:cpp)
-[![MIT License](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/xmidt-org/wrp-c/blob/main/LICENSE)
+[![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/wrp-c/blob/main/LICENSE.txt)
 [![GitHub Release](https://img.shields.io/github/release/xmidt-org/wrp-c.svg)](CHANGELOG.md)
 
 
