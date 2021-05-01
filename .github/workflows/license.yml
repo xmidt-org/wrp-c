@@ -3,7 +3,8 @@
 
 name: REUSE Compliance Check
 
-on: [push, pull_request]
+# For now, don't enable this check.
+#on: [push, pull_request]
 
 jobs:
   test:
