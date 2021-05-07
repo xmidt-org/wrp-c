@@ -1,0 +1,30 @@
+#
+# SPDX-FileCopyrightText: 2021 Comcast Cable Communications Management, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#ifndef _WRPC_VERSION_H_
+#define _WRPC_VERSION_H_ 1
+
+#define WRPC_VERSION          "@wrp-c_VERSION@"
+
+#define WRPC_VERSION_MAJOR    @wrp-c_VERSION_MAJOR@
+#define WRPC_VERSION_MINOR    @wrp-c_VERSION_MINOR@
+#define WRPC_VERSION_PATCH    @wrp-c_VERSION_PATCH@
+
+/* This is the numeric version of the wrp-c version number, meant for easier
+ * parsing and comparisons by programs.  The WRPC_VERSION_NUM define will
+ * always follow this syntax:
+ *
+ *      0xAABBCC
+ *
+ * Where AA, BB, and CC are each major version, minor version, patch in hex
+ * using 8 bits each.
+ *
+ * It should be safe to compare two different versions with the greater number
+ * being the newer version.
+ */
+#define WRPC_VERSION_NUM      @wrp-c_BITWISE_VERSION@
+
+#endif
