@@ -10,7 +10,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [v1.1.0] - 2021-04-40
+## [v1.1.1] - 2021-05-07
+- Improve cmake files so dependencies can be found and specified vs. always downloaded
+- Improve the tag code to leverage the new cmake file
+- Updated to use the spdx license pattern
+
+## [v1.1.0] - 2021-05-01
 - Migrate to new CI infrastructure
 - Fixed memory leak
 - Fixed memory leak coverity found
@@ -27,6 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial creation
 
-[Unreleased]: https://github.com/Comcast/wrp-c/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Comcast/wrp-c/compare/v1.1.1...HEAD
+[v1.1.1]: https://github.com/Comcast/wrp-c/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/Comcast/wrp-c/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/Comcast/wrp-c/compare/40cd45f5ce6723fa8d4aaf6e66fc3e3302758ec4...v1.0.0
