@@ -23,10 +23,14 @@ function(find_msgpack)
 
     if (NOT DEFINED MSGPACK_VERSION)
         set(MSGPACK_ENFORCE_VERSION "msgpack")
-        set(MSGPACK_GIT_TAG "")
+        if (NOT DEFINED MSGPACK_GIT_TAG)
+            set(MSGPACK_GIT_TAG "")
+        endif()
     else ()
         set(MSGPACK_ENFORCE_VERSION "msgpack>=${MSGPACK_VERSION}")
-        set(MSGPACK_GIT_TAG "v${MSGPACK_VERSION}")
+        if (NOT DEFINED MSGPACK_GIT_TAG)
+            set(MSGPACK_GIT_TAG "v${MSGPACK_VERSION}")
+        endif()
     endif()
 
     find_path(MSGPACK_INCLUDE_DIR

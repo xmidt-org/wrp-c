@@ -23,10 +23,14 @@ function(find_cimplog)
 
     if (NOT DEFINED CIMPLOG_VERSION)
         set(CIMPLOG_ENFORCE_VERSION "cimplog")
-        set(CIMPLOG_GIT_TAG "")
+        if (NOT DEFINED CIMPLOG_GIT_TAG)
+            set(CIMPLOG_GIT_TAG "")
+        endif()
     else ()
         set(CIMPLOG_ENFORCE_VERSION "cimplog>=${CIMPLOG_VERSION}")
-        set(CIMPLOG_GIT_TAG "v${CIMPLOG_VERSION}")
+        if (NOT DEFINED CIMPLOG_GIT_TAG)
+            set(CIMPLOG_GIT_TAG "v${CIMPLOG_VERSION}")
+        endif()
     endif()
 
     find_path(CIMPLOG_INCLUDE_DIR
