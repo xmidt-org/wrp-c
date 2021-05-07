@@ -10,6 +10,7 @@ configure_file(wrp-c_ver.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/wrp-c_ver.h)
 
 install (FILES
+         ${CMAKE_CURRENT_BINARY_DIR}/wrp-c_ver.h
          ${CMAKE_CURRENT_SOURCE_DIR}/wrp-c.h
          DESTINATION include/wrp-c)
 
