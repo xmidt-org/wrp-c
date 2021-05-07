@@ -1,86 +1,52 @@
 # SPDX-FileCopyrightText: 2010-2021 Comcast Cable Communications Management, LLC
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 3.13)
 
-project(wrp-c)
-include(ExternalProject)
-include(CTest)
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+
+project(wrp-c VERSION 1.1.1)
+
+math(EXPR wrp-c_BITWISE_VERSION "${wrp-c_VERSION_MAJOR} << 16 | ${wrp-c_VERSION_MINOR} << 8 | ${wrp-c_VERSION_PATCH}" OUTPUT_FORMAT HEXADECIMAL)
+
+set(CIMPLOG_PATH "" CACHE PATH "An alternate path to examine for the cimplog package")
+set(MSGPACK_PATH "" CACHE PATH "An alternate path to examine for the msgpack package")
+set(TROWER_PATH "" CACHE PATH "An alternate path to examine for the trower-base64 package")
 
 add_definitions(-std=c99)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g -Werror -Wall")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -g -Werror -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall")
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-set(CMAKE_MACOSX_RPATH 1)
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -undefined dynamic_lookup")
-endif()
+include(CTest)
+include(ExternalProject)
 
-set(INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/_install)
-set(PREFIX_DIR ${CMAKE_CURRENT_BINARY_DIR}/_prefix)
-set(INCLUDE_DIR ${INSTALL_DIR}/include)
-set(LIBRARY_DIR ${INSTALL_DIR}/lib${LIB_SUFFIX})
-
-include_directories(${INCLUDE_DIR}
-                    ${INCLUDE_DIR}/msgpack
-                    ${INCLUDE_DIR}/trower-base64
-                    ${INCLUDE_DIR}/cimplog)
-
-include_directories (SYSTEM /usr/include)
-link_directories ( ${LIBRARY_DIR})
-                   
-if (MAIN_PROJ_BUILD) 
-include_directories(
-                    ${MAIN_PROJ_INCLUDE_PATH}
-                    ${MAIN_PROJ_INCLUDE_PATH}/msgpack
-                    ${MAIN_PROJ_INCLUDE_PATH}/trower-base64
-                    ${MAIN_PROJ_INCLUDE_PATH}/cimplog)
-link_directories ( ${LIBRARY_DIR} ${MAIN_PROJ_LIB_PATH})                    
-endif ()                    
+add_library(wrp-c SHARED "")
 
 
-enable_testing()
+set(LOCAL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/_install)
+set(LOCAL_PREFIX_DIR ${CMAKE_CURRENT_BINARY_DIR}/_prefix)
+set(LOCAL_INCLUDE_DIR ${LOCAL_INSTALL_DIR}/include)
+set(LOCAL_LIBRARY_DIR ${LOCAL_INSTALL_DIR}/lib${LIB_SUFFIX})
 
-if (NOT BUILD_YOCTO)
+################################################################################
+# Find or acquire software dependencies
+################################################################################
 
-# base64 external dependency
-if (NOT MAIN_PROJ_BUILD)
+include(FindMsgpack)
+include(FindTrowerBase64)
+include(FindCimplog)
 
-ExternalProject_Add(trower-base64
-    PREFIX ${PREFIX_DIR}/trower-base64
-    GIT_REPOSITORY https://github.com/Comcast/trower-base64.git
-    GIT_TAG "v1.1.2"
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF)
-add_library(libtrower-base64 STATIC IMPORTED)
-add_dependencies(libtrower-base64 trower-base64)
-
-# msgpack-c external dependency
-ExternalProject_Add(msgpack
-    PREFIX ${PREFIX_DIR}/msgpack
-    GIT_REPOSITORY https://github.com/msgpack/msgpack-c.git
-    GIT_TAG "7a98138f27f27290e680bf8fbf1f8d1b089bf138"
-    CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
-    -DMSGPACK_ENABLE_CXX=OFF
-    -DMSGPACK_BUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF)
-add_library(libmsgpack STATIC IMPORTED)
-add_dependencies(libmsgpack msgpack)
-
-# cimplog external dependency
-ExternalProject_Add(cimplog
-    PREFIX ${PREFIX_DIR}/cimplog
-    GIT_REPOSITORY https://github.com/Comcast/cimplog.git
-    GIT_TAG "8a5fb3c2f182241d17f5342bea5b7688c28cd1fd"
-    CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
-                  -DBUILD_TESTING=OFF
-)
-add_library(libcimplog STATIC IMPORTED)
-add_dependencies(libcimplog cimplog)
-
-endif ()
-endif ()
+################################################################################
+# Process the subdirectories now
+################################################################################
 
 add_subdirectory(src)
 
 if (BUILD_TESTING)
+    include(FindCunit)
 	add_subdirectory(tests)
 endif (BUILD_TESTING)
+
+add_custom_target(license
+                  COMMAND reuse lint
+                  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

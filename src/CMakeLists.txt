@@ -1,17 +1,21 @@
 # SPDX-FileCopyrightText: 2016-2021 Comcast Cable Communications Management, LLC
 # SPDX-License-Identifier: Apache-2.0
 
-set(PROJ_WRPC wrp-c)
+target_sources(wrp-c
+    PRIVATE
+        wrp-c.c
+)
 
-file(GLOB HEADERS wrp-c.h)
-set(SOURCES wrp-c.c)
+install (FILES
+         ${CMAKE_CURRENT_SOURCE_DIR}/wrp-c.h
+         DESTINATION include/wrp-c)
 
-add_library(${PROJ_WRPC} STATIC ${HEADERS} ${SOURCES})
-add_library(${PROJ_WRPC}.shared SHARED ${HEADERS} ${SOURCES})
-set_target_properties(${PROJ_WRPC}.shared PROPERTIES OUTPUT_NAME ${PROJ_WRPC})
-set_property(TARGET ${PROJ_WRPC} PROPERTY C_STANDARD 99)
-set_property(TARGET ${PROJ_WRPC}.shared PROPERTY C_STANDARD 99)
+set_target_properties(wrp-c PROPERTIES
+        OUTPUT_NAME wrp-c)
 
-install (TARGETS ${PROJ_WRPC} DESTINATION lib${LIB_SUFFIX})
-install (TARGETS ${PROJ_WRPC}.shared DESTINATION lib${LIB_SUFFIX})
-install (FILES wrp-c.h DESTINATION include/${PROJ_WRPC})
+install(TARGETS wrp-c
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+       )
+
