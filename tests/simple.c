@@ -6,7 +6,7 @@
 #include <string.h>
 #include <CUnit/Basic.h>
 #include <stdbool.h>
-#include <cimplog.h>
+#include <cimplog/cimplog.h>
 
 #include "../src/wrp-c.h"
 
