@@ -26,7 +26,7 @@ add_library(wrp-c SHARED "")
 ################################################################################
 
 find_msgpack(      PATH ${MSGPACK_PATH} VERSION "2.1.5" GIT_TAG "7a98138f27f27290e680bf8fbf1f8d1b089bf138")
-find_trower_base64(PATH ${TROWER_PATH}                  GIT_TAG "")
+find_trower_base64(PATH ${TROWER_PATH}  VERSION "1.2.0" GIT_TAG "")
 find_cimplog(      PATH ${CIMPLOG_PATH}                 GIT_TAG "8a5fb3c2f182241d17f5342bea5b7688c28cd1fd")
 
 ################################################################################
