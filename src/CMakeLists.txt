@@ -4,6 +4,7 @@
 target_sources(wrp-c
     PRIVATE
         wrp-c.c
+        utils.c
 )
 
 configure_file(wrp-c_ver.h.in

@@ -11,6 +11,7 @@
 #include <cimplog/cimplog.h>
 
 #include "wrp-c.h"
+#include "utils.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -94,6 +95,7 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
 static char* __get_header_string( headers_t *headers );
 static char* __get_spans_string( const struct money_trace_spans *spans );
 static char* __get_partner_ids_string( partners_t *partner_ids );
+static void __special_free( char *s );
 static void __msgpack_pack_string_nvp( msgpack_packer *pk,
                                        const struct wrp_token *token,
                                        const char *val );
@@ -117,7 +119,6 @@ static void decodeMapRequest( msgpack_object deserialized,
                               struct req_res_t **decodeMapReq );
 static void mapCommonString( msgpack_packer *pk, struct req_res_t *encodeComReq );
 static int alterMap( char * buf );
-static char* strdupptr( const char *s, const char *e );
 
 
 /*----------------------------------------------------------------------------*/
@@ -745,26 +746,16 @@ static ssize_t __wrp_struct_to_string( const wrp_msg_t *msg, char **bytes )
 
 static ssize_t __wrp_keep_alive_to_string( char **bytes )
 {
-    const char *keep_alive_fmt =
-        "wrp_keep_alive_msg {\n"
-        "}\n";
-    char *data;
-    size_t length;
-    length = strlen( keep_alive_fmt );
+    const char *keep_alive_fmt = "wrp_keep_alive_msg {\n"
+                                 "}\n";
+    size_t len;
 
-    if( NULL != bytes ) {
-        data = malloc( sizeof(char) * ( length + 1 ) );   /* +1 for '\0' */
-
-        if( NULL != data ) {
-            memcpy( data, keep_alive_fmt, length );
-            data[length] = '\0';
-            *bytes = data;
-        } else {
-            return -1;
-        }
+    *bytes = mlaprintf( &len, keep_alive_fmt );
+    if( NULL == *bytes ) {
+        len = -1;
     }
 
-    return length;
+    return len;
 }
 
 /**
@@ -781,23 +772,14 @@ static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth,
     const char *auth_fmt = "wrp_auth_msg {\n"
                            "    .status = %d\n"
                            "}\n";
-    char *data;
-    size_t length;
-    length = snprintf( NULL, 0, auth_fmt, auth->status );
+    size_t len;
 
-    if( NULL != bytes ) {
-        data = malloc( sizeof(char) * ( length + 1 ) );   /* +1 for '\0' */
-
-        if( NULL != data ) {
-            sprintf( data, auth_fmt, auth->status );
-            data[length] = '\0';
-            *bytes = data;
-        } else {
-            return -1;
-        }
+    *bytes = mlaprintf( &len, auth_fmt, auth->status );
+    if( NULL == *bytes ) {
+        len = -1;
     }
 
-    return length;
+    return len;
 }
 
 
@@ -823,7 +805,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
                           "    .spans            = %s\n"
                           "    .payload_size     = %zd\n"
                           "}\n";
-    size_t length;
+    size_t len;
     char *headers;
     char *spans;
     char *partner_ids;
@@ -831,40 +813,20 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
     headers = __get_header_string( req->headers );
     spans = __get_spans_string( &req->spans );
     partner_ids = __get_partner_ids_string( req->partner_ids );
-    length = snprintf( NULL, 0, req_fmt, req->transaction_uuid, req->source,
-                       req->dest, partner_ids, headers, req->content_type,
-                       req->accept, ( req->include_spans ? "true" : "false" ),
-                       spans, req->payload_size );
 
-    if( NULL != bytes ) {
-        char *data;
-        data = malloc( sizeof(char) * ( length + 1 ) );   /* +1 for '\0' */
-
-        if( NULL != data ) {
-            sprintf( data, req_fmt, req->transaction_uuid, req->source,
-                     req->dest, partner_ids, headers, req->content_type,
-                     req->accept, ( req->include_spans ? "true" : "false" ),
-                     spans, req->payload_size );
-            data[length] = '\0';
-            *bytes = data;
-        } else {
-            length = -1;
-        }
+    *bytes = mlaprintf( &len, req_fmt, req->transaction_uuid, req->source,
+                        req->dest, partner_ids, headers, req->content_type,
+                        req->accept, ( req->include_spans ? "true" : "false" ),
+                        spans, req->payload_size );
+    if( NULL == *bytes ) {
+        len = -1;
     }
 
-    if( __empty_list != headers ) {
-        free( headers );
-    }
+    __special_free( headers );
+    __special_free( spans );
+    __special_free( partner_ids );
 
-    if( __empty_list != spans ) {
-        free( spans );
-    }
-
-    if( __empty_list != partner_ids ) {
-        free( partner_ids );
-    }
-
-    return length;
+    return len;
 }
 
 
@@ -887,40 +849,23 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
                             "    .content_type     = %s\n"
                             "    .payload_size     = %zd\n"
                             "}\n";
-    size_t length;
+    size_t len;
     char *headers;
     char *partner_ids;
 
     headers = __get_header_string( event->headers );
     partner_ids = __get_partner_ids_string( event->partner_ids );
 
-    length = snprintf( NULL, 0, event_fmt, event->source, event->dest, partner_ids,
-                       headers, event->content_type, event->payload_size );
-
-    if( NULL != bytes ) {
-        char *data;
-        data = malloc( sizeof(char) * ( length + 1 ) );   /* +1 for '\0' */
-
-        if( NULL != data ) {
-            sprintf( data, event_fmt, event->source, event->dest, partner_ids, headers,
-                     event->content_type,
-                     event->payload_size );
-            data[length] = '\0';
-            *bytes = data;
-        } else {
-            length = -1;
-        }
+    *bytes = mlaprintf( &len, event_fmt, event->source, event->dest, partner_ids,
+                        headers, event->content_type, event->payload_size );
+    if( NULL == *bytes ) {
+        len = -1;
     }
 
-    if( __empty_list != headers ) {
-        free( headers );
-    }
+    __special_free( headers );
+    __special_free( partner_ids );
 
-    if( __empty_list != partner_ids ) {
-        free( partner_ids );
-    }
-
-    return length;
+    return len;
 }
 
 
@@ -1015,6 +960,13 @@ static char* __get_partner_ids_string( partners_t *partner_ids )
     }
 
     return rv;
+}
+
+static void __special_free( char *s )
+{
+    if( __empty_list != s ) {
+        free( s );
+    }
 }
 
 static void __msgpack_headers( msgpack_packer *pk, headers_t *headers )
@@ -2094,21 +2046,4 @@ size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encoded
     }
 
     return -1;
-}
-
-/**
- *  @brief Helper function that copies a portion of a string defined by pointers
- *
- *  @param s the start of the string to copy
- *  @param e the last character of the string to copy
- *
- *  @return the allocated buffer with the substring
- */
-static char* strdupptr( const char *s, const char *e )
-{
-    if( s == e ) {
-        return NULL;
-    }
-
-    return strndup( s, ( size_t )( ( ( uintptr_t )e ) - ( ( uintptr_t )s ) ) );
 }
