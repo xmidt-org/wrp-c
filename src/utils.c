@@ -108,25 +108,13 @@ char* strdupptr( const char *s, const char *e )
         return NULL;
     }
 
-    return wrp_strndup( s, (size_t)(((uintptr_t)e) - ((uintptr_t)s)) );
+    return wrp_strndup( s, ((uintptr_t)e) - ((uintptr_t)s) );
 }
 
 
 char* wrp_strdup( const char *s )
 {
-    char *rv = NULL;
-
-    if( s ) {
-        size_t len;
-
-        len = strlen( s ) + 1;
-        rv = malloc( len );
-        if( rv ) {
-            memcpy( rv, s, len );
-        }
-    }
-
-    return rv;
+    return wrp_strndup( s, SIZE_MAX );
 }
 
 
