@@ -2017,7 +2017,7 @@ static ssize_t __wrp_base64_to_struct( const void *base64_data, const size_t bas
     size_t length = 0;
     uint8_t *bytes = NULL;
 
-    bytes = b64_decode_with_alloc( (uint8_t*) base64_data, base64_size, &length );
+    bytes = b64_decode_with_alloc( (const uint8_t*) base64_data, base64_size, &length );
     if( bytes ) {
         rv = __wrp_bytes_to_struct( bytes, length, msg_ptr );
         free( bytes );
