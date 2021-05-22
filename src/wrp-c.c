@@ -128,7 +128,7 @@ static int alterMap( char * buf );
 /* See wrp-c.h for details. */
 ssize_t wrp_struct_to( const wrp_msg_t *msg, const enum wrp_format fmt, void **bytes )
 {
-    char *data;
+    char *data = NULL;
     ssize_t rv;
 
     if( NULL == msg || NULL == bytes ) {
@@ -161,8 +161,7 @@ ssize_t wrp_struct_to( const wrp_msg_t *msg, const enum wrp_format fmt, void **b
 /* See wrp-c.h for details. */
 char* wrp_struct_to_string( const wrp_msg_t *msg )
 {
-    char *string;
-    string = NULL;
+    char *string = NULL;
 
     if( NULL != msg ) {
         __wrp_struct_to_string( msg, &string );
