@@ -136,10 +136,10 @@ typedef struct {
     enum wrp_msg_type msg_type;
 
     union {
-        struct wrp_auth_msg  auth;
-        struct wrp_req_msg   req;
-        struct wrp_event_msg event;
-        struct wrp_crud_msg crud;
+        struct wrp_auth_msg             auth;
+        struct wrp_req_msg              req;
+        struct wrp_event_msg            event;
+        struct wrp_crud_msg             crud;
         struct wrp_svc_registration_msg reg;
     } u;
 } wrp_msg_t;
@@ -194,8 +194,7 @@ ssize_t wrp_struct_to( const wrp_msg_t *msg, const enum wrp_format fmt,
  *          successful, less than 1 otherwise
  */
 ssize_t wrp_to_struct( const void *bytes, const size_t length,
-                       const enum wrp_format fmt,
-                       wrp_msg_t **msg );
+                       const enum wrp_format fmt, wrp_msg_t **msg );
 
 
 /**
@@ -219,6 +218,7 @@ char* wrp_struct_to_string( const wrp_msg_t *msg );
  */
 void wrp_free_struct( wrp_msg_t *msg );
 
+
 /**
  *  Encode/pack only metadata from wrp_msg_t structure.
  *
@@ -228,8 +228,8 @@ void wrp_free_struct( wrp_msg_t *msg );
  *  @param msg [out] the encoded output
  *  @return encoded buffer size or less than 1 in failure case
  */
-
 ssize_t wrp_pack_metadata( const data_t *packData, void **data );
+
 
 /**
  * @brief appendEncodedData function to append two encoded buffer and change MAP size accordingly.
@@ -244,8 +244,9 @@ ssize_t wrp_pack_metadata( const data_t *packData, void **data );
  * @param[out] appendData final encoded buffer after append
  * @return  appended total buffer size or less than 1 in failure case
  */
-
-size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encodedSize, void *metadataPack, size_t metadataSize );
+size_t appendEncodedData( void **appendData,
+                          void *encodedBuffer, size_t encodedSize,
+                          void *metadataPack, size_t metadataSize );
 
 
 /**
@@ -257,6 +258,7 @@ size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encoded
  */
 const char *wrp_get_msg_dest( const wrp_msg_t *wrp_msg );
 
+
 /**
  *  Find the source of a wrp_msg_t
  *
@@ -265,6 +267,7 @@ const char *wrp_get_msg_dest( const wrp_msg_t *wrp_msg );
  *    source for this message type
  */
 const char *wrp_get_msg_source( const wrp_msg_t *wrp_msg );
+
 
 /**
  *  Find an element of the source or destination of a wrp_msg_t
@@ -278,7 +281,9 @@ const char *wrp_get_msg_source( const wrp_msg_t *wrp_msg );
  *  @return pointer to the element requested, or NULL otherwise
  */
 char *wrp_get_msg_element( const enum wrp_device_id_element element,
-                                const wrp_msg_t *wrp_msg, const enum wrp_token_name wrp_token );
+                           const wrp_msg_t *wrp_msg,
+                           const enum wrp_token_name wrp_token );
+
 
 /**
  *  Check to see if the service matches based on the specified device_id.
