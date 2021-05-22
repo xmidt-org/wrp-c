@@ -580,10 +580,9 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
     }
 
     *bytes = NULL;
-    struct req_res_t *encode = malloc( sizeof( struct req_res_t ) );
+    struct req_res_t *encode = calloc( 1, sizeof(struct req_res_t) );
 
     if( encode != NULL ) {
-        memset( encode, 0, sizeof( struct req_res_t ) );
 
         //convert to binary bytes using msgpack
         switch( msg->msg_type ) {
@@ -689,29 +688,27 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
  */
 static ssize_t __wrp_struct_to_base64( const wrp_msg_t *msg, char **bytes )
 {
-    ssize_t rv;
-    size_t base64_buf_size, bytes_size;
-    char *bytes_data;
-    char *base64_data;
-    rv = __wrp_struct_to_bytes( msg, &bytes_data );
+    ssize_t data_len;
+    ssize_t rv = -1;
+    char *data = NULL;
 
-    if( rv < 1 ) {
-        return -1;
+    data_len = __wrp_struct_to_bytes( msg, &data );
+    if( 0 < data_len ) {
+        size_t b64_len = 0;
+        char *base64 = NULL;
+
+        base64 = b64_encode_with_alloc( (uint8_t*) data, data_len, &b64_len );
+
+        if( base64 ) {
+            *bytes = base64;
+            rv = b64_len;
+        }
     }
 
-    bytes_size = ( size_t ) rv;
-    base64_buf_size = b64_get_encoded_buffer_size( rv );
-    base64_data = ( char* ) malloc( sizeof( char ) * base64_buf_size );
-
-    if( NULL == base64_data ) {
-        rv = -1;
-    } else {
-        b64_encode( ( uint8_t* ) bytes_data, bytes_size, ( uint8_t* ) base64_data );
-        *bytes = base64_data;
-        rv = base64_buf_size;
+    if( data ) {
+        free( data );
     }
 
-    free( bytes_data );
     return rv;
 }
 
@@ -756,7 +753,7 @@ static ssize_t __wrp_keep_alive_to_string( char **bytes )
     length = strlen( keep_alive_fmt );
 
     if( NULL != bytes ) {
-        data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
+        data = malloc( sizeof(char) * ( length + 1 ) );   /* +1 for '\0' */
 
         if( NULL != data ) {
             memcpy( data, keep_alive_fmt, length );
@@ -789,7 +786,7 @@ static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth,
     length = snprintf( NULL, 0, auth_fmt, auth->status );
 
     if( NULL != bytes ) {
-        data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
+        data = malloc( sizeof(char) * ( length + 1 ) );   /* +1 for '\0' */
 
         if( NULL != data ) {
             sprintf( data, auth_fmt, auth->status );
@@ -841,7 +838,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
 
     if( NULL != bytes ) {
         char *data;
-        data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
+        data = malloc( sizeof(char) * ( length + 1 ) );   /* +1 for '\0' */
 
         if( NULL != data ) {
             sprintf( data, req_fmt, req->transaction_uuid, req->source,
@@ -902,7 +899,7 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
 
     if( NULL != bytes ) {
         char *data;
-        data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
+        data = malloc( sizeof(char) * ( length + 1 ) );   /* +1 for '\0' */
 
         if( NULL != data ) {
             sprintf( data, event_fmt, event->source, event->dest, partner_ids, headers,
@@ -957,7 +954,7 @@ static char* __get_header_string( headers_t *headers )
             comma = 2;
         }
 
-        tmp = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
+        tmp = malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
 
         if( NULL != tmp ) {
             const char *comma;
@@ -998,7 +995,7 @@ static char* __get_partner_ids_string( partners_t *partner_ids )
             comma = 2;
         }
 
-        tmp = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
+        tmp = malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
 
         if( NULL != tmp ) {
             const char *comma;
@@ -1309,7 +1306,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq, char **data )
     rv = -1;
 
     if( sbuf.data ) {
-        *data = ( char * ) malloc( sizeof( char ) * sbuf.size );
+        *data = malloc( sizeof(char) * sbuf.size );
 
         if( NULL != *data ) {
             memcpy( *data, sbuf.data, sbuf.size );
@@ -1348,7 +1345,7 @@ ssize_t wrp_pack_metadata( const data_t *packData, void **data )
     }
 
     if( sbuf.data ) {
-        *data = ( char * ) malloc( sizeof( char ) * sbuf.size );
+        *data = malloc( sizeof(char) * sbuf.size );
 
         if( NULL != *data ) {
             memcpy( *data, sbuf.data, sbuf.size );
@@ -1391,7 +1388,7 @@ static char* __get_spans_string( const struct money_trace_spans *spans )
                                 p->name, p->start, p->duration );
         }
 
-        buffer = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
+        buffer = malloc( sizeof(char) * ( length + 1 ) );   /* +1 for '\0' */
 
         if( NULL != buffer ) {
             rv = buffer;
@@ -1449,7 +1446,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
         msgpack_object keyType = p->key;
         msgpack_object ValueType = p->val;
         keySize = keyType.via.str.size;
-        keyString = ( char* ) malloc( keySize + 1 );
+        keyString = malloc( keySize + 1 );
 
         if( keyString != NULL ) {
             keyName = NULL;
@@ -1477,7 +1474,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
 
                     case MSGPACK_OBJECT_STR: {
                         StringValueSize = ValueType.via.str.size;
-                        NewStringVal = ( char* ) malloc( StringValueSize + 1 );
+                        NewStringVal = malloc( StringValueSize + 1 );
 
                         if( NewStringVal != NULL ) {
                             StringValue = getKey_MsgtypeStr( ValueType, StringValueSize, NewStringVal );
@@ -1523,7 +1520,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                                     tmpdecodeReq->url = NULL;
                                 }
                             } else if( strcmp( keyName, WRP_HEADERS.name ) == 0 ) {
-                                tmpdecodeReq->headers = ( headers_t * ) malloc( sizeof( headers_t )
+                                tmpdecodeReq->headers = malloc( sizeof(headers_t)
                                                         + sizeof( char * ) * 1 );
 
                                 if( tmpdecodeReq->headers != NULL ) {
@@ -1564,7 +1561,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                                     tmpdecodeReq->accept = NULL;
                                 }
                             } else if( strcmp( keyName, WRP_PARTNER_IDS.name ) == 0 ) {
-                                tmpdecodeReq->partner_ids = ( partners_t * ) malloc( sizeof( partners_t )
+                                tmpdecodeReq->partner_ids = malloc( sizeof(partners_t)
                                                             + sizeof( char * ) * 1 );
 
                                 if( tmpdecodeReq->partner_ids != NULL ) {
@@ -1592,7 +1589,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                     case MSGPACK_OBJECT_BIN: {
                         if( strcmp( keyName, WRP_PAYLOAD.name ) == 0 ) {
                             binValueSize = ValueType.via.bin.size;
-                            payload = ( char* ) malloc( binValueSize + 1 );
+                            payload = malloc( binValueSize + 1 );
 
                             if( payload != NULL ) {
                                 memset( payload, 0, binValueSize + 1 );
@@ -1619,14 +1616,14 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                             msgpack_object *ptr = array.ptr;
                             uint32_t cnt = 0;
                             ptr = array.ptr;
-                            tmpdecodeReq->headers = ( headers_t * ) malloc( sizeof( headers_t )
+                            tmpdecodeReq->headers = malloc( sizeof(headers_t)
                                                     + sizeof( char * ) * array.size );
 
                             if( tmpdecodeReq->headers != NULL ) {
                                 tmpdecodeReq->headers->count = array.size;
 
                                 for( cnt = 0; cnt < array.size; cnt++, ptr++ ) {
-                                    tmpdecodeReq->headers->headers[cnt] = ( char * ) malloc( ptr->via.str.size + 1 );
+                                    tmpdecodeReq->headers->headers[cnt] = malloc( ptr->via.str.size + 1 );
 
                                     if( tmpdecodeReq->headers->headers[cnt] != NULL ) {
                                         memset( tmpdecodeReq->headers->headers[cnt], 0, ptr->via.str.size + 1 );
@@ -1640,14 +1637,14 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                             msgpack_object *ptr = array.ptr;
                             uint32_t cnt = 0;
                             ptr = array.ptr;
-                            tmpdecodeReq->partner_ids = ( partners_t * ) malloc( sizeof( partners_t )
+                            tmpdecodeReq->partner_ids = malloc( sizeof(partners_t)
                                                         + sizeof( char * ) * array.size );
 
                             if( tmpdecodeReq->partner_ids != NULL ) {
                                 tmpdecodeReq->partner_ids->count = array.size;
 
                                 for( cnt = 0; cnt < array.size; cnt++, ptr++ ) {
-                                    tmpdecodeReq->partner_ids->partner_ids[cnt] = ( char * ) malloc( ptr->via.str.size + 1 );
+                                    tmpdecodeReq->partner_ids->partner_ids[cnt] = malloc( ptr->via.str.size + 1 );
 
                                     if( tmpdecodeReq->partner_ids->partner_ids[cnt] != NULL ) {
                                         memset( tmpdecodeReq->partner_ids->partner_ids[cnt], 0, ptr->via.str.size + 1 );
@@ -1713,7 +1710,7 @@ static void decodeMapRequest( msgpack_object deserialized,
 
     if( deserialized.via.map.size != 0 ) {
         mapdecodeReq->metadata->count = deserialized.via.map.size;
-        mapdecodeReq->metadata->data_items = ( struct data* )malloc( sizeof( struct data ) *
+        mapdecodeReq->metadata->data_items = malloc( sizeof(struct data) *
                                              ( deserialized.via.map.size ) );
 
     }
@@ -1723,7 +1720,7 @@ static void decodeMapRequest( msgpack_object deserialized,
             msgpack_object keyType = p->key;
             msgpack_object ValueType = p->val;
             keySize = keyType.via.str.size;
-            keyString = ( char* ) malloc( keySize + 1 );
+            keyString = malloc( keySize + 1 );
 
             if( keyString != NULL ) {
                 keyName = NULL;
@@ -1757,7 +1754,7 @@ static void decodeMapRequest( msgpack_object deserialized,
 
                         case MSGPACK_OBJECT_STR: {
                             StringValueSize = ValueType.via.str.size;
-                            NewStringVal = ( char* ) malloc( StringValueSize + 1 );
+                            NewStringVal = malloc( StringValueSize + 1 );
 
                             if( NewStringVal != NULL ) {
                                 StringValue = getKey_MsgtypeStr( ValueType, StringValueSize, NewStringVal );
@@ -2013,27 +2010,23 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
  *  @return the number of bytes 'consumed' by making this transformation if
  *          successful, less than 1 otherwise
  */
-
 static ssize_t __wrp_base64_to_struct( const void *base64_data, const size_t base64_size,
                                        wrp_msg_t **msg_ptr )
 {
-    ssize_t rv;
-    size_t length, decodeMsgSize;
-    char *bytes;
-    decodeMsgSize = b64_get_decoded_buffer_size( base64_size );
-    bytes = ( char * ) malloc( sizeof( char ) * decodeMsgSize );
+    ssize_t rv = -1;
+    size_t length = 0;
+    uint8_t *bytes = NULL;
 
-    if( bytes != NULL ) {
-        length = b64_decode( ( uint8_t * ) base64_data, base64_size, ( uint8_t * ) bytes );
+    bytes = b64_decode_with_alloc( (const uint8_t*) base64_data, base64_size, &length );
+    if( bytes ) {
         rv = __wrp_bytes_to_struct( bytes, length, msg_ptr );
         free( bytes );
-        return rv;
-    } else {
-        WRP_ERROR( "Memory allocation failed\n" );
     }
 
-    return -1;
+    return rv;
 }
+
+
 /**
  * @brief alterMap function to change MAP size of encoded msgpack object.
  *
@@ -2082,7 +2075,7 @@ size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encoded
                           void *metadataPack, size_t metadataSize )
 {
     //Allocate size for final buffer
-    *appendData = ( void * )malloc( sizeof( char * ) * ( encodedSize + metadataSize ) );
+    *appendData = malloc( sizeof(char*) * (encodedSize + metadataSize) );
 
     if( *appendData != NULL ) {
         memcpy( *appendData, encodedBuffer, encodedSize );
