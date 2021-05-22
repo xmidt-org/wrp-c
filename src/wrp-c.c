@@ -31,14 +31,14 @@ struct wrp_token {
 
 
 struct req_res_t {
-    int msgType ;
+    int msgType;
     int statusValue;
-    char* source ;
-    char* dest ;
+    char* source;
+    char* dest;
     char* transaction_uuid;
-    partners_t *partner_ids ;
-    headers_t *headers ;
-    void *payload ;
+    partners_t *partner_ids;
+    headers_t *headers;
+    void *payload;
     size_t payload_size;
     bool include_spans;
     struct money_trace_spans spans;
@@ -85,7 +85,7 @@ static const int WRP_MAP_SIZE                   = 4; // mandatory msg_type,sourc
 static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes );
 static ssize_t __wrp_struct_to_base64( const wrp_msg_t *msg, char **bytes );
 static ssize_t __wrp_struct_to_string( const wrp_msg_t *msg, char **bytes );
-static ssize_t __wrp_keep_alive_to_string (char **bytes );
+static ssize_t __wrp_keep_alive_to_string( char **bytes );
 static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth,
         char **bytes );
 static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char **bytes );
@@ -99,7 +99,7 @@ static void __msgpack_pack_string_nvp( msgpack_packer *pk,
                                        const char *val );
 static void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n );
 
-static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data );
+static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq, char **data );
 
 
 static ssize_t __wrp_base64_to_struct( const void *base64_data, const size_t base64_size,
@@ -113,7 +113,8 @@ static char* getKey_MsgtypeStr( const msgpack_object key, const size_t keySize,
 static char* getKey_MsgtypeBin( const msgpack_object key, const size_t binSize,
                                 char* keyBin );
 static void __msgpack_maps( msgpack_packer *pk, const data_t *dataMap );
-static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **decodeMapReq );
+static void decodeMapRequest( msgpack_object deserialized,
+                              struct req_res_t **decodeMapReq );
 static void mapCommonString( msgpack_packer *pk, struct req_res_t *encodeComReq );
 static int alterMap( char * buf );
 static char* strdupptr( const char *s, const char *e );
@@ -137,12 +138,15 @@ ssize_t wrp_struct_to( const wrp_msg_t *msg, const enum wrp_format fmt, void **b
         case WRP_BYTES:
             rv = __wrp_struct_to_bytes( msg, &data );
             break;
+
         case WRP_BASE64:
             rv = __wrp_struct_to_base64( msg, &data );
             break;
+
         case WRP_STRING:
             rv = __wrp_struct_to_string( msg, &data );
             break;
+
         default:
             return -2;
     }
@@ -180,9 +184,11 @@ ssize_t wrp_to_struct( const void *bytes, const size_t length,
         case WRP_BYTES:
             rv = __wrp_bytes_to_struct( bytes, length, msg );
             break;
+
         case WRP_BASE64:
             rv = __wrp_base64_to_struct( bytes, length, msg );
             break;
+
         default:
             return -2;
     }
@@ -203,14 +209,15 @@ void wrp_free_struct( wrp_msg_t *msg )
             free( msg->u.req.source );
             free( msg->u.req.dest );
             free( msg->u.req.payload );
-            if(NULL != msg->u.req.content_type)
-            {
-                free(msg->u.req.content_type);
+
+            if( NULL != msg->u.req.content_type ) {
+                free( msg->u.req.content_type );
             }
-            if(NULL != msg->u.req.accept)
-            {
-                free(msg->u.req.accept);
+
+            if( NULL != msg->u.req.accept ) {
+                free( msg->u.req.accept );
             }
+
             if( NULL != msg->u.req.headers ) {
                 size_t cnt;
 
@@ -220,6 +227,7 @@ void wrp_free_struct( wrp_msg_t *msg )
 
                 free( msg->u.req.headers );
             }
+
             if( NULL != msg->u.req.metadata ) {
                 size_t n = 0;
 
@@ -232,6 +240,7 @@ void wrp_free_struct( wrp_msg_t *msg )
                 free( msg->u.req.metadata->data_items );
                 free( msg->u.req.metadata );
             }
+
             if( NULL != msg->u.req.partner_ids ) {
                 size_t i;
 
@@ -241,15 +250,18 @@ void wrp_free_struct( wrp_msg_t *msg )
 
                 free( msg->u.req.partner_ids );
             }
+
             break;
+
         case WRP_MSG_TYPE__EVENT:
             free( msg->u.event.source );
             free( msg->u.event.dest );
             free( msg->u.event.payload );
-            if(NULL != msg->u.event.content_type)
-            {
-                free(msg->u.event.content_type);
+
+            if( NULL != msg->u.event.content_type ) {
+                free( msg->u.event.content_type );
             }
+
             if( NULL != msg->u.event.headers ) {
                 size_t cnt;
 
@@ -259,6 +271,7 @@ void wrp_free_struct( wrp_msg_t *msg )
 
                 free( msg->u.event.headers );
             }
+
             if( NULL != msg->u.event.metadata ) {
                 size_t n = 0;
 
@@ -271,6 +284,7 @@ void wrp_free_struct( wrp_msg_t *msg )
                 free( msg->u.event.metadata->data_items );
                 free( msg->u.event.metadata );
             }
+
             if( NULL != msg->u.event.partner_ids ) {
                 size_t i;
 
@@ -280,17 +294,20 @@ void wrp_free_struct( wrp_msg_t *msg )
 
                 free( msg->u.event.partner_ids );
             }
+
             break;
+
         case WRP_MSG_TYPE__SVC_REGISTRATION:
-            WRP_DEBUG("Free for REGISTRATION \n" );
+            WRP_DEBUG( "Free for REGISTRATION \n" );
             free( msg->u.reg.service_name );
             free( msg->u.reg.url );
             break;
+
         case WRP_MSG_TYPE__CREATE:
         case WRP_MSG_TYPE__RETREIVE:
         case WRP_MSG_TYPE__UPDATE:
         case WRP_MSG_TYPE__DELETE:
-            WRP_DEBUG("Free for CRUD \n" );
+            WRP_DEBUG( "Free for CRUD \n" );
 
             if( msg->u.crud.source ) {
                 free( msg->u.crud.source );
@@ -328,17 +345,18 @@ void wrp_free_struct( wrp_msg_t *msg )
                 free( msg->u.crud.headers );
             }
 
-            if(NULL != msg->u.crud.content_type)
-            {
-                free(msg->u.crud.content_type);
+            if( NULL != msg->u.crud.content_type ) {
+                free( msg->u.crud.content_type );
             }
-            if(NULL != msg->u.crud.accept)
-            {
-                free(msg->u.crud.accept);
+
+            if( NULL != msg->u.crud.accept ) {
+                free( msg->u.crud.accept );
             }
+
             if( NULL != msg->u.crud.payload ) {
                 free( msg->u.crud.payload );
             }
+
             if( NULL != msg->u.crud.metadata ) {
                 size_t n = 0;
 
@@ -354,12 +372,14 @@ void wrp_free_struct( wrp_msg_t *msg )
 
 
             break;
+
         case WRP_MSG_TYPE__AUTH:
         case WRP_MSG_TYPE__SVC_ALIVE:
             break;
+
         default:
-            WRP_ERROR("wrp_free_struct()->Invalid Message Type! (0x%x)\n",
-                    msg->msg_type );
+            WRP_ERROR( "wrp_free_struct()->Invalid Message Type! (0x%x)\n",
+                       msg->msg_type );
             break;
     }
 
@@ -367,117 +387,142 @@ void wrp_free_struct( wrp_msg_t *msg )
 }
 
 /* See wrp-c.h for details. */
-const char *wrp_get_msg_dest (const wrp_msg_t *wrp_msg)
+const char *wrp_get_msg_dest( const wrp_msg_t *wrp_msg )
 {
-	if (wrp_msg->msg_type == WRP_MSG_TYPE__REQ)
-		return (const char *)wrp_msg->u.req.dest;
-	if (wrp_msg->msg_type == WRP_MSG_TYPE__EVENT)
-		return (const char *)wrp_msg->u.event.dest;
-	if (wrp_msg->msg_type == WRP_MSG_TYPE__CREATE)
-		return (const char *)wrp_msg->u.crud.dest;
-	if (wrp_msg->msg_type == WRP_MSG_TYPE__RETREIVE)
-		return (const char *)wrp_msg->u.crud.dest;
-	if (wrp_msg->msg_type == WRP_MSG_TYPE__UPDATE)
-		return (const char *)wrp_msg->u.crud.dest;
-	if (wrp_msg->msg_type == WRP_MSG_TYPE__DELETE)
-		return (const char *)wrp_msg->u.crud.dest;
-	return NULL;
+    if( wrp_msg->msg_type == WRP_MSG_TYPE__REQ ) {
+        return ( const char * )wrp_msg->u.req.dest;
+    }
+
+    if( wrp_msg->msg_type == WRP_MSG_TYPE__EVENT ) {
+        return ( const char * )wrp_msg->u.event.dest;
+    }
+
+    if( wrp_msg->msg_type == WRP_MSG_TYPE__CREATE ) {
+        return ( const char * )wrp_msg->u.crud.dest;
+    }
+
+    if( wrp_msg->msg_type == WRP_MSG_TYPE__RETREIVE ) {
+        return ( const char * )wrp_msg->u.crud.dest;
+    }
+
+    if( wrp_msg->msg_type == WRP_MSG_TYPE__UPDATE ) {
+        return ( const char * )wrp_msg->u.crud.dest;
+    }
+
+    if( wrp_msg->msg_type == WRP_MSG_TYPE__DELETE ) {
+        return ( const char * )wrp_msg->u.crud.dest;
+    }
+
+    return NULL;
 }
 
 /* See wrp-c.h for details. */
-const char *wrp_get_msg_source (const wrp_msg_t *wrp_msg)
+const char *wrp_get_msg_source( const wrp_msg_t *wrp_msg )
 {
-        if (wrp_msg->msg_type == WRP_MSG_TYPE__REQ)
-                return (const char *)wrp_msg->u.req.source;
-        if (wrp_msg->msg_type == WRP_MSG_TYPE__EVENT)
-                return (const char *)wrp_msg->u.event.source;
-        if (wrp_msg->msg_type == WRP_MSG_TYPE__CREATE)
-                return (const char *)wrp_msg->u.crud.source;
-        if (wrp_msg->msg_type == WRP_MSG_TYPE__RETREIVE)
-                return (const char *)wrp_msg->u.crud.source;
-        if (wrp_msg->msg_type == WRP_MSG_TYPE__UPDATE)
-                return (const char *)wrp_msg->u.crud.source;
-        if (wrp_msg->msg_type == WRP_MSG_TYPE__DELETE)
-                return (const char *)wrp_msg->u.crud.source;
-        return NULL;
+    if( wrp_msg->msg_type == WRP_MSG_TYPE__REQ ) {
+        return ( const char * )wrp_msg->u.req.source;
+    }
+
+    if( wrp_msg->msg_type == WRP_MSG_TYPE__EVENT ) {
+        return ( const char * )wrp_msg->u.event.source;
+    }
+
+    if( wrp_msg->msg_type == WRP_MSG_TYPE__CREATE ) {
+        return ( const char * )wrp_msg->u.crud.source;
+    }
+
+    if( wrp_msg->msg_type == WRP_MSG_TYPE__RETREIVE ) {
+        return ( const char * )wrp_msg->u.crud.source;
+    }
+
+    if( wrp_msg->msg_type == WRP_MSG_TYPE__UPDATE ) {
+        return ( const char * )wrp_msg->u.crud.source;
+    }
+
+    if( wrp_msg->msg_type == WRP_MSG_TYPE__DELETE ) {
+        return ( const char * )wrp_msg->u.crud.source;
+    }
+
+    return NULL;
 }
 
 /* See wrp-c.h for details. */
 char *wrp_get_msg_element( const enum wrp_device_id_element element,
-                                const wrp_msg_t *wrp_msg, const enum wrp_token_name wrp_token )
+                           const wrp_msg_t *wrp_msg, const enum wrp_token_name wrp_token )
 {
     const char *dest;
     const char *source;
     const char *start = NULL, *end = NULL;
     char *rv = NULL;
 
-	if (wrp_token == DEST) {
-		dest = wrp_get_msg_dest(wrp_msg);
-		if (NULL != dest ) {
-			start = dest;
-		}
-	} else if(wrp_token == SOURCE) {
-		source = wrp_get_msg_source(wrp_msg);
-		if (NULL != source ) {
-			start = source;
-		}
-	}
-    if (NULL != start ) {
-        end = strchr(start, ':');
-        if (NULL != end) {
-            if (WRP_ID_ELEMENT__SCHEME == element) {
-                rv = strdupptr(start, end);
+    if( wrp_token == DEST ) {
+        dest = wrp_get_msg_dest( wrp_msg );
+
+        if( NULL != dest ) {
+            start = dest;
+        }
+    } else if( wrp_token == SOURCE ) {
+        source = wrp_get_msg_source( wrp_msg );
+
+        if( NULL != source ) {
+            start = source;
+        }
+    }
+
+    if( NULL != start ) {
+        end = strchr( start, ':' );
+
+        if( NULL != end ) {
+            if( WRP_ID_ELEMENT__SCHEME == element ) {
+                rv = strdupptr( start, end );
             } else {
                 start = end;
                 start++;
-                end = strchr(start, '/');
-                if (NULL != end) {
-                    if (WRP_ID_ELEMENT__ID == element) {
-                        rv = strdupptr(start, end);
+                end = strchr( start, '/' );
+
+                if( NULL != end ) {
+                    if( WRP_ID_ELEMENT__ID == element ) {
+                        rv = strdupptr( start, end );
                     } else {
                         start = end;
                         start++;
-                        end = strchr(start, '/');
-                        if (NULL != end) {
-                            if (WRP_ID_ELEMENT__SERVICE == element) {
-                                rv = strdupptr(start, end);
+                        end = strchr( start, '/' );
+
+                        if( NULL != end ) {
+                            if( WRP_ID_ELEMENT__SERVICE == element ) {
+                                rv = strdupptr( start, end );
                             } else {
-                                if (WRP_ID_ELEMENT__APPLICATION == element) {
+                                if( WRP_ID_ELEMENT__APPLICATION == element ) {
                                     start = end;
                                     start++;
-                                    if (0 < strlen(start)) {
-                                        rv = strdup(start);
+
+                                    if( 0 < strlen( start ) ) {
+                                        rv = strdup( start );
                                     }
                                 }
                             }
+                        } else {
+                            if( WRP_ID_ELEMENT__SERVICE == element ) {
+                                if( 0 < strlen( start ) ) {
+                                    rv = strdup( start );
+                                }
+                            }
                         }
-                        else
-                        {
-							if (WRP_ID_ELEMENT__SERVICE == element) {
-								if (0 < strlen(start)) {
-									rv = strdup(start);
-								}
-							 }
+                    }
+                } else {
+                    if( WRP_ID_ELEMENT__ID == element ) {
+                        if( 0 < strlen( start ) ) {
+                            rv = strdup( start );
                         }
                     }
                 }
-                else
-                {
-					if (WRP_ID_ELEMENT__ID == element) {
-						if (0 < strlen(start)) {
-							rv = strdup(start);
-						}
-					 }
+            }
+        } else {
+            if( WRP_ID_ELEMENT__SCHEME == element ) {
+                if( 0 < strlen( start ) ) {
+                    rv = strdup( start );
                 }
             }
-        }
-        else
-        {
-			if (WRP_ID_ELEMENT__SCHEME == element) {
-				if (0 < strlen(start)) {
-					rv = strdup(start);
-				}
-			}
         }
     }
 
@@ -490,14 +535,17 @@ int wrp_does_service_match( const char *service, const char *device_id )
     const char *p;
 
     p = strchr( device_id, '/' );
-    if( (NULL != p) && ('/' == *p) ) {
+
+    if( ( NULL != p ) && ( '/' == *p ) ) {
         size_t len;
         p++;
 
         len = strlen( service );
-        if( 0 == strncmp(p, service, len) ) {
+
+        if( 0 == strncmp( p, service, len ) ) {
             p += len;
-            if( ('\0' == *p) || ('/' == *p) ) {
+
+            if( ( '\0' == *p ) || ( '/' == *p ) ) {
                 return 0;
             }
         }
@@ -533,95 +581,101 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 
     *bytes = NULL;
     struct req_res_t *encode = malloc( sizeof( struct req_res_t ) );
-	if(encode != NULL)
-	{
-		memset( encode, 0, sizeof( struct req_res_t ) );
 
-		//convert to binary bytes using msgpack
-		switch( msg->msg_type ) {
-		    case WRP_MSG_TYPE__AUTH:
-		        encode->msgType = msg->msg_type;
-		        encode->statusValue = auth->status;
-		        rv = __wrp_pack_structure( encode, bytes );
-		        break;
-		    case WRP_MSG_TYPE__REQ:
-		        encode->source = req->source;
-		        encode->dest = req->dest;
-		        encode->content_type = req->content_type;
-				encode->accept = req->accept;
-		        encode->transaction_uuid = req->transaction_uuid;
-		        encode->include_spans = req->include_spans;
-		        encode->spans = req->spans;
-		        encode->payload = req->payload;//void
-		        encode->payload_size = req->payload_size;
-		        encode->headers = req->headers;
-		        encode->metadata = req->metadata;
-		        encode->partner_ids = req->partner_ids;
-		        encode->msgType = msg->msg_type;
-		        rv = __wrp_pack_structure( encode, bytes );
-		        break;
-		    case WRP_MSG_TYPE__EVENT:
-		        encode->source = event->source;
-		        encode->dest = event->dest;
-		        encode->content_type = event->content_type;
-		        encode->transaction_uuid = NULL;
-		        encode->include_spans = false;
-		        encode->spans.spans = NULL;
-		        encode->payload = event->payload;//void
-		        encode->payload_size = event->payload_size;
-		        encode->headers = event->headers;
-		        encode->metadata = event->metadata;
-		        encode->partner_ids = event->partner_ids;
-		        encode->msgType = msg->msg_type;
-		        rv = __wrp_pack_structure( encode, bytes );
-		        break;
-		    case WRP_MSG_TYPE__SVC_REGISTRATION:
-		        encode->msgType = msg->msg_type;
-		        encode->service_name = reg->service_name;
-		        encode->url = reg->url;
-		        encode->transaction_uuid = NULL;
-		        encode->include_spans = false;
-		        encode->spans.spans = NULL;
-		        rv = __wrp_pack_structure( encode, bytes );
-		        break;
-		    case WRP_MSG_TYPE__CREATE:
-		    case WRP_MSG_TYPE__RETREIVE:
-		    case WRP_MSG_TYPE__UPDATE:
-		    case WRP_MSG_TYPE__DELETE:
-		        encode->msgType = msg->msg_type;
-		        encode->source = crud->source;
-		        encode->dest = crud->dest;
-		        encode->transaction_uuid = crud->transaction_uuid;
-		        encode->include_spans = crud->include_spans;
-		        encode->spans = crud->spans;
-		        encode->content_type = crud->content_type;
-				encode->accept = crud->accept;
-		        encode->payload = crud->payload;//void
-		        encode->payload_size = crud->payload_size;
-		        encode->partner_ids = crud->partner_ids;
-		        encode->headers = crud->headers;
-		        encode->metadata = crud->metadata;
-		        encode->path = crud->path;
-		        encode->status = crud->status;
-		        encode->rdr = crud->rdr;
-		        rv = __wrp_pack_structure( encode, bytes );
-		        break;
-		    case WRP_MSG_TYPE__SVC_ALIVE:
-		        encode->msgType = msg->msg_type;
-		        rv = __wrp_pack_structure( encode, bytes );
-		        break;
-		    default:
-		        WRP_ERROR("Unknown msgType to encode\n" );
-		        break;
-		}
-		free( encode );
-		return rv;
-	}
-	else
-	{
-		WRP_ERROR("Memory allocation failed\n" );
-	}
-	return -1;
+    if( encode != NULL ) {
+        memset( encode, 0, sizeof( struct req_res_t ) );
+
+        //convert to binary bytes using msgpack
+        switch( msg->msg_type ) {
+            case WRP_MSG_TYPE__AUTH:
+                encode->msgType = msg->msg_type;
+                encode->statusValue = auth->status;
+                rv = __wrp_pack_structure( encode, bytes );
+                break;
+
+            case WRP_MSG_TYPE__REQ:
+                encode->source = req->source;
+                encode->dest = req->dest;
+                encode->content_type = req->content_type;
+                encode->accept = req->accept;
+                encode->transaction_uuid = req->transaction_uuid;
+                encode->include_spans = req->include_spans;
+                encode->spans = req->spans;
+                encode->payload = req->payload;//void
+                encode->payload_size = req->payload_size;
+                encode->headers = req->headers;
+                encode->metadata = req->metadata;
+                encode->partner_ids = req->partner_ids;
+                encode->msgType = msg->msg_type;
+                rv = __wrp_pack_structure( encode, bytes );
+                break;
+
+            case WRP_MSG_TYPE__EVENT:
+                encode->source = event->source;
+                encode->dest = event->dest;
+                encode->content_type = event->content_type;
+                encode->transaction_uuid = NULL;
+                encode->include_spans = false;
+                encode->spans.spans = NULL;
+                encode->payload = event->payload;//void
+                encode->payload_size = event->payload_size;
+                encode->headers = event->headers;
+                encode->metadata = event->metadata;
+                encode->partner_ids = event->partner_ids;
+                encode->msgType = msg->msg_type;
+                rv = __wrp_pack_structure( encode, bytes );
+                break;
+
+            case WRP_MSG_TYPE__SVC_REGISTRATION:
+                encode->msgType = msg->msg_type;
+                encode->service_name = reg->service_name;
+                encode->url = reg->url;
+                encode->transaction_uuid = NULL;
+                encode->include_spans = false;
+                encode->spans.spans = NULL;
+                rv = __wrp_pack_structure( encode, bytes );
+                break;
+
+            case WRP_MSG_TYPE__CREATE:
+            case WRP_MSG_TYPE__RETREIVE:
+            case WRP_MSG_TYPE__UPDATE:
+            case WRP_MSG_TYPE__DELETE:
+                encode->msgType = msg->msg_type;
+                encode->source = crud->source;
+                encode->dest = crud->dest;
+                encode->transaction_uuid = crud->transaction_uuid;
+                encode->include_spans = crud->include_spans;
+                encode->spans = crud->spans;
+                encode->content_type = crud->content_type;
+                encode->accept = crud->accept;
+                encode->payload = crud->payload;//void
+                encode->payload_size = crud->payload_size;
+                encode->partner_ids = crud->partner_ids;
+                encode->headers = crud->headers;
+                encode->metadata = crud->metadata;
+                encode->path = crud->path;
+                encode->status = crud->status;
+                encode->rdr = crud->rdr;
+                rv = __wrp_pack_structure( encode, bytes );
+                break;
+
+            case WRP_MSG_TYPE__SVC_ALIVE:
+                encode->msgType = msg->msg_type;
+                rv = __wrp_pack_structure( encode, bytes );
+                break;
+
+            default:
+                WRP_ERROR( "Unknown msgType to encode\n" );
+                break;
+        }
+
+        free( encode );
+        return rv;
+    } else {
+        WRP_ERROR( "Memory allocation failed\n" );
+    }
+
+    return -1;
 }
 
 
@@ -675,28 +729,32 @@ static ssize_t __wrp_struct_to_string( const wrp_msg_t *msg, char **bytes )
 {
     switch( msg->msg_type ) {
         case WRP_MSG_TYPE__SVC_ALIVE:
-            return __wrp_keep_alive_to_string (bytes);
+            return __wrp_keep_alive_to_string( bytes );
+
         case WRP_MSG_TYPE__AUTH:
             return __wrp_auth_struct_to_string( &msg->u.auth, bytes );
+
         case WRP_MSG_TYPE__REQ:
             return __wrp_req_struct_to_string( &msg->u.req, bytes );
+
         case WRP_MSG_TYPE__EVENT:
             return __wrp_event_struct_to_string( &msg->u.event, bytes );
+
         default:
             break;
     }
 
-    return -1;  
+    return -1;
 }
 
-static ssize_t __wrp_keep_alive_to_string (char **bytes )
+static ssize_t __wrp_keep_alive_to_string( char **bytes )
 {
     const char *keep_alive_fmt =
         "wrp_keep_alive_msg {\n"
         "}\n";
     char *data;
     size_t length;
-    length = strlen (keep_alive_fmt);
+    length = strlen( keep_alive_fmt );
 
     if( NULL != bytes ) {
         data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
@@ -801,14 +859,15 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
     if( __empty_list != headers ) {
         free( headers );
     }
-    
+
     if( __empty_list != spans ) {
         free( spans );
     }
-    
+
     if( __empty_list != partner_ids ) {
         free( partner_ids );
     }
+
     return length;
 }
 
@@ -835,10 +894,10 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
     size_t length;
     char *headers;
     char *partner_ids;
-    
+
     headers = __get_header_string( event->headers );
     partner_ids = __get_partner_ids_string( event->partner_ids );
-    
+
     length = snprintf( NULL, 0, event_fmt, event->source, event->dest, partner_ids,
                        headers, event->content_type, event->payload_size );
 
@@ -847,7 +906,8 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
         data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
 
         if( NULL != data ) {
-            sprintf( data, event_fmt, event->source, event->dest, partner_ids, headers, event->content_type,
+            sprintf( data, event_fmt, event->source, event->dest, partner_ids, headers,
+                     event->content_type,
                      event->payload_size );
             data[length] = '\0';
             *bytes = data;
@@ -859,11 +919,11 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
     if( __empty_list != headers ) {
         free( headers );
     }
-    
+
     if( __empty_list != partner_ids ) {
         free( partner_ids );
     }
-        
+
     return length;
 }
 
@@ -892,7 +952,7 @@ static char* __get_header_string( headers_t *headers )
         comma = 0;
         length = 2; /* For ' characters. */
 
-        for( i = 0; i < headers->count ; i++ ) {
+        for( i = 0; i < headers->count; i++ ) {
             length += comma;
             length += strlen( headers->headers[i] );
             comma = 2;
@@ -933,7 +993,7 @@ static char* __get_partner_ids_string( partners_t *partner_ids )
         comma = 0;
         length = 2; /* For ' characters. */
 
-        for( i = 0; i < partner_ids->count ; i++ ) {
+        for( i = 0; i < partner_ids->count; i++ ) {
             length += comma;
             length += strlen( partner_ids->partner_ids[i] );
             comma = 2;
@@ -985,7 +1045,8 @@ static void __msgpack_partner_ids( msgpack_packer *pk, partners_t *partner_ids )
         count = 0;
 
         while( count < partner_ids->count ) {
-            __msgpack_pack_string( pk, partner_ids->partner_ids[count], strlen( partner_ids->partner_ids[count] ) );
+            __msgpack_pack_string( pk, partner_ids->partner_ids[count],
+                                   strlen( partner_ids->partner_ids[count] ) );
             count++;
         }
     }
@@ -1018,7 +1079,7 @@ static void __msgpack_maps( msgpack_packer *pk, const data_t *dataMap )
         struct data *tmpdata;
         msgpack_pack_map( pk, dataMap->count );
         tmpdata = dataMap->data_items;
-        WRP_DEBUG("dataMap->count is %zu\n", dataMap->count );
+        WRP_DEBUG( "dataMap->count is %zu\n", dataMap->count );
 
         for( i = 0; i < dataMap->count; i++ ) {
             struct wrp_token WRP_MAP_NAME;
@@ -1028,7 +1089,7 @@ static void __msgpack_maps( msgpack_packer *pk, const data_t *dataMap )
             __msgpack_pack_string_nvp( pk, &WRP_MAP_NAME, tmpdata[i].value );
         }
     } else {
-        WRP_ERROR("Map is NULL.Do not pack\n" );
+        WRP_ERROR( "Map is NULL.Do not pack\n" );
     }
 }
 
@@ -1073,7 +1134,7 @@ static void mapCommonString( msgpack_packer *pk, struct req_res_t *encodeComReq 
  *  @return the number of bytes in the string or less then 1 on error*/
 
 
-static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
+static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq, char **data )
 
 {
     msgpack_sbuffer sbuf;
@@ -1082,7 +1143,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
     int wrp_map_size = WRP_MAP_SIZE;
     struct req_res_t *encodeReqtmp =  encodeReq;
     /***   Start of Msgpack Encoding  ***/
-    WRP_DEBUG("***   Start of Msgpack Encoding  ***\n" );
+    WRP_DEBUG( "***   Start of Msgpack Encoding  ***\n" );
     msgpack_sbuffer_init( &sbuf );
     msgpack_packer_init( &pk, &sbuf, msgpack_sbuffer_write );
 
@@ -1090,7 +1151,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
     if( encodeReqtmp->transaction_uuid ) {
         wrp_map_size++;
     }
-    
+
     if( encodeReqtmp->content_type ) {
         wrp_map_size++;
     }
@@ -1114,7 +1175,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
     if( encodeReqtmp->metadata != NULL ) {
         wrp_map_size++;
     }
-    
+
     if( encodeReqtmp->partner_ids ) {
         wrp_map_size++;
     }
@@ -1128,12 +1189,14 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             __msgpack_pack_string( &pk, WRP_STATUS.name, WRP_STATUS.length );
             msgpack_pack_int( &pk, encodeReqtmp->statusValue );
             break;
+
         case WRP_MSG_TYPE__REQ:
             msgpack_pack_map( &pk, wrp_map_size );
             //Pack msgType,source,dest,headers,metadata,partner_ids
             mapCommonString( &pk, encodeReqtmp );
             __msgpack_pack_string_nvp( &pk, &WRP_TRANS_ID, encodeReqtmp->transaction_uuid );
             __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
+
             if( encodeReqtmp->accept ) {
                 __msgpack_pack_string_nvp( &pk, &WRP_ACCEPT, encodeReqtmp->accept );
             }
@@ -1148,6 +1211,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
             msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
             break;
+
         case WRP_MSG_TYPE__EVENT:
             msgpack_pack_map( &pk, wrp_map_size );
             //Pack msgType,source,dest,headers,metadata,partner_ids
@@ -1157,6 +1221,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
             msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
             break;
+
         case WRP_MSG_TYPE__SVC_REGISTRATION:
             wrp_map_size = 3;//Hardcoded.Pack service name and url only
             msgpack_pack_map( &pk, wrp_map_size );
@@ -1165,12 +1230,14 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             __msgpack_pack_string_nvp( &pk, &WRP_SERVICE_NAME, encodeReqtmp->service_name );
             __msgpack_pack_string_nvp( &pk, &WRP_URL, encodeReqtmp->url );
             break;
+
         case WRP_MSG_TYPE__SVC_ALIVE:
             wrp_map_size = 1;//Hardcoded. Pack for msgType only
             msgpack_pack_map( &pk, wrp_map_size );
             __msgpack_pack_string( &pk, WRP_MSG_TYPE.name, WRP_MSG_TYPE.length );
             msgpack_pack_int( &pk, encodeReqtmp->msgType );
             break;
+
         case WRP_MSG_TYPE__CREATE:
         case WRP_MSG_TYPE__RETREIVE:
         case WRP_MSG_TYPE__UPDATE:
@@ -1178,7 +1245,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
 
             if( encodeReqtmp->payload == NULL ) {
                 wrp_map_size--;
-                WRP_INFO("CRUD payload is NULL map size is %d\n", wrp_map_size );
+                WRP_INFO( "CRUD payload is NULL map size is %d\n", wrp_map_size );
             }
 
             if( encodeReqtmp->path != NULL ) {
@@ -1218,12 +1285,12 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             if( encodeReqtmp->path != NULL ) {
                 __msgpack_pack_string_nvp( &pk, &WRP_PATH, encodeReqtmp->path );
             }
-            
-            if( encodeReqtmp->content_type != NULL) {
+
+            if( encodeReqtmp->content_type != NULL ) {
                 __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
             }
 
-            if( encodeReqtmp->accept != NULL) {
+            if( encodeReqtmp->accept != NULL ) {
                 __msgpack_pack_string_nvp( &pk, &WRP_ACCEPT, encodeReqtmp->accept );
             }
 
@@ -1234,8 +1301,9 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             }
 
             break;
+
         default:
-            WRP_ERROR("Un-supported format to pack\n" );
+            WRP_ERROR( "Un-supported format to pack\n" );
             return -1;
     }
 
@@ -1276,7 +1344,7 @@ ssize_t wrp_pack_metadata( const data_t *packData, void **data )
         __msgpack_pack_string( &pk, WRP_METADATA.name, WRP_METADATA.length );
         __msgpack_maps( &pk, packData );
     } else {
-        WRP_ERROR("Metadata is NULL\n" );
+        WRP_ERROR( "Metadata is NULL\n" );
         return rv;
     }
 
@@ -1374,7 +1442,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
     char *content_type = NULL;
     char *headers = NULL;
     char *partnerID = NULL;
-	char *accept = NULL;
+    char *accept = NULL;
     struct req_res_t *tmpdecodeReq = *decodeReq;
     msgpack_object_kv* p = deserialized.via.map.ptr;
 
@@ -1383,284 +1451,251 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
         msgpack_object ValueType = p->val;
         keySize = keyType.via.str.size;
         keyString = ( char* ) malloc( keySize + 1 );
-		if(keyString != NULL)
-		{
-		    keyName = NULL;
-		    keyName = getKey_MsgtypeStr( keyType, keySize, keyString );
 
-		    if( keyName != NULL ) {
-		            switch( ValueType.type ) {
-		                case MSGPACK_OBJECT_POSITIVE_INTEGER: {
-		                    if( strcmp( keyName, WRP_MSG_TYPE.name ) == 0 ) {
-		                        tmpdecodeReq->msgType = ValueType.via.i64;
-		                    } else if( strcmp( keyName, WRP_STATUS.name ) == 0 ) {
-		                        tmpdecodeReq->statusValue = ValueType.via.i64;
-		                    } else if( strcmp( keyName, WRP_RDR.name ) == 0 ) {
-		                        tmpdecodeReq->rdr = ValueType.via.i64;
-		                    }
-		                }
-		                break;
-		                case MSGPACK_OBJECT_BOOLEAN: {
-		                    if( strcmp( keyName, WRP_INCLUDE_SPANS.name ) == 0 ) {
-		                        tmpdecodeReq->include_spans = ValueType.via.boolean ? true : false;
-		                    }
-		                }
-		                break;
-		                case MSGPACK_OBJECT_STR: {
-		                    StringValueSize = ValueType.via.str.size;
-		                    NewStringVal = ( char* ) malloc( StringValueSize + 1 );
-							if(NewStringVal != NULL)
-							{
-				                StringValue = getKey_MsgtypeStr( ValueType, StringValueSize, NewStringVal );
-				                if( strcmp( keyName, WRP_SOURCE.name ) == 0 )
-				                {
-				                    source = strdup(StringValue);
-				                    if(source)
-				                    {
-				                    	tmpdecodeReq->source = source;
-				                    }
-				                    else
-				                    {
-				                    	tmpdecodeReq->source = NULL;
-				                    }
-				                }
-				                else if( strcmp( keyName, WRP_DEST.name ) == 0 )
-				                {
-				                    dest = strdup(StringValue);
-				                    if(dest)
-				                    {
-				                    	tmpdecodeReq->dest = dest;
-				                    }
-				                    else
-				                    {
-				                    	tmpdecodeReq->dest = NULL;
-				                    }
-				                }
-				                else if( strcmp( keyName, WRP_TRANS_ID.name ) == 0 )
-				                {
-				                    transaction_uuid = strdup(StringValue);
-				                    if(transaction_uuid)
-				                    {
-				                    	tmpdecodeReq->transaction_uuid = transaction_uuid;
-				                    }
-				                    else
-				                    {
-				                    	tmpdecodeReq->transaction_uuid = NULL;
-				                    }
-				                }
-				                else if( strcmp( keyName, WRP_SERVICE_NAME.name ) == 0 )
-				                {
-				                    service_name = strdup(StringValue);
-				                    if(service_name)
-				                    {
-				                    	tmpdecodeReq->service_name = service_name;
-				                    }
-				                    else
-				                    {
-				                    	tmpdecodeReq->service_name = NULL;
-				                    }
-				                }
-				                else if( strcmp( keyName, WRP_URL.name ) == 0 )
-				                {
-				                    url = strdup(StringValue);
-				                    if(url)
-				                    {
-				                    	tmpdecodeReq->url = url;
-				                    }
-				                    else
-				                    {
-				                    	tmpdecodeReq->url = NULL;
-				                    }
-				                }
-				                else if( strcmp( keyName, WRP_HEADERS.name ) == 0 )
-				                {
-				                    tmpdecodeReq->headers = ( headers_t * ) malloc( sizeof( headers_t )
-				                                            + sizeof( char * ) * 1 );
-									if(tmpdecodeReq->headers != NULL)
-									{
-						                headers = strdup(StringValue);
-						                if(headers)
-						                {
-						                	tmpdecodeReq->headers->count = 1;
-							                tmpdecodeReq->headers->headers[0] = headers;
-							            }
-							            else
-							            {
-							            	tmpdecodeReq->headers->count = 1;
-							                tmpdecodeReq->headers->headers[0] = NULL;
-							            }
-									}
-									else
-									{
-										WRP_ERROR("Memory allocation failed\n" );
-									}
-				                }
-				                else if( strcmp( keyName, WRP_PATH.name ) == 0 )
-				                {
-				                    path= strdup(StringValue);
-				                    if(path)
-				                    {
-			                            tmpdecodeReq->path = path;
-				                    }
-				                    else
-				                    {
-			                            tmpdecodeReq->path = NULL;
-				                    }
-				                }
-				                else if( strcmp( keyName, WRP_CONTENT_TYPE.name ) == 0 )
-				                {
-				                    content_type = strdup(StringValue);
-				                    if(content_type)
-				                    {
-			                            tmpdecodeReq->content_type = content_type;
-				                    }
-				                    else
-				                    {
-			                            tmpdecodeReq->content_type = NULL;
-				                    }
-				                }
-								else if( strcmp( keyName, WRP_ACCEPT.name ) == 0 ) 
-								{
-									accept = strdup( StringValue );
-									if(accept)
-									{
-										tmpdecodeReq->accept = accept;
-									}
-									else
-									{
-										tmpdecodeReq->accept = NULL;
-									}
-								}
-				                else if( strcmp( keyName, WRP_PARTNER_IDS.name ) == 0 )
-				                {
-				                    tmpdecodeReq->partner_ids = ( partners_t * ) malloc( sizeof( partners_t )
-				                                            + sizeof( char * ) * 1 );
-									if(tmpdecodeReq->partner_ids != NULL)
-									{
-						                partnerID = strdup(StringValue);
-						                if(partnerID)
-						                {
-								            tmpdecodeReq->partner_ids->count = 1;
-								            tmpdecodeReq->partner_ids->partner_ids[0] = partnerID;
-								        }
-								        else
-								        {
-								            tmpdecodeReq->partner_ids->count = 1;
-								            tmpdecodeReq->partner_ids->partner_ids[0] = NULL;
-								        }
-									}
-									else
-									{
-										WRP_ERROR("Memory allocation failed\n" );
-									}
-				                 }
-				                free( NewStringVal );
-							}
-							else
-							{
-								WRP_ERROR("Memory allocation failed\n" );
-							}
-		                }
-		                break;
-		                case MSGPACK_OBJECT_BIN: {
-		                    if( strcmp( keyName, WRP_PAYLOAD.name ) == 0 ) {
-		                        binValueSize = ValueType.via.bin.size;
-		                        payload = ( char* ) malloc( binValueSize + 1 );
-								if(payload != NULL)
-								{
-				                    memset( payload, 0, binValueSize + 1 );
-				                    keyValue = NULL;
-				                    keyValue = getKey_MsgtypeBin( ValueType, binValueSize, payload );
+        if( keyString != NULL ) {
+            keyName = NULL;
+            keyName = getKey_MsgtypeStr( keyType, keySize, keyString );
 
-				                    if( keyValue != NULL ) {
-				                        WRP_DEBUG("Binary payload %s\n", keyValue );
-				                    }
-				                    tmpdecodeReq->payload = keyValue;
-				                    tmpdecodeReq->payload_size = binValueSize;
-								}
-								else
-								{
-									WRP_ERROR("Memory allocation failed\n" );
-								}
-		                    }
-		                }
-		                break;
-		                case MSGPACK_OBJECT_ARRAY:
+            if( keyName != NULL ) {
+                switch( ValueType.type ) {
+                    case MSGPACK_OBJECT_POSITIVE_INTEGER: {
+                        if( strcmp( keyName, WRP_MSG_TYPE.name ) == 0 ) {
+                            tmpdecodeReq->msgType = ValueType.via.i64;
+                        } else if( strcmp( keyName, WRP_STATUS.name ) == 0 ) {
+                            tmpdecodeReq->statusValue = ValueType.via.i64;
+                        } else if( strcmp( keyName, WRP_RDR.name ) == 0 ) {
+                            tmpdecodeReq->rdr = ValueType.via.i64;
+                        }
+                    }
+                    break;
 
-		                    if( strcmp( keyName, WRP_HEADERS.name ) == 0 ) {
-		                        msgpack_object_array array = ValueType.via.array;
-		                        msgpack_object *ptr = array.ptr;
-		                        uint32_t cnt = 0;
-		                        ptr = array.ptr;
-		                        tmpdecodeReq->headers = ( headers_t * ) malloc( sizeof( headers_t )
-		                                                + sizeof( char * ) * array.size );
-								if(tmpdecodeReq->headers != NULL){
-				                    tmpdecodeReq->headers->count = array.size;
+                    case MSGPACK_OBJECT_BOOLEAN: {
+                        if( strcmp( keyName, WRP_INCLUDE_SPANS.name ) == 0 ) {
+                            tmpdecodeReq->include_spans = ValueType.via.boolean ? true : false;
+                        }
+                    }
+                    break;
 
-				                    for( cnt = 0; cnt < array.size; cnt++, ptr++ ) {
-				                        tmpdecodeReq->headers->headers[cnt] = ( char * ) malloc( ptr->via.str.size + 1 );
-										if(tmpdecodeReq->headers->headers[cnt] != NULL)
-										{
-						                    memset( tmpdecodeReq->headers->headers[cnt], 0, ptr->via.str.size + 1 );
-						                    memcpy( tmpdecodeReq->headers->headers[cnt], ptr->via.str.ptr, ptr->via.str.size );
-						                    WRP_DEBUG("tmpdecodeReq->headers[%d] %s\n", cnt, tmpdecodeReq->headers->headers[cnt] );
-										}
-				                    }
-								}
-		                    }else if( strcmp( keyName, WRP_PARTNER_IDS.name ) == 0 ) {
-		                        msgpack_object_array array = ValueType.via.array;
-		                        msgpack_object *ptr = array.ptr;
-		                        uint32_t cnt = 0;
-		                        ptr = array.ptr;
-		                        tmpdecodeReq->partner_ids = ( partners_t * ) malloc( sizeof( partners_t )
-		                                                + sizeof( char * ) * array.size );
-								if(tmpdecodeReq->partner_ids != NULL){
-				                    tmpdecodeReq->partner_ids->count = array.size;
+                    case MSGPACK_OBJECT_STR: {
+                        StringValueSize = ValueType.via.str.size;
+                        NewStringVal = ( char* ) malloc( StringValueSize + 1 );
 
-				                    for( cnt = 0; cnt < array.size; cnt++, ptr++ ) {
-				                        tmpdecodeReq->partner_ids->partner_ids[cnt] = ( char * ) malloc( ptr->via.str.size + 1 );
-										if(tmpdecodeReq->partner_ids->partner_ids[cnt] != NULL){
-						                    memset( tmpdecodeReq->partner_ids->partner_ids[cnt], 0, ptr->via.str.size + 1 );
-						                    memcpy( tmpdecodeReq->partner_ids->partner_ids[cnt], ptr->via.str.ptr, ptr->via.str.size );
-						                    WRP_DEBUG("tmpdecodeReq->partner_ids[%d] %s\n", cnt, tmpdecodeReq->partner_ids->partner_ids[cnt] );
-										}
-				                    }
-								}
-		                    } else {
-		                        WRP_ERROR("Not Handled MSGPACK_OBJECT_ARRAY %s\n", keyName );
-		                    }
+                        if( NewStringVal != NULL ) {
+                            StringValue = getKey_MsgtypeStr( ValueType, StringValueSize, NewStringVal );
 
-		                    break;
-		                case MSGPACK_OBJECT_MAP:
-		                    WRP_DEBUG("Type of MAP\n" );
-		                    WRP_DEBUG("keyName is %s\n",keyName);
-		                    decodeMapRequest( ValueType, decodeReq );
-		                    break;
-		                case MSGPACK_OBJECT_NIL:
+                            if( strcmp( keyName, WRP_SOURCE.name ) == 0 ) {
+                                source = strdup( StringValue );
 
-		                    if( strcmp( keyName, WRP_SPANS.name ) == 0 ) {
-		                        WRP_DEBUG("spans is nil\n" );
-		                    }
+                                if( source ) {
+                                    tmpdecodeReq->source = source;
+                                } else {
+                                    tmpdecodeReq->source = NULL;
+                                }
+                            } else if( strcmp( keyName, WRP_DEST.name ) == 0 ) {
+                                dest = strdup( StringValue );
 
-		                    break;
-		                default:
-		                    WRP_ERROR("Unknown Data Type\n" );
-		                    break;
-		            }
-		    }
+                                if( dest ) {
+                                    tmpdecodeReq->dest = dest;
+                                } else {
+                                    tmpdecodeReq->dest = NULL;
+                                }
+                            } else if( strcmp( keyName, WRP_TRANS_ID.name ) == 0 ) {
+                                transaction_uuid = strdup( StringValue );
 
-		    p++;
-		    i++;
-		    free( keyString );
-		}
-		else
-		{
-			WRP_ERROR("Memory allocation failed\n" );
-		}
+                                if( transaction_uuid ) {
+                                    tmpdecodeReq->transaction_uuid = transaction_uuid;
+                                } else {
+                                    tmpdecodeReq->transaction_uuid = NULL;
+                                }
+                            } else if( strcmp( keyName, WRP_SERVICE_NAME.name ) == 0 ) {
+                                service_name = strdup( StringValue );
+
+                                if( service_name ) {
+                                    tmpdecodeReq->service_name = service_name;
+                                } else {
+                                    tmpdecodeReq->service_name = NULL;
+                                }
+                            } else if( strcmp( keyName, WRP_URL.name ) == 0 ) {
+                                url = strdup( StringValue );
+
+                                if( url ) {
+                                    tmpdecodeReq->url = url;
+                                } else {
+                                    tmpdecodeReq->url = NULL;
+                                }
+                            } else if( strcmp( keyName, WRP_HEADERS.name ) == 0 ) {
+                                tmpdecodeReq->headers = ( headers_t * ) malloc( sizeof( headers_t )
+                                                        + sizeof( char * ) * 1 );
+
+                                if( tmpdecodeReq->headers != NULL ) {
+                                    headers = strdup( StringValue );
+
+                                    if( headers ) {
+                                        tmpdecodeReq->headers->count = 1;
+                                        tmpdecodeReq->headers->headers[0] = headers;
+                                    } else {
+                                        tmpdecodeReq->headers->count = 1;
+                                        tmpdecodeReq->headers->headers[0] = NULL;
+                                    }
+                                } else {
+                                    WRP_ERROR( "Memory allocation failed\n" );
+                                }
+                            } else if( strcmp( keyName, WRP_PATH.name ) == 0 ) {
+                                path = strdup( StringValue );
+
+                                if( path ) {
+                                    tmpdecodeReq->path = path;
+                                } else {
+                                    tmpdecodeReq->path = NULL;
+                                }
+                            } else if( strcmp( keyName, WRP_CONTENT_TYPE.name ) == 0 ) {
+                                content_type = strdup( StringValue );
+
+                                if( content_type ) {
+                                    tmpdecodeReq->content_type = content_type;
+                                } else {
+                                    tmpdecodeReq->content_type = NULL;
+                                }
+                            } else if( strcmp( keyName, WRP_ACCEPT.name ) == 0 ) {
+                                accept = strdup( StringValue );
+
+                                if( accept ) {
+                                    tmpdecodeReq->accept = accept;
+                                } else {
+                                    tmpdecodeReq->accept = NULL;
+                                }
+                            } else if( strcmp( keyName, WRP_PARTNER_IDS.name ) == 0 ) {
+                                tmpdecodeReq->partner_ids = ( partners_t * ) malloc( sizeof( partners_t )
+                                                            + sizeof( char * ) * 1 );
+
+                                if( tmpdecodeReq->partner_ids != NULL ) {
+                                    partnerID = strdup( StringValue );
+
+                                    if( partnerID ) {
+                                        tmpdecodeReq->partner_ids->count = 1;
+                                        tmpdecodeReq->partner_ids->partner_ids[0] = partnerID;
+                                    } else {
+                                        tmpdecodeReq->partner_ids->count = 1;
+                                        tmpdecodeReq->partner_ids->partner_ids[0] = NULL;
+                                    }
+                                } else {
+                                    WRP_ERROR( "Memory allocation failed\n" );
+                                }
+                            }
+
+                            free( NewStringVal );
+                        } else {
+                            WRP_ERROR( "Memory allocation failed\n" );
+                        }
+                    }
+                    break;
+
+                    case MSGPACK_OBJECT_BIN: {
+                        if( strcmp( keyName, WRP_PAYLOAD.name ) == 0 ) {
+                            binValueSize = ValueType.via.bin.size;
+                            payload = ( char* ) malloc( binValueSize + 1 );
+
+                            if( payload != NULL ) {
+                                memset( payload, 0, binValueSize + 1 );
+                                keyValue = NULL;
+                                keyValue = getKey_MsgtypeBin( ValueType, binValueSize, payload );
+
+                                if( keyValue != NULL ) {
+                                    WRP_DEBUG( "Binary payload %s\n", keyValue );
+                                }
+
+                                tmpdecodeReq->payload = keyValue;
+                                tmpdecodeReq->payload_size = binValueSize;
+                            } else {
+                                WRP_ERROR( "Memory allocation failed\n" );
+                            }
+                        }
+                    }
+                    break;
+
+                    case MSGPACK_OBJECT_ARRAY:
+
+                        if( strcmp( keyName, WRP_HEADERS.name ) == 0 ) {
+                            msgpack_object_array array = ValueType.via.array;
+                            msgpack_object *ptr = array.ptr;
+                            uint32_t cnt = 0;
+                            ptr = array.ptr;
+                            tmpdecodeReq->headers = ( headers_t * ) malloc( sizeof( headers_t )
+                                                    + sizeof( char * ) * array.size );
+
+                            if( tmpdecodeReq->headers != NULL ) {
+                                tmpdecodeReq->headers->count = array.size;
+
+                                for( cnt = 0; cnt < array.size; cnt++, ptr++ ) {
+                                    tmpdecodeReq->headers->headers[cnt] = ( char * ) malloc( ptr->via.str.size + 1 );
+
+                                    if( tmpdecodeReq->headers->headers[cnt] != NULL ) {
+                                        memset( tmpdecodeReq->headers->headers[cnt], 0, ptr->via.str.size + 1 );
+                                        memcpy( tmpdecodeReq->headers->headers[cnt], ptr->via.str.ptr, ptr->via.str.size );
+                                        WRP_DEBUG( "tmpdecodeReq->headers[%d] %s\n", cnt, tmpdecodeReq->headers->headers[cnt] );
+                                    }
+                                }
+                            }
+                        } else if( strcmp( keyName, WRP_PARTNER_IDS.name ) == 0 ) {
+                            msgpack_object_array array = ValueType.via.array;
+                            msgpack_object *ptr = array.ptr;
+                            uint32_t cnt = 0;
+                            ptr = array.ptr;
+                            tmpdecodeReq->partner_ids = ( partners_t * ) malloc( sizeof( partners_t )
+                                                        + sizeof( char * ) * array.size );
+
+                            if( tmpdecodeReq->partner_ids != NULL ) {
+                                tmpdecodeReq->partner_ids->count = array.size;
+
+                                for( cnt = 0; cnt < array.size; cnt++, ptr++ ) {
+                                    tmpdecodeReq->partner_ids->partner_ids[cnt] = ( char * ) malloc( ptr->via.str.size + 1 );
+
+                                    if( tmpdecodeReq->partner_ids->partner_ids[cnt] != NULL ) {
+                                        memset( tmpdecodeReq->partner_ids->partner_ids[cnt], 0, ptr->via.str.size + 1 );
+                                        memcpy( tmpdecodeReq->partner_ids->partner_ids[cnt], ptr->via.str.ptr,
+                                                ptr->via.str.size );
+                                        WRP_DEBUG( "tmpdecodeReq->partner_ids[%d] %s\n", cnt,
+                                                   tmpdecodeReq->partner_ids->partner_ids[cnt] );
+                                    }
+                                }
+                            }
+                        } else {
+                            WRP_ERROR( "Not Handled MSGPACK_OBJECT_ARRAY %s\n", keyName );
+                        }
+
+                        break;
+
+                    case MSGPACK_OBJECT_MAP:
+                        WRP_DEBUG( "Type of MAP\n" );
+                        WRP_DEBUG( "keyName is %s\n", keyName );
+                        decodeMapRequest( ValueType, decodeReq );
+                        break;
+
+                    case MSGPACK_OBJECT_NIL:
+
+                        if( strcmp( keyName, WRP_SPANS.name ) == 0 ) {
+                            WRP_DEBUG( "spans is nil\n" );
+                        }
+
+                        break;
+
+                    default:
+                        WRP_ERROR( "Unknown Data Type\n" );
+                        break;
+                }
+            }
+
+            p++;
+            i++;
+            free( keyString );
+        } else {
+            WRP_ERROR( "Memory allocation failed\n" );
+        }
     }
 }
 
-static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **decodeMapReq )
+static void decodeMapRequest( msgpack_object deserialized,
+                              struct req_res_t **decodeMapReq )
 {
     unsigned int i = 0;
     int n = 0, v = 0;
@@ -1673,94 +1708,86 @@ static void decodeMapRequest( msgpack_object deserialized, struct req_res_t **de
     char *mapValue = NULL;
     struct req_res_t *mapdecodeReq = *decodeMapReq;
     msgpack_object_kv* p = deserialized.via.map.ptr;
-    WRP_DEBUG("Map size is %d\n", deserialized.via.map.size );
+    WRP_DEBUG( "Map size is %d\n", deserialized.via.map.size );
 
-    WRP_DEBUG("mapdecodeReq->metadata->count is %d\n", deserialized.via.map.size );
+    WRP_DEBUG( "mapdecodeReq->metadata->count is %d\n", deserialized.via.map.size );
 
     if( deserialized.via.map.size != 0 ) {
         mapdecodeReq->metadata->count = deserialized.via.map.size;
-        mapdecodeReq->metadata->data_items = ( struct data* )malloc( sizeof( struct data ) * ( deserialized.via.map.size ) );
+        mapdecodeReq->metadata->data_items = ( struct data* )malloc( sizeof( struct data ) *
+                                             ( deserialized.via.map.size ) );
 
     }
-	if(mapdecodeReq->metadata->data_items != NULL)
-	{
-		while( i < deserialized.via.map.size )
-		{
-		    msgpack_object keyType = p->key;
-		    msgpack_object ValueType = p->val;
-		    keySize = keyType.via.str.size;
-		    keyString = ( char* ) malloc( keySize + 1 );
-			if(keyString != NULL)
-			{
-				keyName = NULL;
-				keyName = getKey_MsgtypeStr( keyType, keySize, keyString );
-				if( keyName != NULL )
-				{
-				    mapName = strdup(keyName);
-				    if(mapName)
-				    {
-				    	mapdecodeReq->metadata->data_items[n].name = mapName;
-				    }
-				    else
-				    {
-				    	mapdecodeReq->metadata->data_items[n].name = NULL;
-				    }
-				    n++;
 
-				    switch( ValueType.type ) 
-				    {
-				        case MSGPACK_OBJECT_POSITIVE_INTEGER: 
-				        {
-				            WRP_DEBUG("Map value is int %" PRId64 "\n", ValueType.via.i64 );
-				            sprintf( mapdecodeReq->metadata->data_items[v].value, "%" PRId64, ValueType.via.i64 );
-				            v++;
-				        }
-				        break;
-				        case MSGPACK_OBJECT_BOOLEAN: 
-				        {
-				            WRP_DEBUG("Map value boolean %d\n", ValueType.via.boolean ? true : false );
-				            mapdecodeReq->metadata->data_items[v].value = ValueType.via.boolean ? "true" : "false";
-				            v++;
-				        }
-				        break;
-				        case MSGPACK_OBJECT_STR: 
-				        {
-				            StringValueSize = ValueType.via.str.size;
-				            NewStringVal = ( char* ) malloc( StringValueSize + 1 );
-							if(NewStringVal != NULL)
-							{
-						        StringValue = getKey_MsgtypeStr( ValueType, StringValueSize, NewStringVal );
-						        mapValue = strdup(StringValue);
-						        mapdecodeReq->metadata->data_items[v].value = mapValue;
-						        v++;
-						        free( NewStringVal );
-							}
-							else
-							{
-								WRP_ERROR("Memory allocation failed\n" );
-							}
-				        }
-				        break;
-				        default:
-				            WRP_ERROR("Unknown data format inside MAP\n" );
-				            break;
-				    }
-				}
+    if( mapdecodeReq->metadata->data_items != NULL ) {
+        while( i < deserialized.via.map.size ) {
+            msgpack_object keyType = p->key;
+            msgpack_object ValueType = p->val;
+            keySize = keyType.via.str.size;
+            keyString = ( char* ) malloc( keySize + 1 );
 
-				p++;
-				i++;
-				free( keyString );
-			}
-			else
-			{
-				WRP_ERROR("Memory allocation failed\n" );
-			}
-		}
-	}
-	else
-	{
-		WRP_ERROR("Memory allocation failed\n" );
-	}
+            if( keyString != NULL ) {
+                keyName = NULL;
+                keyName = getKey_MsgtypeStr( keyType, keySize, keyString );
+
+                if( keyName != NULL ) {
+                    mapName = strdup( keyName );
+
+                    if( mapName ) {
+                        mapdecodeReq->metadata->data_items[n].name = mapName;
+                    } else {
+                        mapdecodeReq->metadata->data_items[n].name = NULL;
+                    }
+
+                    n++;
+
+                    switch( ValueType.type ) {
+                        case MSGPACK_OBJECT_POSITIVE_INTEGER: {
+                            WRP_DEBUG( "Map value is int %" PRId64 "\n", ValueType.via.i64 );
+                            sprintf( mapdecodeReq->metadata->data_items[v].value, "%" PRId64, ValueType.via.i64 );
+                            v++;
+                        }
+                        break;
+
+                        case MSGPACK_OBJECT_BOOLEAN: {
+                            WRP_DEBUG( "Map value boolean %d\n", ValueType.via.boolean ? true : false );
+                            mapdecodeReq->metadata->data_items[v].value = ValueType.via.boolean ? "true" : "false";
+                            v++;
+                        }
+                        break;
+
+                        case MSGPACK_OBJECT_STR: {
+                            StringValueSize = ValueType.via.str.size;
+                            NewStringVal = ( char* ) malloc( StringValueSize + 1 );
+
+                            if( NewStringVal != NULL ) {
+                                StringValue = getKey_MsgtypeStr( ValueType, StringValueSize, NewStringVal );
+                                mapValue = strdup( StringValue );
+                                mapdecodeReq->metadata->data_items[v].value = mapValue;
+                                v++;
+                                free( NewStringVal );
+                            } else {
+                                WRP_ERROR( "Memory allocation failed\n" );
+                            }
+                        }
+                        break;
+
+                        default:
+                            WRP_ERROR( "Unknown data format inside MAP\n" );
+                            break;
+                    }
+                }
+
+                p++;
+                i++;
+                free( keyString );
+            } else {
+                WRP_ERROR( "Memory allocation failed\n" );
+            }
+        }
+    } else {
+        WRP_ERROR( "Memory allocation failed\n" );
+    }
 }
 
 
@@ -1810,7 +1837,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
     struct req_res_t *metadata;
 
     if( NULL == bytes ) {
-        WRP_ERROR("bytes is NULL\n" );
+        WRP_ERROR( "bytes is NULL\n" );
         return -1;
     }
 
@@ -1818,8 +1845,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
     msg       = malloc( sizeof( wrp_msg_t ) );
     metadata  = malloc( sizeof( data_t ) );
 
-    if( (decodeReq != NULL) && (NULL != msg) && (NULL != metadata) )
-    {
+    if( ( decodeReq != NULL ) && ( NULL != msg ) && ( NULL != metadata ) ) {
         msgpack_zone mempool;
         msgpack_object deserialized;
         msgpack_unpack_return unpack_ret;
@@ -1828,14 +1854,15 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
         memset( decodeReq, 0, sizeof( struct req_res_t ) );
         memset( metadata, 0, sizeof( data_t ) );
 
-        decodeReq->metadata = (struct data_struct *) metadata;
-        WRP_DEBUG("unpacking encoded data\n" );
+        decodeReq->metadata = ( struct data_struct * ) metadata;
+        WRP_DEBUG( "unpacking encoded data\n" );
         msgpack_zone_init( &mempool, 2048 );
         unpack_ret = msgpack_unpack( bytes, length, NULL, &mempool, &deserialized );
-        WRP_DEBUG("unpack_ret:%d\n", unpack_ret );
+        WRP_DEBUG( "unpack_ret:%d\n", unpack_ret );
 
         switch( unpack_ret ) {
             case MSGPACK_UNPACK_SUCCESS:
+
                 //msgpack_object_print( stdout, deserialized );
                 //puts("");
                 if( deserialized.via.map.size != 0 ) {
@@ -1853,6 +1880,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         free( decodeReq->metadata );
                         free( decodeReq );
                         return length;
+
                     case WRP_MSG_TYPE__REQ:
                         msg->msg_type = decodeReq->msgType;
                         msg->u.req.source = decodeReq->source;
@@ -1871,6 +1899,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         *msg_ptr = msg;
                         free( decodeReq );
                         return length;
+
                     case WRP_MSG_TYPE__EVENT:
                         msg->msg_type = decodeReq->msgType;
                         msg->u.event.source = decodeReq->source;
@@ -1884,6 +1913,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         *msg_ptr = msg;
                         free( decodeReq );
                         return length;
+
                     case WRP_MSG_TYPE__SVC_REGISTRATION:
                         msg->msg_type = decodeReq->msgType;
                         msg->u.reg.service_name = decodeReq->service_name;
@@ -1893,12 +1923,14 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         free( decodeReq->metadata );
                         free( decodeReq );
                         return length;
+
                     case WRP_MSG_TYPE__SVC_ALIVE:
                         msg->msg_type = decodeReq->msgType;
                         *msg_ptr = msg;
                         free( decodeReq->metadata );
                         free( decodeReq );
                         return length;
+
                     case WRP_MSG_TYPE__CREATE:
                     case WRP_MSG_TYPE__RETREIVE:
                     case WRP_MSG_TYPE__UPDATE:
@@ -1923,39 +1955,47 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         free( decodeReq );
                         *msg_ptr = msg;
                         return length;
+
                     default:
                         free( decodeReq->metadata->data_items );
                         break;
                 }
-                break; 
+
+                break;
 
             case MSGPACK_UNPACK_EXTRA_BYTES:
-                WRP_ERROR("MSGPACK_UNPACK_EXTRA_BYTES\n" );
+                WRP_ERROR( "MSGPACK_UNPACK_EXTRA_BYTES\n" );
                 break;
+
             case MSGPACK_UNPACK_CONTINUE:
-                WRP_ERROR("MSGPACK_UNPACK_CONTINUE\n" );
+                WRP_ERROR( "MSGPACK_UNPACK_CONTINUE\n" );
                 break;
+
             case MSGPACK_UNPACK_PARSE_ERROR:
-                WRP_ERROR("MSGPACK_UNPACK_PARSE_ERROR\n" );
+                WRP_ERROR( "MSGPACK_UNPACK_PARSE_ERROR\n" );
                 break;
+
             case MSGPACK_UNPACK_NOMEM_ERROR:
-                WRP_ERROR("MSGPACK_UNPACK_NOMEM_ERROR\n" );
+                WRP_ERROR( "MSGPACK_UNPACK_NOMEM_ERROR\n" );
                 break;
+
             default:
                 break;
         }
 
         msgpack_zone_destroy( &mempool );
     } else {
-        WRP_ERROR("Memory allocation failed\n" );
+        WRP_ERROR( "Memory allocation failed\n" );
     }
 
     if( NULL != decodeReq ) {
         free( decodeReq );
     }
+
     if( NULL != msg ) {
         free( msg );
     }
+
     if( NULL != metadata ) {
         free( metadata );
     }
@@ -1983,18 +2023,17 @@ static ssize_t __wrp_base64_to_struct( const void *base64_data, const size_t bas
     char *bytes;
     decodeMsgSize = b64_get_decoded_buffer_size( base64_size );
     bytes = ( char * ) malloc( sizeof( char ) * decodeMsgSize );
-	if(bytes != NULL)
-	{
-		length = b64_decode( ( uint8_t * ) base64_data, base64_size, ( uint8_t * ) bytes );
-		rv = __wrp_bytes_to_struct( bytes, length, msg_ptr );
-		free( bytes );
-		return rv;
-	}
-	else
-	{
-		WRP_ERROR("Memory allocation failed\n" );
-	}
-	return -1;
+
+    if( bytes != NULL ) {
+        length = b64_decode( ( uint8_t * ) base64_data, base64_size, ( uint8_t * ) bytes );
+        rv = __wrp_bytes_to_struct( bytes, length, msg_ptr );
+        free( bytes );
+        return rv;
+    } else {
+        WRP_ERROR( "Memory allocation failed\n" );
+    }
+
+    return -1;
 }
 /**
  * @brief alterMap function to change MAP size of encoded msgpack object.
@@ -2006,21 +2045,21 @@ static ssize_t __wrp_base64_to_struct( const void *base64_data, const size_t bas
 static int alterMap( char * buf )
 {
     //Extract 1st byte from binary stream which holds type and map size
-    unsigned char *byte = ( unsigned char * )( &( buf[0] ) ) ;
+    unsigned char *byte = ( unsigned char * )( &( buf[0] ) );
     int mapSize;
-    WRP_DEBUG("First byte in hex : %x\n", 0xff & *byte );
+    WRP_DEBUG( "First byte in hex : %x\n", 0xff & *byte );
     //Calculate map size
     mapSize = ( 0xff & *byte ) % 0x10;
-    WRP_DEBUG("Map size is :%d\n", mapSize );
+    WRP_DEBUG( "Map size is :%d\n", mapSize );
 
     if( mapSize == 15 ) {
-        WRP_ERROR("Msgpack Map (fixmap) is already at its MAX size i.e. 15\n" );
+        WRP_ERROR( "Msgpack Map (fixmap) is already at its MAX size i.e. 15\n" );
         return -1;
     }
 
     *byte = *byte + METADATA_MAP_SIZE;
     mapSize = ( 0xff & *byte ) % 0x10;
-    WRP_DEBUG("New Map size : %d\n", mapSize );
+    WRP_DEBUG( "New Map size : %d\n", mapSize );
     //Update 1st byte with new MAP size
     buf[0] = *byte;
     return 0;
@@ -2028,7 +2067,7 @@ static int alterMap( char * buf )
 
 /**
  * @brief appendEncodedData function to append two encoded buffer and change MAP size accordingly.
- * 
+ *
  * @note appendEncodedData function allocates memory for buffer, caller needs to free the buffer(appendData)in
  * both success or failure case. use wrp_free_struct() for free
  *
@@ -2040,27 +2079,28 @@ static int alterMap( char * buf )
  * @return  appended total buffer size or less than 1 in failure case
  */
 
-size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encodedSize, void *metadataPack, size_t metadataSize )
+size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encodedSize,
+                          void *metadataPack, size_t metadataSize )
 {
     //Allocate size for final buffer
     *appendData = ( void * )malloc( sizeof( char * ) * ( encodedSize + metadataSize ) );
-	if(*appendData != NULL)
-	{
-		memcpy( *appendData, encodedBuffer, encodedSize );
-		//Append 2nd encoded buf with 1st encoded buf
-		memcpy( *appendData + ( encodedSize ), metadataPack, metadataSize );
-		//Alter MAP
-		int ret = alterMap( ( char * ) * appendData );
 
-		if( ret ) {
-		    return -1;
-		}
-		return ( encodedSize + metadataSize );
-	}
-	else
-	{
-		WRP_ERROR("Memory allocation failed\n" );
-	}
+    if( *appendData != NULL ) {
+        memcpy( *appendData, encodedBuffer, encodedSize );
+        //Append 2nd encoded buf with 1st encoded buf
+        memcpy( *appendData + ( encodedSize ), metadataPack, metadataSize );
+        //Alter MAP
+        int ret = alterMap( ( char * ) * appendData );
+
+        if( ret ) {
+            return -1;
+        }
+
+        return ( encodedSize + metadataSize );
+    } else {
+        WRP_ERROR( "Memory allocation failed\n" );
+    }
+
     return -1;
 }
 
@@ -2074,9 +2114,9 @@ size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encoded
  */
 static char* strdupptr( const char *s, const char *e )
 {
-    if (s == e) {
+    if( s == e ) {
         return NULL;
     }
 
-    return strndup(s, (size_t) (((uintptr_t)e) - ((uintptr_t)s)));
+    return strndup( s, ( size_t )( ( ( uintptr_t )e ) - ( ( uintptr_t )s ) ) );
 }
