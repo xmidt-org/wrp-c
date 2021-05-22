@@ -3,8 +3,11 @@
 
 target_sources(wrp-c
     PRIVATE
-        wrp-c.c
+        b64.c
+        msgpack.c
+        string.c
         utils.c
+        wrp-c.c
 )
 
 configure_file(wrp-c_ver.h.in
