@@ -11,17 +11,8 @@ set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-cov
 
 add_test(NAME Simple COMMAND ${MEMORY_CHECK} ./simple)
 add_executable(simple simple.c ../src/wrp-c.c)
-target_link_libraries (simple ${TROWER_LIBRARIES})
-target_link_libraries (simple ${CIMPLOG_LIBRARIES})
-target_link_libraries (simple ${MSGPACK_LIBRARIES})
-target_link_libraries (simple ${CUNIT_LIBRARIES})
-#target_link_libraries (simple -lmsgpackc -ltrower-base64 -lcimplog)
-target_link_libraries (simple gcov)
-target_link_libraries (simple rt)
-
-add_custom_target(coverage
-                  COMMAND lcov -q --capture
-                          --directory ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/
-                          --output-file coverage.info
-                  COMMAND genhtml coverage.info
-                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+target_link_libraries (simple ${TROWER_LIBRARIES}
+                              ${CIMPLOG_LIBRARIES}
+                              ${MSGPACK_LIBRARIES}
+                              ${CUNIT_LIBRARIES}
+                              gcov)

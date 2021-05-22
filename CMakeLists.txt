@@ -8,6 +8,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 project(wrp-c VERSION 1.1.1)
 
 include(BitwiseVersion)
+include(Coverage)
 include(CTest)
 include(FindCimplog)
 include(FindMsgpack)
