@@ -148,7 +148,7 @@ ssize_t wrp_struct_to( const wrp_msg_t *msg, const enum wrp_format fmt, void **b
             break;
 
         default:
-            return -2;
+            return -1;
     }
 
     *bytes = data;
@@ -190,7 +190,7 @@ ssize_t wrp_to_struct( const void *bytes, const size_t length,
             break;
 
         default:
-            return -2;
+            return -1;
     }
 
     return rv;
@@ -696,8 +696,7 @@ static ssize_t __wrp_struct_to_base64( const wrp_msg_t *msg, char **bytes )
     rv = __wrp_struct_to_bytes( msg, &bytes_data );
 
     if( rv < 1 ) {
-        rv = -100;
-        return rv;
+        return -1;
     }
 
     bytes_size = ( size_t ) rv;
@@ -705,7 +704,7 @@ static ssize_t __wrp_struct_to_base64( const wrp_msg_t *msg, char **bytes )
     base64_data = ( char* ) malloc( sizeof( char ) * base64_buf_size );
 
     if( NULL == base64_data ) {
-        rv = -101;
+        rv = -1;
     } else {
         b64_encode( ( uint8_t* ) bytes_data, bytes_size, ( uint8_t* ) base64_data );
         *bytes = base64_data;
