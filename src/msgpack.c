@@ -91,7 +91,7 @@ static char* getKey_MsgtypeBin( const msgpack_object key, const size_t binSize,
 static void __msgpack_maps( msgpack_packer *pk, const data_t *dataMap );
 static void decodeMapRequest( msgpack_object deserialized,
                               struct req_res_t **decodeMapReq );
-static void mapCommonString( msgpack_packer *pk, struct req_res_t *encodeComReq );
+static void mapCommonString( msgpack_packer *pk, const struct req_res_t *encodeComReq );
 static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq, char **data );
 
 /*----------------------------------------------------------------------------*/
@@ -412,7 +412,7 @@ static void __msgpack_partner_ids( msgpack_packer *pk, const partners_t *partner
 static void __msgpack_spans( msgpack_packer *pk, const struct money_trace_spans *spans )
 {
     if( spans && (0 < spans->count) ) {
-        struct money_trace_span *span = spans->spans;
+        const struct money_trace_span *span = spans->spans;
 
         __msgpack_pack_string( pk, WRP_SPANS.name, WRP_SPANS.length );
         msgpack_pack_array( pk, spans->count );
@@ -468,7 +468,7 @@ static void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_
 
 
 //Pack msgType,source,dest,headers,metadata,partner_ids
-static void mapCommonString( msgpack_packer *pk, struct req_res_t *encodeComReq )
+static void mapCommonString( msgpack_packer *pk, const struct req_res_t *encodeComReq )
 {
     __msgpack_pack_string( pk, WRP_MSG_TYPE.name, WRP_MSG_TYPE.length );
     msgpack_pack_int( pk, encodeComReq->msgType );
