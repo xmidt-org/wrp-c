@@ -78,9 +78,30 @@ void test_mvaprintf(void)
     free( got );
 }
 
+
+void test_append(void)
+{
+    char *buf;
+    char *p;
+
+    buf = calloc( 9, sizeof(char) );
+    CU_ASSERT_FATAL( NULL != buf );
+
+    memset( buf, '-', 9 );
+
+    p = wrp_append( buf, "1234" );
+    CU_ASSERT_STRING_EQUAL( buf, "1234" );
+
+    p = wrp_append( p, "abcd" );
+    CU_ASSERT_STRING_EQUAL( buf, "1234abcd" );
+
+    free( buf );
+}
+
 void add_suites( CU_pSuite *suite )
 {
     *suite = CU_add_suite( "utils.c tests", NULL, NULL );
+    CU_add_test( *suite, "wrp_append() Tests", test_append );
     CU_add_test( *suite, "wrp_strdup() Tests", test_wrp_strdup );
     CU_add_test( *suite, "wrp_strndup() Tests", test_wrp_strndup );
     CU_add_test( *suite, "mvaprintf() Tests", test_mvaprintf );

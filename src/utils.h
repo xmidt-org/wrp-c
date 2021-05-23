@@ -35,5 +35,18 @@ char* strdupptr( const char *s, const char *e );
 char* wrp_strdup( const char *s );
 char* wrp_strndup( const char *s, size_t n );
 
+/**
+ *  Appends 'src' to dest and includes the trailing '\0'.
+ *
+ *  @note: The caller must ensure there is enough buffer space in dest.
+ *  @note: Don't overlap buffers.
+ *
+ *  @param dest the destination to append to
+ *  @param src  the string to append
+ *
+ *  @return the pointer to the '\0' at the end of what was appended.
+ */
+char* wrp_append( char *dest, const char *src );
+
 #endif
 
