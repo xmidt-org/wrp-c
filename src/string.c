@@ -235,7 +235,7 @@ static char* __get_header_string( headers_t *headers )
         p = wrp_append( p, headers->headers[i] );
         comma = ", ";
     }
-    p = wrp_append( p, "'" );
+    wrp_append( p, "'" );
 
     return rv;
 }
@@ -270,7 +270,7 @@ static char* __get_partner_ids_string( partners_t *partner_ids )
         p = wrp_append( p, partner_ids->partner_ids[i] );
         comma = ", ";
     }
-    p = wrp_append( p, "'" );
+    wrp_append( p, "'" );
 
     return rv;
 }
