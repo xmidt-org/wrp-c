@@ -84,7 +84,7 @@ static void __msgpack_pack_string_nvp( msgpack_packer *pk,
                                        const char *val );
 static void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n );
 static void decodeRequest( msgpack_object deserialized, struct req_res_t **decodeReq );
-static char* getKey_MsgtypeStr( const msgpack_object key, const size_t keySize,
+static char* getKey_MsgtypeStr( const msgpack_object key, size_t keySize,
                                 char* keyString );
 static char* getKey_MsgtypeBin( const msgpack_object key, const size_t binSize,
                                 char* keyBin );
@@ -222,18 +222,14 @@ ssize_t wrp_bytes_to_struct( const void *bytes, size_t length,
         return -1;
     }
 
-    decodeReq = malloc( sizeof( struct req_res_t ) );
-    msg       = malloc( sizeof( wrp_msg_t ) );
-    metadata  = malloc( sizeof( data_t ) );
+    decodeReq = calloc( 1, sizeof(struct req_res_t) );
+    msg       = calloc( 1, sizeof(wrp_msg_t) );
+    metadata  = calloc( 1, sizeof(data_t) );
 
     if( ( decodeReq != NULL ) && ( NULL != msg ) && ( NULL != metadata ) ) {
         msgpack_zone mempool;
         msgpack_object deserialized;
         msgpack_unpack_return unpack_ret;
-
-        memset( msg, 0, sizeof( wrp_msg_t ) );
-        memset( decodeReq, 0, sizeof( struct req_res_t ) );
-        memset( metadata, 0, sizeof( data_t ) );
 
         decodeReq->metadata = ( struct data_struct * ) metadata;
         WRP_DEBUG( "unpacking encoded data\n" );
@@ -243,9 +239,6 @@ ssize_t wrp_bytes_to_struct( const void *bytes, size_t length,
 
         switch( unpack_ret ) {
             case MSGPACK_UNPACK_SUCCESS:
-
-                //msgpack_object_print( stdout, deserialized );
-                //puts("");
                 if( deserialized.via.map.size != 0 ) {
                     decodeRequest( deserialized, &decodeReq );
                 }
@@ -389,34 +382,28 @@ ssize_t wrp_bytes_to_struct( const void *bytes, size_t length,
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
 
-static void __msgpack_headers( msgpack_packer *pk, headers_t *headers )
+static void __msgpack_headers( msgpack_packer *pk, const headers_t *headers )
 {
-    if( NULL != headers ) {
-        size_t count = headers->count;
+    if( headers && (0 < headers->count) ) {
         __msgpack_pack_string( pk, WRP_HEADERS.name, WRP_HEADERS.length );
-        msgpack_pack_array( pk, count );
-        count = 0;
+        msgpack_pack_array( pk, headers->count );
 
-        while( count < headers->count ) {
-            __msgpack_pack_string( pk, headers->headers[count], strlen( headers->headers[count] ) );
-            count++;
+        for( size_t i = 0; i < headers->count; i++ ) {
+            __msgpack_pack_string( pk, headers->headers[i], strlen(headers->headers[i]) );
         }
     }
 }
 
 
-static void __msgpack_partner_ids( msgpack_packer *pk, partners_t *partner_ids )
+static void __msgpack_partner_ids( msgpack_packer *pk, const partners_t *partner_ids )
 {
-    if( NULL != partner_ids ) {
-        size_t count = partner_ids->count;
+    if( partner_ids && (0 < partner_ids->count) ) {
         __msgpack_pack_string( pk, WRP_PARTNER_IDS.name, WRP_PARTNER_IDS.length );
-        msgpack_pack_array( pk, count );
-        count = 0;
+        msgpack_pack_array( pk, partner_ids->count );
 
-        while( count < partner_ids->count ) {
-            __msgpack_pack_string( pk, partner_ids->partner_ids[count],
-                                   strlen( partner_ids->partner_ids[count] ) );
-            count++;
+        for( size_t i = 0; i < partner_ids->count; i++ ) {
+            __msgpack_pack_string( pk, partner_ids->partner_ids[i],
+                                   strlen(partner_ids->partner_ids[i]) );
         }
     }
 }
@@ -424,14 +411,13 @@ static void __msgpack_partner_ids( msgpack_packer *pk, partners_t *partner_ids )
 
 static void __msgpack_spans( msgpack_packer *pk, const struct money_trace_spans *spans )
 {
-    if( ( NULL != spans ) && ( 0 < spans->count ) ) {
-        size_t i;
-        struct money_trace_span *span;
+    if( spans && (0 < spans->count) ) {
+        struct money_trace_span *span = spans->spans;
+
         __msgpack_pack_string( pk, WRP_SPANS.name, WRP_SPANS.length );
         msgpack_pack_array( pk, spans->count );
-        span = spans->spans;
 
-        for( i = 0; i < spans->count; i++ ) {
+        for( size_t i = 0; i < spans->count; i++ ) {
             msgpack_pack_array( pk, 3 );
             __msgpack_pack_string( pk, span->name, strlen( span->name ) );
             msgpack_pack_uint64( pk, span->start );
@@ -444,15 +430,13 @@ static void __msgpack_spans( msgpack_packer *pk, const struct money_trace_spans 
 
 static void __msgpack_maps( msgpack_packer *pk, const data_t *dataMap )
 {
-    size_t i;
-
     if( dataMap != NULL ) {
-        struct data *tmpdata;
+        const struct data *tmpdata;
         msgpack_pack_map( pk, dataMap->count );
         tmpdata = dataMap->data_items;
         WRP_DEBUG( "dataMap->count is %zu\n", dataMap->count );
 
-        for( i = 0; i < dataMap->count; i++ ) {
+        for( size_t i = 0; i < dataMap->count; i++ ) {
             struct wrp_token WRP_MAP_NAME;
 
             WRP_MAP_NAME.name = tmpdata[i].name;
@@ -469,9 +453,9 @@ static void __msgpack_pack_string_nvp( msgpack_packer *pk,
                                        const struct wrp_token *token,
                                        const char *val )
 {
-    if( ( NULL != token ) && ( NULL != val ) ) {
+    if( token && val ) {
         __msgpack_pack_string( pk, token->name, token->length );
-        __msgpack_pack_string( pk, val, strlen( val ) );
+        __msgpack_pack_string( pk, val, strlen(val) );
     }
 }
 
@@ -918,10 +902,9 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                     case MSGPACK_OBJECT_BIN: {
                         if( strcmp( keyName, WRP_PAYLOAD.name ) == 0 ) {
                             binValueSize = ValueType.via.bin.size;
-                            payload = malloc( binValueSize + 1 );
+                            payload = calloc( 1, binValueSize + 1 );
 
                             if( payload != NULL ) {
-                                memset( payload, 0, binValueSize + 1 );
                                 keyValue = NULL;
                                 keyValue = getKey_MsgtypeBin( ValueType, binValueSize, payload );
 
@@ -952,10 +935,9 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                                 tmpdecodeReq->headers->count = array.size;
 
                                 for( cnt = 0; cnt < array.size; cnt++, ptr++ ) {
-                                    tmpdecodeReq->headers->headers[cnt] = malloc( ptr->via.str.size + 1 );
+                                    tmpdecodeReq->headers->headers[cnt] = calloc( 1, ptr->via.str.size + 1 );
 
                                     if( tmpdecodeReq->headers->headers[cnt] != NULL ) {
-                                        memset( tmpdecodeReq->headers->headers[cnt], 0, ptr->via.str.size + 1 );
                                         memcpy( tmpdecodeReq->headers->headers[cnt], ptr->via.str.ptr, ptr->via.str.size );
                                         WRP_DEBUG( "tmpdecodeReq->headers[%d] %s\n", cnt, tmpdecodeReq->headers->headers[cnt] );
                                     }
@@ -964,7 +946,6 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                         } else if( strcmp( keyName, WRP_PARTNER_IDS.name ) == 0 ) {
                             msgpack_object_array array = ValueType.via.array;
                             msgpack_object *ptr = array.ptr;
-                            uint32_t cnt = 0;
                             ptr = array.ptr;
                             tmpdecodeReq->partner_ids = malloc( sizeof(partners_t)
                                                         + sizeof( char * ) * array.size );
@@ -972,11 +953,10 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
                             if( tmpdecodeReq->partner_ids != NULL ) {
                                 tmpdecodeReq->partner_ids->count = array.size;
 
-                                for( cnt = 0; cnt < array.size; cnt++, ptr++ ) {
-                                    tmpdecodeReq->partner_ids->partner_ids[cnt] = malloc( ptr->via.str.size + 1 );
+                                for( uint32_t cnt = 0; cnt < array.size; cnt++, ptr++ ) {
+                                    tmpdecodeReq->partner_ids->partner_ids[cnt] = calloc( 1, ptr->via.str.size + 1 );
 
                                     if( tmpdecodeReq->partner_ids->partner_ids[cnt] != NULL ) {
-                                        memset( tmpdecodeReq->partner_ids->partner_ids[cnt], 0, ptr->via.str.size + 1 );
                                         memcpy( tmpdecodeReq->partner_ids->partner_ids[cnt], ptr->via.str.ptr,
                                                 ptr->via.str.size );
                                         WRP_DEBUG( "tmpdecodeReq->partner_ids[%d] %s\n", cnt,
@@ -1125,8 +1105,10 @@ static char* getKey_MsgtypeStr( const msgpack_object key, const size_t keySize,
                                 char* keyString )
 {
     const char* keyName = key.via.str.ptr;
-    strncpy( keyString, keyName, keySize );
+
+    memcpy( keyString, keyName, keySize );
     keyString[keySize] = '\0';
+
     return keyString;
 }
 
