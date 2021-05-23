@@ -31,7 +31,7 @@ jobs:
       - name: Install packages
         run: |
           sudo apt update
-          sudo apt-get -y install valgrind libcunit1 libcunit1-doc libcunit1-dev jq gcovr
+          sudo apt-get -y install valgrind libcunit1 libcunit1-doc libcunit1-dev libmsgpack-dev gcovr
           pip install codecov
 
       - name: Make Build Directory
@@ -40,10 +40,7 @@ jobs:
       - name: Get Sonarcloud Binaries
         working-directory: build
         run: |
-          curl -s -L -O https://sonarcloud.io/static/cpp/build-wrapper-linux-x86.zip
-          curl -s -L -O https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.6.0.2311-linux.zip
-          unzip -q -o build-wrapper-linux-x86.zip
-          unzip -q sonar-scanner-cli-4.6.0.2311-linux.zip
+          ../.github/scripts/get_sonarcloud.sh
 
       - name: CMake
         working-directory: build
@@ -62,7 +59,7 @@ jobs:
 
       - name: Upload SonarCloud
         run: |
-          build/sonar-scanner-4.6.0.2311-linux/bin/sonar-scanner -Dsonar.host.url=https://sonarcloud.io -Dproject.settings=.sonar-project.properties -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          build/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=https://sonarcloud.io -Dproject.settings=.sonar-project.properties -Dsonar.login=${{ secrets.SONAR_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
