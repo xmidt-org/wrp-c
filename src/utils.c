@@ -138,3 +138,15 @@ char* wrp_strndup( const char *s, size_t n )
 
     return rv;
 }
+
+char* wrp_append( char *dest, const char *src )
+{
+    while( *src ) {
+        *dest = *src;
+        dest++;
+        src++;
+    }
+    *dest = '\0';
+
+    return dest;
+}

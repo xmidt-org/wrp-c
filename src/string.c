@@ -22,7 +22,7 @@
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
-static const char *__empty_list = "''";
+/* none */
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
@@ -36,7 +36,6 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
 static char* __get_header_string( headers_t *headers );
 static char* __get_spans_string( const struct money_trace_spans *spans );
 static char* __get_partner_ids_string( partners_t *partner_ids );
-static void __special_free( char *s );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -94,12 +93,13 @@ static ssize_t __wrp_keep_alive_to_string( char **bytes )
 static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth,
         char **bytes )
 {
-    const char *auth_fmt = "wrp_auth_msg {\n"
-                           "    .status = %d\n"
-                           "}\n";
     size_t len;
 
-    *bytes = mlaprintf( &len, auth_fmt, auth->status );
+    *bytes = mlaprintf( &len, "wrp_auth_msg {\n"
+                              "    .status = %d\n"
+                              "}\n",
+                        auth->status );
+
     if( NULL == *bytes ) {
         len = -1;
     }
@@ -118,38 +118,41 @@ static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth,
  */
 static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char **bytes )
 {
-    const char *req_fmt = "wrp_req_msg {\n"
-                          "    .transaction_uuid = %s\n"
-                          "    .source           = %s\n"
-                          "    .dest             = %s\n"
-                          "    .partner_ids      = %s\n"
-                          "    .headers          = %s\n"
-                          "    .content_type     = %s\n"
-                          "    .accept           = %s\n"
-                          "    .include_spans    = %s\n"
-                          "    .spans            = %s\n"
-                          "    .payload_size     = %zd\n"
-                          "}\n";
     size_t len;
-    char *headers;
-    char *spans;
-    char *partner_ids;
+    char *headers     = __get_header_string( req->headers );
+    char *spans       = __get_spans_string( &req->spans );
+    char *partner_ids = __get_partner_ids_string( req->partner_ids );
 
-    headers = __get_header_string( req->headers );
-    spans = __get_spans_string( &req->spans );
-    partner_ids = __get_partner_ids_string( req->partner_ids );
+    *bytes = mlaprintf( &len, "wrp_req_msg {\n"
+                              "    .transaction_uuid = %s\n"
+                              "    .source           = %s\n"
+                              "    .dest             = %s\n"
+                              "    .partner_ids      = %s\n"
+                              "    .headers          = %s\n"
+                              "    .content_type     = %s\n"
+                              "    .accept           = %s\n"
+                              "    .include_spans    = %s\n"
+                              "    .spans            = %s\n"
+                              "    .payload_size     = %zd\n"
+                              "}\n",
+                        req->transaction_uuid,
+                        req->source,
+                        req->dest,
+                        (partner_ids ? partner_ids : "''"),
+                        (headers ? headers : "''"),
+                        req->content_type,
+                        req->accept,
+                        (req->include_spans ? "true" : "false"),
+                        (spans ? spans : "''"),
+                        req->payload_size );
 
-    *bytes = mlaprintf( &len, req_fmt, req->transaction_uuid, req->source,
-                        req->dest, partner_ids, headers, req->content_type,
-                        req->accept, ( req->include_spans ? "true" : "false" ),
-                        spans, req->payload_size );
     if( NULL == *bytes ) {
         len = -1;
     }
 
-    __special_free( headers );
-    __special_free( spans );
-    __special_free( partner_ids );
+    if( headers )     free( headers );
+    if( spans )       free( spans );
+    if( partner_ids ) free( partner_ids );
 
     return len;
 }
@@ -166,29 +169,31 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
 static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
         char **bytes )
 {
-    const char *event_fmt = "wrp_event_msg {\n"
-                            "    .source           = %s\n"
-                            "    .dest             = %s\n"
-                            "    .partner_ids      = %s\n"
-                            "    .headers          = %s\n"
-                            "    .content_type     = %s\n"
-                            "    .payload_size     = %zd\n"
-                            "}\n";
     size_t len;
-    char *headers;
-    char *partner_ids;
+    char *headers     = __get_header_string( event->headers );
+    char *partner_ids = __get_partner_ids_string( event->partner_ids );
 
-    headers = __get_header_string( event->headers );
-    partner_ids = __get_partner_ids_string( event->partner_ids );
+    *bytes = mlaprintf( &len, "wrp_event_msg {\n"
+                              "    .source           = %s\n"
+                              "    .dest             = %s\n"
+                              "    .partner_ids      = %s\n"
+                              "    .headers          = %s\n"
+                              "    .content_type     = %s\n"
+                              "    .payload_size     = %zd\n"
+                              "}\n",
+                        event->source,
+                        event->dest,
+                        (partner_ids ? partner_ids : "''"),
+                        (headers ? headers : "''"),
+                        event->content_type,
+                        event->payload_size );
 
-    *bytes = mlaprintf( &len, event_fmt, event->source, event->dest, partner_ids,
-                        headers, event->content_type, event->payload_size );
     if( NULL == *bytes ) {
         len = -1;
     }
 
-    __special_free( headers );
-    __special_free( partner_ids );
+    if( headers )     free( headers );
+    if( partner_ids ) free( partner_ids );
 
     return len;
 }
@@ -197,51 +202,40 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
 /**
  *  Converts the list of headers into a string to print.
  *
- *  @note The caller must check to see if the value is equal to __empty_list
- *        and not free it if equal.  If not equal it must be freed.
- *  @note This function never returns NULL.
- *
  *  @param headers [in] the headers to make into a string
  *
- *  @return The string representation of the headers.
+ *  @return The string representation of the headers or NULL if none.
  */
 static char* __get_header_string( headers_t *headers )
 {
-    char *rv;
-    rv = ( char* ) __empty_list;
+    char *rv = NULL;
+    char *p = NULL;
+    size_t len = 0;
+    const char *comma = "";
 
-    if( headers ) {
-        char *tmp;
-        size_t i;
-        int comma;
-        size_t length;
-        comma = 0;
-        length = 2; /* For ' characters. */
-
-        for( i = 0; i < headers->count; i++ ) {
-            length += comma;
-            length += strlen( headers->headers[i] );
-            comma = 2;
-        }
-
-        tmp = malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
-
-        if( NULL != tmp ) {
-            const char *comma;
-            rv = tmp;
-            comma = "";
-            *tmp = '\0';
-            tmp = strcat( tmp, "'" );
-
-            for( i = 0; i < headers->count; i++ ) {
-                tmp = strcat( tmp, comma );
-                tmp = strcat( tmp, headers->headers[i] );
-                comma = ", ";
-            }
-
-            tmp = strcat( tmp, "'" );
-        }
+    if( !headers || (0 == headers->count) ) {
+        return NULL;
     }
+
+    for( size_t i = 0; i < headers->count; i++ ) {
+        len += strlen( headers->headers[i] );
+    }
+    len += 2;                           /* For '' characters. */
+    len += 2 * (headers->count - 1);    /* For ", " between headers */
+    len += 1;                           /* For trailing '\0' */
+
+    rv = calloc( len, sizeof(char) );
+    if( !rv ) {
+        return NULL;
+    }
+
+    p = wrp_append( rv, "'" );
+    for( size_t i = 0; i < headers->count; i++ ) {
+        p = wrp_append( p, comma );
+        p = wrp_append( p, headers->headers[i] );
+        comma = ", ";
+    }
+    wrp_append( p, "'" );
 
     return rv;
 }
@@ -249,41 +243,34 @@ static char* __get_header_string( headers_t *headers )
 
 static char* __get_partner_ids_string( partners_t *partner_ids )
 {
-    char *rv;
-    rv = ( char* ) __empty_list;
+    char *rv = NULL;
+    char *p = NULL;
+    size_t len = 0;
+    const char *comma = "";
 
-    if( partner_ids ) {
-        char *tmp;
-        size_t i;
-        int comma;
-        size_t length;
-        comma = 0;
-        length = 2; /* For ' characters. */
-
-        for( i = 0; i < partner_ids->count; i++ ) {
-            length += comma;
-            length += strlen( partner_ids->partner_ids[i] );
-            comma = 2;
-        }
-
-        tmp = malloc( sizeof(char) * (length + 1) );   /* +1 for '\0' */
-
-        if( NULL != tmp ) {
-            const char *comma;
-            rv = tmp;
-            comma = "";
-            *tmp = '\0';
-            tmp = strcat( tmp, "'" );
-
-            for( i = 0; i < partner_ids->count; i++ ) {
-                tmp = strcat( tmp, comma );
-                tmp = strcat( tmp, partner_ids->partner_ids[i] );
-                comma = ", ";
-            }
-
-            tmp = strcat( tmp, "'" );
-        }
+    if( !partner_ids || (0 == partner_ids->count) ) {
+        return NULL;
     }
+
+    for( size_t i = 0; i < partner_ids->count; i++ ) {
+        len += strlen( partner_ids->partner_ids[i] );
+    }
+    len += 2;                               /* For '' characters. */
+    len += 2 * (partner_ids->count - 1);    /* For ", " between partner_ids */
+    len += 1;                               /* For trailing '\0' */
+
+    rv = calloc( len, sizeof(char) );
+    if( !rv ) {
+        return NULL;
+    }
+
+    p = wrp_append( rv, "'" );
+    for( size_t i = 0; i < partner_ids->count; i++ ) {
+        p = wrp_append( p, comma );
+        p = wrp_append( p, partner_ids->partner_ids[i] );
+        comma = ", ";
+    }
+    wrp_append( p, "'" );
 
     return rv;
 }
@@ -292,55 +279,46 @@ static char* __get_partner_ids_string( partners_t *partner_ids )
 /**
  *  Converts the list of times into a string to print.
  *
- *  @note The caller must check to see if the value is equal to __empty_list
- *        and not free it if equal.  If not equal it must be freed.
- *  @note This function never returns NULL.
- *
  *  @param spans [in] the spans to make into a string
  *
- *  @return The string representation of the times.
+ *  @return The string representation of the times or NULL if none.
  */
 static char* __get_spans_string( const struct money_trace_spans *spans )
 {
-    char *rv;
-    size_t count;
-    count = spans->count;
-    rv = ( char* ) __empty_list;
+    static const char *fmt = "\n        %s: %" PRIu64 " - %" PRIu32;
+    char *rv = NULL;
+    char *p = NULL;
+    size_t len = 0;
 
-    if( 0 < count ) {
-        char *buffer;
-        size_t length, i;
-        const struct money_trace_span *p;
-        length = 0;
-        p = spans->spans;
-
-        for( i = 0; i < count; i++, p++ ) {
-            length += snprintf( NULL, 0, "\n        %s: %" PRIu64 " - %" PRIu32,
-                                p->name, p->start, p->duration );
-        }
-
-        buffer = malloc( sizeof(char) * ( length + 1 ) );   /* +1 for '\0' */
-
-        if( NULL != buffer ) {
-            rv = buffer;
-            p = spans->spans;
-
-            for( i = 0; i < count; i++, p++ ) {
-                buffer += sprintf( buffer, "\n        %s: %" PRIu64 " - %" PRIu32,
-                                   p->name, p->start, p->duration );
-            }
-
-            *buffer = '\0';
-        }
+    if( !spans || (0 == spans->count) ) {
+        return NULL;
     }
+
+    for( size_t i = 0; i < spans->count; i++ ) {
+        const struct money_trace_span *span = &spans->spans[i];
+        len += snprintf( NULL, 0, fmt, span->name, span->start, span->duration );
+    }
+
+    len += 1;   /* +1 for '\0' */
+    rv = calloc( len, sizeof(char) );
+    if( !rv ) {
+        return NULL;
+    }
+
+    p = rv;
+
+    for( size_t i = 0; i < spans->count; i++ ) {
+        const struct money_trace_span *span = &spans->spans[i];
+        int used;
+        used = snprintf( p, len, fmt, span->name, span->start, span->duration );
+        if( used < 1 ) {
+            free( rv );
+            return NULL;
+        }
+        p += used;
+        len -= used;
+    }
+    *p = '\0';
 
     return rv;
-}
-
-
-static void __special_free( char *s )
-{
-    if( __empty_list != s ) {
-        free( s );
-    }
 }
