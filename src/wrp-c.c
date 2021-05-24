@@ -37,6 +37,12 @@
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
 static int alterMap( char * buf );
+static void free_common_fields( headers_t *h, partners_t *p, data_t *metadata,
+                                struct money_trace_spans *spans );
+static void free_msg_type__req( struct wrp_req_msg *req );
+static void free_msg_type__event( struct wrp_event_msg *event );
+static void free_msg_type__svc_registration( struct wrp_svc_registration_msg *reg );
+static void free_msg_type__crud( struct wrp_crud_msg *crud );
 
 
 /*----------------------------------------------------------------------------*/
@@ -92,7 +98,7 @@ char* wrp_struct_to_string( const wrp_msg_t *msg )
 ssize_t wrp_to_struct( const void *bytes, const size_t length,
                        const enum wrp_format fmt, wrp_msg_t **msg )
 {
-    ssize_t rv;
+    ssize_t rv = -1;
 
     if( NULL == bytes || length <= 0 || NULL == msg ) {
         return -1;
@@ -123,172 +129,22 @@ void wrp_free_struct( wrp_msg_t *msg )
 
     switch( msg->msg_type ) {
         case WRP_MSG_TYPE__REQ:
-            free( msg->u.req.transaction_uuid );
-            free( msg->u.req.source );
-            free( msg->u.req.dest );
-            free( msg->u.req.payload );
-
-            if( NULL != msg->u.req.content_type ) {
-                free( msg->u.req.content_type );
-            }
-
-            if( NULL != msg->u.req.accept ) {
-                free( msg->u.req.accept );
-            }
-
-            if( NULL != msg->u.req.headers ) {
-                size_t cnt;
-
-                for( cnt = 0; cnt < msg->u.req.headers->count; cnt++ ) {
-                    free( msg->u.req.headers->headers[cnt] );
-                }
-
-                free( msg->u.req.headers );
-            }
-
-            if( NULL != msg->u.req.metadata ) {
-                size_t n = 0;
-
-                while( n < msg->u.req.metadata->count ) {
-                    free( msg->u.req.metadata->data_items[n].name );
-                    free( msg->u.req.metadata->data_items[n].value );
-                    n++;
-                }
-
-                free( msg->u.req.metadata->data_items );
-                free( msg->u.req.metadata );
-            }
-
-            if( NULL != msg->u.req.partner_ids ) {
-                size_t i;
-
-                for( i = 0; i < msg->u.req.partner_ids->count; i++ ) {
-                    free( msg->u.req.partner_ids->partner_ids[i] );
-                }
-
-                free( msg->u.req.partner_ids );
-            }
-
+            free_msg_type__req( &msg->u.req );
             break;
 
         case WRP_MSG_TYPE__EVENT:
-            free( msg->u.event.source );
-            free( msg->u.event.dest );
-            free( msg->u.event.payload );
-
-            if( NULL != msg->u.event.content_type ) {
-                free( msg->u.event.content_type );
-            }
-
-            if( NULL != msg->u.event.headers ) {
-                size_t cnt;
-
-                for( cnt = 0; cnt < ( msg->u.event.headers->count ); cnt++ ) {
-                    free( msg->u.event.headers->headers[cnt] );
-                }
-
-                free( msg->u.event.headers );
-            }
-
-            if( NULL != msg->u.event.metadata ) {
-                size_t n = 0;
-
-                while( n < msg->u.event.metadata->count ) {
-                    free( msg->u.event.metadata->data_items[n].name );
-                    free( msg->u.event.metadata->data_items[n].value );
-                    n++;
-                }
-
-                free( msg->u.event.metadata->data_items );
-                free( msg->u.event.metadata );
-            }
-
-            if( NULL != msg->u.event.partner_ids ) {
-                size_t i;
-
-                for( i = 0; i < ( msg->u.event.partner_ids->count ); i++ ) {
-                    free( msg->u.event.partner_ids->partner_ids[i] );
-                }
-
-                free( msg->u.event.partner_ids );
-            }
-
+            free_msg_type__event( &msg->u.event );
             break;
 
         case WRP_MSG_TYPE__SVC_REGISTRATION:
-            WRP_DEBUG( "Free for REGISTRATION \n" );
-            free( msg->u.reg.service_name );
-            free( msg->u.reg.url );
+            free_msg_type__svc_registration( &msg->u.reg );
             break;
 
         case WRP_MSG_TYPE__CREATE:
         case WRP_MSG_TYPE__RETREIVE:
         case WRP_MSG_TYPE__UPDATE:
         case WRP_MSG_TYPE__DELETE:
-            WRP_DEBUG( "Free for CRUD \n" );
-
-            if( msg->u.crud.source ) {
-                free( msg->u.crud.source );
-            }
-
-            if( msg->u.crud.dest ) {
-                free( msg->u.crud.dest );
-            }
-
-            if( msg->u.crud.transaction_uuid != NULL ) {
-                free( msg->u.crud.transaction_uuid );
-            }
-
-            if( msg->u.crud.path != NULL ) {
-                free( msg->u.crud.path );
-            }
-
-            if( NULL != msg->u.crud.partner_ids ) {
-                size_t i;
-
-                for( i = 0; i < ( msg->u.crud.partner_ids->count ); i++ ) {
-                    free( msg->u.crud.partner_ids->partner_ids[i] );
-                }
-
-                free( msg->u.crud.partner_ids );
-            }
-
-            if( NULL != msg->u.crud.headers ) {
-                size_t cnt;
-
-                for( cnt = 0; cnt < ( msg->u.crud.headers->count ); cnt++ ) {
-                    free( msg->u.crud.headers->headers[cnt] );
-                }
-
-                free( msg->u.crud.headers );
-            }
-
-            if( NULL != msg->u.crud.content_type ) {
-                free( msg->u.crud.content_type );
-            }
-
-            if( NULL != msg->u.crud.accept ) {
-                free( msg->u.crud.accept );
-            }
-
-            if( NULL != msg->u.crud.payload ) {
-                free( msg->u.crud.payload );
-            }
-
-            if( NULL != msg->u.crud.metadata ) {
-                size_t n = 0;
-
-                while( n < msg->u.crud.metadata->count ) {
-                    free( msg->u.crud.metadata->data_items[n].name );
-                    free( msg->u.crud.metadata->data_items[n].value );
-                    n++;
-                }
-
-                free( msg->u.crud.metadata->data_items );
-                free( msg->u.crud.metadata );
-            }
-
-
+            free_msg_type__crud( &msg->u.crud );
             break;
 
         case WRP_MSG_TYPE__AUTH:
@@ -545,3 +401,85 @@ size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encoded
 
     return -1;
 }
+
+
+static void free_common_fields( headers_t *h, partners_t *p, data_t *metadata,
+                                struct money_trace_spans *spans )
+{
+    if( h ) {
+        for( size_t i = 0; i < h->count; i++ ) {
+            free( h->headers[i] );
+        }
+        free( h );
+    }
+
+    if( p ) {
+        for( size_t i = 0; i < p->count; i++ ) {
+            free( p->partner_ids[i] );
+        }
+        free( p );
+    }
+
+    if( metadata ) {
+        for( size_t i = 0; i < metadata->count; i++ ) {
+            free( metadata->data_items[i].name );
+            free( metadata->data_items[i].value );
+        }
+        free( metadata->data_items );
+        free( metadata );
+    }
+
+    if( spans ) {
+        for( size_t i = 0; i < spans->count; i++ ) {
+            free( spans->spans[i].name );
+        }
+        free( spans->spans );
+    }
+}
+
+
+static void free_msg_type__req( struct wrp_req_msg *req )
+{
+    if( req->transaction_uuid ) free( req->transaction_uuid );
+    if( req->content_type )     free( req->content_type );
+    if( req->accept )           free( req->accept );
+    if( req->source )           free( req->source );
+    if( req->dest )             free( req->dest );
+    if( req->payload )          free( req->payload );
+
+    free_common_fields( req->headers, req->partner_ids, req->metadata, &req->spans );
+}
+
+
+static void free_msg_type__event( struct wrp_event_msg *event )
+{
+    if( event->content_type )     free( event->content_type );
+    if( event->source )           free( event->source );
+    if( event->dest )             free( event->dest );
+    if( event->payload )          free( event->payload );
+
+    free_common_fields( event->headers, event->partner_ids, event->metadata, NULL );
+}
+
+
+static void free_msg_type__svc_registration( struct wrp_svc_registration_msg *reg )
+{
+    if( reg->service_name ) free( reg->service_name );
+    if( reg->url )          free( reg->url );
+}
+
+
+static void free_msg_type__crud( struct wrp_crud_msg *crud )
+{
+    if( crud->content_type )     free( crud->content_type );
+    if( crud->accept )           free( crud->accept );
+    if( crud->transaction_uuid ) free( crud->transaction_uuid );
+    if( crud->source )           free( crud->source );
+    if( crud->dest )             free( crud->dest );
+    if( crud->path )             free( crud->path );
+    if( crud->payload )          free( crud->payload );
+
+    free_common_fields( crud->headers, crud->partner_ids, crud->metadata, &crud->spans );
+}
+
+
