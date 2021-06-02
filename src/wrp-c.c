@@ -9,6 +9,7 @@
 #include <cimplog/cimplog.h>
 
 #include "b64.h"
+#include "locator.h"
 #include "msgpack.h"
 #include "string.h"
 #include "utils.h"
@@ -163,28 +164,23 @@ void wrp_free_struct( wrp_msg_t *msg )
 /* See wrp-c.h for details. */
 const char *wrp_get_msg_dest( const wrp_msg_t *wrp_msg )
 {
-    if( wrp_msg->msg_type == WRP_MSG_TYPE__REQ ) {
-        return ( const char * )wrp_msg->u.req.dest;
-    }
+    if( wrp_msg ) {
+        switch( wrp_msg->msg_type ) {
+            case WRP_MSG_TYPE__REQ:
+                return wrp_msg->u.req.dest;
 
-    if( wrp_msg->msg_type == WRP_MSG_TYPE__EVENT ) {
-        return ( const char * )wrp_msg->u.event.dest;
-    }
+            case WRP_MSG_TYPE__EVENT:
+                return wrp_msg->u.event.dest;
 
-    if( wrp_msg->msg_type == WRP_MSG_TYPE__CREATE ) {
-        return ( const char * )wrp_msg->u.crud.dest;
-    }
+            case WRP_MSG_TYPE__CREATE:
+            case WRP_MSG_TYPE__RETREIVE:
+            case WRP_MSG_TYPE__UPDATE:
+            case WRP_MSG_TYPE__DELETE:
+                return wrp_msg->u.crud.dest;
 
-    if( wrp_msg->msg_type == WRP_MSG_TYPE__RETREIVE ) {
-        return ( const char * )wrp_msg->u.crud.dest;
-    }
-
-    if( wrp_msg->msg_type == WRP_MSG_TYPE__UPDATE ) {
-        return ( const char * )wrp_msg->u.crud.dest;
-    }
-
-    if( wrp_msg->msg_type == WRP_MSG_TYPE__DELETE ) {
-        return ( const char * )wrp_msg->u.crud.dest;
+            default:
+                break;
+        }
     }
 
     return NULL;
@@ -193,28 +189,23 @@ const char *wrp_get_msg_dest( const wrp_msg_t *wrp_msg )
 /* See wrp-c.h for details. */
 const char *wrp_get_msg_source( const wrp_msg_t *wrp_msg )
 {
-    if( wrp_msg->msg_type == WRP_MSG_TYPE__REQ ) {
-        return ( const char * )wrp_msg->u.req.source;
-    }
+    if( wrp_msg ) {
+        switch( wrp_msg->msg_type ) {
+            case WRP_MSG_TYPE__REQ:
+                return wrp_msg->u.req.source;
 
-    if( wrp_msg->msg_type == WRP_MSG_TYPE__EVENT ) {
-        return ( const char * )wrp_msg->u.event.source;
-    }
+            case WRP_MSG_TYPE__EVENT:
+                return wrp_msg->u.event.source;
 
-    if( wrp_msg->msg_type == WRP_MSG_TYPE__CREATE ) {
-        return ( const char * )wrp_msg->u.crud.source;
-    }
+            case WRP_MSG_TYPE__CREATE:
+            case WRP_MSG_TYPE__RETREIVE:
+            case WRP_MSG_TYPE__UPDATE:
+            case WRP_MSG_TYPE__DELETE:
+                return wrp_msg->u.crud.source;
 
-    if( wrp_msg->msg_type == WRP_MSG_TYPE__RETREIVE ) {
-        return ( const char * )wrp_msg->u.crud.source;
-    }
-
-    if( wrp_msg->msg_type == WRP_MSG_TYPE__UPDATE ) {
-        return ( const char * )wrp_msg->u.crud.source;
-    }
-
-    if( wrp_msg->msg_type == WRP_MSG_TYPE__DELETE ) {
-        return ( const char * )wrp_msg->u.crud.source;
+            default:
+                break;
+        }
     }
 
     return NULL;
@@ -224,83 +215,39 @@ const char *wrp_get_msg_source( const wrp_msg_t *wrp_msg )
 char *wrp_get_msg_element( const enum wrp_device_id_element element,
                            const wrp_msg_t *wrp_msg, const enum wrp_token_name token )
 {
-    const char *dest;
-    const char *source;
-    const char *start = NULL, *end = NULL;
-    char *rv = NULL;
+    const char *field = NULL;
+    struct locator l;
 
     if( token == DEST ) {
-        dest = wrp_get_msg_dest( wrp_msg );
-
-        if( NULL != dest ) {
-            start = dest;
-        }
+        field = wrp_get_msg_dest( wrp_msg );
     } else if( token == SOURCE ) {
-        source = wrp_get_msg_source( wrp_msg );
+        field = wrp_get_msg_source( wrp_msg );
+    }
 
-        if( NULL != source ) {
-            start = source;
+    if( !field ) {
+        return NULL;
+    }
+
+    memset( &l, 0, sizeof(struct locator) );
+    if( 0 == string_to_locator(field, strlen(field), &l) ) {
+        switch( element ) {
+            case WRP_ID_ELEMENT__SCHEME:
+                return wrp_strndup( l.scheme.s, l.scheme.len );
+            case WRP_ID_ELEMENT__ID:
+                return wrp_strndup( l.authority.s, l.authority.len );
+            case WRP_ID_ELEMENT__SERVICE:
+                return wrp_strndup( l.service.s, l.service.len );
+            case WRP_ID_ELEMENT__APPLICATION:
+                if( l.app.s && l.app.len ) {
+                    return wrp_strndup( l.app.s, l.app.len );
+                }
+                break;
+            default:
+                break;
         }
     }
 
-    if( NULL != start ) {
-        end = strchr( start, ':' );
-
-        if( NULL != end ) {
-            if( WRP_ID_ELEMENT__SCHEME == element ) {
-                rv = strdupptr( start, end );
-            } else {
-                start = end;
-                start++;
-                end = strchr( start, '/' );
-
-                if( NULL != end ) {
-                    if( WRP_ID_ELEMENT__ID == element ) {
-                        rv = strdupptr( start, end );
-                    } else {
-                        start = end;
-                        start++;
-                        end = strchr( start, '/' );
-
-                        if( NULL != end ) {
-                            if( WRP_ID_ELEMENT__SERVICE == element ) {
-                                rv = strdupptr( start, end );
-                            } else {
-                                if( WRP_ID_ELEMENT__APPLICATION == element ) {
-                                    start = end;
-                                    start++;
-
-                                    if( 0 < strlen( start ) ) {
-                                        rv = strdup( start );
-                                    }
-                                }
-                            }
-                        } else {
-                            if( WRP_ID_ELEMENT__SERVICE == element ) {
-                                if( 0 < strlen( start ) ) {
-                                    rv = strdup( start );
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    if( WRP_ID_ELEMENT__ID == element ) {
-                        if( 0 < strlen( start ) ) {
-                            rv = strdup( start );
-                        }
-                    }
-                }
-            }
-        } else {
-            if( WRP_ID_ELEMENT__SCHEME == element ) {
-                if( 0 < strlen( start ) ) {
-                    rv = strdup( start );
-                }
-            }
-        }
-    }
-
-    return rv;
+    return NULL;
 }
 
 /* See wrp-c.h for details. */
@@ -481,5 +428,3 @@ static void free_msg_type__crud( struct wrp_crud_msg *crud )
 
     free_common_fields( crud->headers, crud->partner_ids, crud->metadata, &crud->spans );
 }
-
-
