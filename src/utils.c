@@ -101,16 +101,6 @@ char* mlvaprintf( size_t *len, const char *format, va_list args )
 }
 
 
-char* strdupptr( const char *s, const char *e )
-{
-    if( s == e ) {
-        return NULL;
-    }
-
-    return wrp_strndup( s, ((uintptr_t)e) - ((uintptr_t)s) );
-}
-
-
 char* wrp_strdup( const char *s )
 {
     return wrp_strndup( s, SIZE_MAX );

@@ -20,16 +20,6 @@ char* mlvaprintf( size_t *len, const char *format, va_list args );
 
 
 /**
- *  @brief Helper function that copies a portion of a string defined by pointers
- *
- *  @param s the start of the string to copy
- *  @param e the last character of the string to copy
- *
- *  @return the allocated buffer with the substring
- */
-char* strdupptr( const char *s, const char *e );
-
-/**
  * 'standard' but often missing functions
  */
 char* wrp_strdup( const char *s );

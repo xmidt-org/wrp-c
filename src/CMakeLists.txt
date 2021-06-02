@@ -4,6 +4,7 @@
 target_sources(wrp-c
     PRIVATE
         b64.c
+        locator.c
         msgpack.c
         string.c
         utils.c

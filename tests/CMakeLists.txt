@@ -11,6 +11,7 @@ set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-cov
 
 add_test(NAME Simple COMMAND ${MEMORY_CHECK} ./simple)
 add_executable(simple simple.c ../src/b64.c
+                               ../src/locator.c
                                ../src/msgpack.c
                                ../src/string.c
                                ../src/utils.c
@@ -24,3 +25,7 @@ target_link_libraries (simple ${TROWER_LIBRARIES}
 add_test(NAME Test_utils COMMAND ${MEMORY_CHECK} ./test_utils)
 add_executable(test_utils test_utils.c ../src/utils.c)
 target_link_libraries(test_utils ${CUNIT_LIBRARIES} gcov)
+
+add_test(NAME Test_locator COMMAND ${MEMORY_CHECK} ./test_locator)
+add_executable(test_locator test_locator.c ../src/locator.c)
+target_link_libraries(test_locator ${CUNIT_LIBRARIES} gcov)
