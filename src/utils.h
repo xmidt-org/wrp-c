@@ -22,8 +22,9 @@ char* mlvaprintf( size_t *len, const char *format, va_list args );
 /**
  * 'standard' but often missing functions
  */
+size_t wrp_strnlen( const char *s, size_t maxlen );
 char* wrp_strdup( const char *s );
-char* wrp_strndup( const char *s, size_t n );
+char* wrp_strndup( const char *s, size_t maxlen );
 
 /**
  *  Appends 'src' to dest and includes the trailing '\0'.
