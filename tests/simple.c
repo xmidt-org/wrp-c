@@ -985,7 +985,7 @@ void test_encode_decode()
     CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
     CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg.u.req.content_type );
     CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg.u.req.transaction_uuid );
-    CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg.u.req.payload );
+    CU_ASSERT_NSTRING_EQUAL( message->u.req.payload, msg.u.req.payload, message->u.req.payload_size );
 
     if( NULL != msg.u.req.headers ) {
         size_t n = 0;
@@ -1038,7 +1038,7 @@ void test_encode_decode()
     CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
     CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg.u.req.content_type );
     CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg.u.req.transaction_uuid );
-    CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg.u.req.payload );
+    CU_ASSERT_NSTRING_EQUAL( message->u.req.payload, msg.u.req.payload, message->u.req.payload_size );
     WRP_DEBUG("decoded msgType:%d\n", message->msg_type );
     WRP_DEBUG("decoded source:%s\n", message->u.req.source );
     WRP_DEBUG("decoded dest:%s\n", message->u.req.dest );
@@ -1064,7 +1064,7 @@ void test_encode_decode()
         CU_ASSERT_STRING_EQUAL( message->u.event.source, event_msg->u.event.source );
         CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
         CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
-        CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
+        CU_ASSERT_NSTRING_EQUAL( message->u.event.payload, event_msg->u.event.payload, message->u.event.payload_size );
 
         if( NULL != event_msg->u.event.headers ) {
             size_t n = 0;
@@ -1111,7 +1111,7 @@ void test_encode_decode()
         CU_ASSERT_STRING_EQUAL( message->u.event.source, event_msg->u.event.source );
         CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
         CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
-        CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
+        CU_ASSERT_NSTRING_EQUAL( message->u.event.payload, event_msg->u.event.payload, message->u.event.payload_size );
 
         if( NULL != event_msg->u.event.headers ) {
             size_t n = 0;
@@ -1147,7 +1147,7 @@ void test_encode_decode()
     CU_ASSERT_STRING_EQUAL( message->u.req.source, msg2.u.req.source );
     CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg2.u.req.dest );
     CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg2.u.req.transaction_uuid );
-    CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg2.u.req.payload );
+    CU_ASSERT_NSTRING_EQUAL( message->u.req.payload, msg2.u.req.payload, message->u.req.payload_size );
 
     if( NULL != message->u.req.headers ) {
         size_t n = 0;
@@ -1385,7 +1385,7 @@ void test_crud_message()
     
      if( message->u.crud.payload != NULL ) 
      {
-        CU_ASSERT_STRING_EQUAL( retreive.u.crud.payload, message->u.crud.payload);
+        CU_ASSERT_NSTRING_EQUAL( retreive.u.crud.payload, message->u.crud.payload, retreive.u.crud.payload_size);
         WRP_INFO("Crud payload : %s\n",message->u.crud.payload);
      }
     if( message->u.crud.metadata != NULL ) {
@@ -1520,7 +1520,7 @@ void test_crud_message()
     CU_ASSERT_STRING_EQUAL( message->u.crud.path, delete.u.crud.path );
     if( message->u.crud.payload != NULL ) 
     {
-        CU_ASSERT_STRING_EQUAL( delete.u.crud.payload, message->u.crud.payload);
+        CU_ASSERT_NSTRING_EQUAL( delete.u.crud.payload, message->u.crud.payload, delete.u.crud.payload_size);
         WRP_INFO("Crud payload : %s\n",message->u.crud.payload);
     }
     if( message->u.crud.metadata != NULL ) {
@@ -1700,7 +1700,7 @@ void test_crud_message()
         CU_ASSERT_EQUAL( message->msg_type, eventMsg.msg_type );
         CU_ASSERT_STRING_EQUAL( message->u.event.source, eventMsg.u.event.source );
         CU_ASSERT_STRING_EQUAL( message->u.event.dest, eventMsg.u.event.dest );
-        CU_ASSERT_STRING_EQUAL( message->u.event.payload, eventMsg.u.event.payload );
+        CU_ASSERT_NSTRING_EQUAL( message->u.event.payload, eventMsg.u.event.payload, message->u.event.payload_size );
         CU_ASSERT_EQUAL( message->u.event.payload_size, eventMsg.u.event.payload_size );
         WRP_DEBUG("decoded event source:%s\n", message->u.event.source );
         WRP_DEBUG("decoded event dest:%s\n", message->u.event.dest );
@@ -1721,7 +1721,7 @@ void test_crud_message()
                     CU_ASSERT_EQUAL( message->msg_type, eventMsg.msg_type );
                     CU_ASSERT_STRING_EQUAL( message->u.event.source, finalMsg->u.event.source );
                     CU_ASSERT_STRING_EQUAL( message->u.event.dest, finalMsg->u.event.dest );
-                    CU_ASSERT_STRING_EQUAL( message->u.event.payload, finalMsg->u.event.payload );
+                    CU_ASSERT_NSTRING_EQUAL( message->u.event.payload, finalMsg->u.event.payload, message->u.event.payload_size );
                     CU_ASSERT_EQUAL( message->u.event.payload_size, finalMsg->u.event.payload_size );
                     if( message->u.event.metadata != NULL ) 
                     {
