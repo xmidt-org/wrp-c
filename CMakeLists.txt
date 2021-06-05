@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
-project(wrp-c VERSION 1.1.1)
+project(wrp-c VERSION 1.1.3)
 
 include(BitwiseVersion)
 include(Coverage)
