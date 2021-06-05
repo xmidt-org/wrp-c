@@ -44,6 +44,7 @@ static void free_msg_type__req( struct wrp_req_msg *req );
 static void free_msg_type__event( struct wrp_event_msg *event );
 static void free_msg_type__svc_registration( struct wrp_svc_registration_msg *reg );
 static void free_msg_type__crud( struct wrp_crud_msg *crud );
+static int validate( const wrp_msg_t *msg );
 
 
 /*----------------------------------------------------------------------------*/
@@ -57,6 +58,11 @@ ssize_t wrp_struct_to( const wrp_msg_t *msg, const enum wrp_format fmt, void **b
     ssize_t rv;
 
     if( NULL == msg || NULL == bytes ) {
+        return -1;
+    }
+
+    if( 0 != validate(msg) ) {
+        *bytes = NULL;
         return -1;
     }
 
@@ -355,30 +361,42 @@ static void free_common_fields( headers_t *h, partners_t *p, data_t *metadata,
 {
     if( h ) {
         for( size_t i = 0; i < h->count; i++ ) {
-            free( h->headers[i] );
+            if( h->headers[i] ) {
+                free( h->headers[i] );
+            }
         }
         free( h );
     }
 
     if( p ) {
         for( size_t i = 0; i < p->count; i++ ) {
-            free( p->partner_ids[i] );
+            if( p->partner_ids[i] ) {
+                free( p->partner_ids[i] );
+            }
         }
         free( p );
     }
 
     if( metadata ) {
-        for( size_t i = 0; i < metadata->count; i++ ) {
-            free( metadata->data_items[i].name );
-            free( metadata->data_items[i].value );
+        if( metadata->data_items ) {
+            for( size_t i = 0; i < metadata->count; i++ ) {
+                if( metadata->data_items[i].name ) {
+                    free( metadata->data_items[i].name );
+                }
+                if( metadata->data_items[i].value ) {
+                    free( metadata->data_items[i].value );
+                }
+            }
+            free( metadata->data_items );
         }
-        free( metadata->data_items );
         free( metadata );
     }
 
     if( spans ) {
         for( size_t i = 0; i < spans->count; i++ ) {
-            free( spans->spans[i].name );
+            if( spans->spans[i].name ) {
+                free( spans->spans[i].name );
+            }
         }
         free( spans->spans );
     }
@@ -427,4 +445,50 @@ static void free_msg_type__crud( struct wrp_crud_msg *crud )
     if( crud->payload )          free( crud->payload );
 
     free_common_fields( crud->headers, crud->partner_ids, crud->metadata, &crud->spans );
+}
+
+
+static int validate( const wrp_msg_t *msg )
+{
+    int rv = 0;
+
+    if( !msg ) {
+        return -1;
+    }
+
+    switch( msg->msg_type ) {
+        case WRP_MSG_TYPE__AUTH:
+        case WRP_MSG_TYPE__SVC_ALIVE:
+            break;
+
+        case WRP_MSG_TYPE__REQ:
+            rv |= (NULL == msg->u.req.transaction_uuid) ? -1 : 0;
+            rv |= (NULL == msg->u.req.source) ? -1 : 0;
+            rv |= (NULL == msg->u.req.dest) ? -1 : 0;
+            break;
+
+        case WRP_MSG_TYPE__EVENT:
+            rv |= (NULL == msg->u.event.source) ? -1 : 0;
+            rv |= (NULL == msg->u.event.dest) ? -1 : 0;
+            break;
+
+        case WRP_MSG_TYPE__CREATE:
+        case WRP_MSG_TYPE__RETREIVE:
+        case WRP_MSG_TYPE__UPDATE:
+        case WRP_MSG_TYPE__DELETE:
+            rv |= (NULL == msg->u.crud.transaction_uuid) ? -1 : 0;
+            rv |= (NULL == msg->u.crud.source) ? -1 : 0;
+            rv |= (NULL == msg->u.crud.dest) ? -1 : 0;
+            break;
+
+        case WRP_MSG_TYPE__SVC_REGISTRATION:
+            rv |= (NULL == msg->u.reg.service_name) ? -1 : 0;
+            rv |= (NULL == msg->u.reg.url) ? -1 : 0;
+            break;
+
+        default:
+            return -1;
+    }
+
+    return rv;
 }
