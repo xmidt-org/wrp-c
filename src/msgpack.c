@@ -796,18 +796,22 @@ static int dec_map_all_possible( const msgpack_object *obj, struct all_fields *a
 }
 
 
-static int dec_trans_auth( struct all_fields *all, wrp_msg_t *p )
+static int dec_trans_auth( const struct all_fields *all, wrp_msg_t *p )
 {
     if( !all->status ) {
         return -1;
     }
 
-    p->u.auth.status = *all->status;
+    if( all->status && (INT_MAX < *all->status) ) {
+        return -1;
+    }
+
+    p->u.auth.status = (int) *all->status;
     return 0;
 }
 
 
-static int dec_trans_req( struct all_fields *all, wrp_msg_t *p )
+static int dec_trans_req( const struct all_fields *all, wrp_msg_t *p )
 {
     struct wrp_req_msg *r = &p->u.req;
 
@@ -835,7 +839,7 @@ static int dec_trans_req( struct all_fields *all, wrp_msg_t *p )
 }
 
 
-static int dec_trans_event( struct all_fields *all, wrp_msg_t *p )
+static int dec_trans_event( const struct all_fields *all, wrp_msg_t *p )
 {
     struct wrp_event_msg *e = &p->u.event;
 
@@ -858,7 +862,7 @@ static int dec_trans_event( struct all_fields *all, wrp_msg_t *p )
 }
 
 
-static int dec_trans_crud( struct all_fields *all, wrp_msg_t *p )
+static int dec_trans_crud( const struct all_fields *all, wrp_msg_t *p )
 {
     struct wrp_crud_msg *c = &p->u.crud;
 
@@ -866,9 +870,16 @@ static int dec_trans_crud( struct all_fields *all, wrp_msg_t *p )
         return -1;
     }
 
+    if( all->status && (INT_MAX < *all->status) ) {
+        return -1;
+    }
+    if( all->rdr && (INT_MAX < *all->rdr) ) {
+        return -1;
+    }
+
     c->include_spans = (all->include_spans) ? *all->include_spans : 0;
-    c->status = (all->status) ? *all->status : 0;
-    c->rdr = (all->rdr) ? *all->rdr : 0;
+    c->status = (all->status) ? (int) *all->status : 0;
+    c->rdr = (all->rdr) ? (int) *all->rdr : 0;
 
     if(    (0 == mp_strdup(all->uuid, &c->transaction_uuid))
         && (0 == mp_strdup(all->content_type, &c->content_type))
@@ -889,7 +900,7 @@ static int dec_trans_crud( struct all_fields *all, wrp_msg_t *p )
 }
 
 
-static int dec_trans_reg( struct all_fields *all, wrp_msg_t *p )
+static int dec_trans_reg( const struct all_fields *all, wrp_msg_t *p )
 {
     struct wrp_svc_registration_msg *r = &p->u.reg;
 
