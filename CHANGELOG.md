@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+- [Issue #105](https://github.com/xmidt-org/wrp-c/issues/105) where memory bounds are not respected
+
+
 ## [v1.1.2] - 2021-05-07
 - Improve the cmake files so they are easier to share
 - Add a `wrp-c_ver.h` file to help with versioning.
