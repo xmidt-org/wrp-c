@@ -107,20 +107,27 @@ char* wrp_strdup( const char *s )
 }
 
 
-char* wrp_strndup( const char *s, size_t n )
+size_t wrp_strnlen( const char *s, size_t maxlen )
+{
+    for( size_t i = 0; i < maxlen; i++ ) {
+        if( '\0' == s[i] ) {
+            return i;
+        }
+    }
+
+    return maxlen;
+}
+
+
+char* wrp_strndup( const char *s, size_t maxlen )
 {
     char *rv = NULL;
 
-    if( (NULL != s) && (0 < n) ) {
-        size_t len;
-
-        len = strlen( s );
-        if( n < len ) {
-            len = n;
-        }
+    if( s && (0 < maxlen) ) {
+        size_t len = wrp_strnlen( s, maxlen );
 
         rv = malloc( len + 1 ); /* +1 for trailing '\0' */
-        if (rv) {
+        if( rv ) {
             memcpy( rv, s, len );
             rv[len] = '\0';
         }
