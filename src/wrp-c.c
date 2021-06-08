@@ -392,7 +392,7 @@ static void free_common_fields( headers_t *h, partners_t *p, data_t *metadata,
         free( metadata );
     }
 
-    if( spans ) {
+    if( spans && spans->spans ) {
         for( size_t i = 0; i < spans->count; i++ ) {
             if( spans->spans[i].name ) {
                 free( spans->spans[i].name );
