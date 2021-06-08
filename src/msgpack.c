@@ -205,7 +205,7 @@ static void enc_payload( msgpack_packer *pk, const void *payload, size_t len )
 
 static void enc_spans( msgpack_packer *pk, const struct money_trace_spans *spans )
 {
-    if( spans && (0 < spans->count) ) {
+    if( spans && spans->spans && (0 < spans->count) ) {
         const struct money_trace_span *span = spans->spans;
 
         enc_nstring( pk, WRP_SPANS.name, WRP_SPANS.length );
