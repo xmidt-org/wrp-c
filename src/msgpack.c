@@ -616,7 +616,6 @@ static int dec_bools( const msgpack_object_kv *p, struct all_fields *all )
 
 static int dec_int( const msgpack_object_kv *p, struct all_fields *all )
 {
-    /* TODO: Figure out i64 vs u64 ... */
     struct list {
         const struct wrp_token *token;
         const int64_t **dest;
@@ -629,6 +628,12 @@ static int dec_int( const msgpack_object_kv *p, struct all_fields *all )
     for( size_t i = 0; i < sizeof(mapping) / sizeof(struct list); i++ ) {
         if( is_key(&p->key, mapping[i].token) ) {
             if( NULL != *mapping[i].dest ) {
+                return -1;
+            }
+
+            if( p->val.type == MSGPACK_OBJECT_POSITIVE_INTEGER &&
+                (INT64_MAX < p->val.via.u64) )
+            {
                 return -1;
             }
 
@@ -918,7 +923,7 @@ static int dec_trans_reg( const struct all_fields *all, wrp_msg_t *p )
 }
 
 
-static int dec_translate( struct all_fields *all, wrp_msg_t *p )
+static int dec_translate( const struct all_fields *all, wrp_msg_t *p )
 {
     if( !all->msg_type ) {
         return -1;
