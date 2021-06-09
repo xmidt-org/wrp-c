@@ -250,6 +250,46 @@ void test_00()  /* Simple boudary tests */
 /*----------------------------------------------------------------------------*/
 /*                                Event Tests                                 */
 /*----------------------------------------------------------------------------*/
+void test_auth_00()
+{
+    const char bytes[] = "\x81"                                            // map, size 1
+                         "\xa8""msg_type" "\x02";                          // msg_type: 2
+    ssize_t len = sizeof(bytes) - 1;
+    wrp_msg_t *msg = NULL;
+
+    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+}
+
+
+void test_auth_01()
+{
+    const char bytes[] = "\x82"                                            // map, size 2
+                         "\xa8""msg_type" "\x02"                           // msg_type: 2
+                         "\xa6""status"   "\xcf\x00\xff\xff\xff\xff\xff\xff\xff"; // Larger than int
+    ssize_t len = sizeof(bytes) - 1;
+    wrp_msg_t *msg = NULL;
+
+    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+}
+
+void test_auth_02()
+{
+    const char bytes[] = "\x82"                                            // map, size 2
+                         "\xa8""msg_type" "\x02"                           // msg_type: 2
+                         "\xa6""status"   "\xcc\xff";   // 255
+    ssize_t bytes_len = sizeof(bytes) - 1;
+
+    const wrp_msg_t s = { .msg_type = WRP_MSG_TYPE__AUTH,
+                          .u.auth.status = 255,
+                        };
+
+    run_test_to_struct( bytes, bytes_len, &s );
+    run_test_to_bytes( bytes, bytes_len, &s );
+}
+
+
+
+
 
 void test_event_00()
 {
@@ -372,25 +412,27 @@ void test_req_01()    // check bool values in metadata
                          "\xa8""msg_type"         "\x03"                   // msg_type: 3
                          "\xa6""source"           "\xb8""mac:112233445566/example"
                          "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xa8""metadata"         "\x85"
+                         "\xa8""metadata"         "\x86"
                              "\xa3""foo"          "\xc3"                   // true
                              "\xa3""bar"          "\xc2"                   // false
                              "\xa3""num"          "\xd3\x00\x00\x00\x00\x00\x00\x00\x0c" // 12
                              "\xa3""big"          "\xcf\x00\x00\x00\x00\x00\x00\x00\x0c" // 12
                              "\xa3""neg"          "\xd3\xff\xff\xff\xff\xff\xff\xff\xf4" // -12
+                             "\xa3""nil"          "\xc0"
                          "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
                          "\xad""include_spans"    "\xc3"
                          "\xa7""payload"          "\xc4""\x00";            // empty payload
     ssize_t bytes_len = sizeof(bytes) - 1;
 
-    struct data d[5] = {
+    struct data d[6] = {
         { .name = "foo", .value = "true" },
         { .name = "bar", .value = "false" },
         { .name = "num", .value = "12" },
         { .name = "big", .value = "12" },
         { .name = "neg", .value = "-12" },
+        { .name = "nil", .value = NULL },
     };
-    data_t metadata = { .count = 5, .data_items = d };
+    data_t metadata = { .count = 6, .data_items = d };
     wrp_msg_t s = { .msg_type = WRP_MSG_TYPE__REQ,
                           .u.req.transaction_uuid = "f8013ad2-438a-46dd-8b62-45a3e1f95561",
                           .u.req.source = "mac:112233445566/example",
@@ -494,9 +536,189 @@ void test_req_05()    // check duplicate fields
 }
 
 
+void test_req_06()    // check invalid metadata
+{
+    const char bytes[] = "\x86"                                            // map, size 6
+                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
+                         "\xa6""source"           "\xb8""mac:112233445566/example"
+                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                         "\xa8""metadata"         "\x81"
+                             "\xc3"               "\xa3""foo"              // bool key
+                         "\xa7""payload"          "\xc4\x00";              // empty payload
+    ssize_t len = sizeof(bytes) - 1;
+    wrp_msg_t *msg = NULL;
+
+    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+}
+
+
+void test_req_07()    // check duplicate metadata
+{
+    const char bytes[] = "\x87"                                            // map, size 6
+                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
+                         "\xa6""source"           "\xb8""mac:112233445566/example"
+                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                         "\xa8""metadata"         "\x80"
+                         "\xa8""metadata"         "\x80"
+                         "\xa7""payload"          "\xc4\x00";              // empty payload
+    ssize_t len = sizeof(bytes) - 1;
+    wrp_msg_t *msg = NULL;
+
+    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+}
+
+
+void test_req_08()    // check duplicate headers
+{
+    const char bytes[] = "\x87"                                            // map, size 6
+                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
+                         "\xa6""source"           "\xb8""mac:112233445566/example"
+                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                         "\xa7""headers"          "\x90"
+                         "\xa7""headers"          "\x90"
+                         "\xa7""payload"          "\xc4\x00";              // empty payload
+    ssize_t len = sizeof(bytes) - 1;
+    wrp_msg_t *msg = NULL;
+
+    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+}
+
+
+void test_req_09()    // check headers are all strings
+{
+    const char bytes[] = "\x86"                                            // map, size 6
+                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
+                         "\xa6""source"           "\xb8""mac:112233445566/example"
+                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                         "\xa7""headers"          "\x91"
+                            "\xc3"
+                         "\xa7""payload"          "\xc4\x00";              // empty payload
+    ssize_t len = sizeof(bytes) - 1;
+    wrp_msg_t *msg = NULL;
+
+    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+}
+
+
+void test_req_10()    // check duplicate payload
+{
+    const char bytes[] = "\x87"                                            // map, size 6
+                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
+                         "\xa6""source"           "\xb8""mac:112233445566/example"
+                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                         "\xa8""metadata"         "\x80"
+                         "\xa7""payload"          "\xc4\x00"
+                         "\xa7""payload"          "\xc4\x00";              // empty payload
+    ssize_t len = sizeof(bytes) - 1;
+    wrp_msg_t *msg = NULL;
+
+    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+}
+
+
+void test_req_11()    // check duplicate msg_type
+{
+    const char bytes[] = "\x87"                                            // map, size 6
+                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
+                         "\xa8""msg_type"         "\x03"
+                         "\xa6""source"           "\xb8""mac:112233445566/example"
+                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                         "\xa8""metadata"         "\x80"
+                         "\xa7""payload"          "\xc4\x00";              // empty payload
+    ssize_t len = sizeof(bytes) - 1;
+    wrp_msg_t *msg = NULL;
+
+    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+}
+
+
+void test_req_12()    // check for a really large msg_type
+{
+    const char bytes[] = "\x86"                                            // map, size 6
+                         "\xa8""msg_type"         "\xcf\xff\xff\xff\xff\xff\xff\xff\xff"
+                         "\xa6""source"           "\xb8""mac:112233445566/example"
+                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                         "\xa8""metadata"         "\x80"
+                         "\xa7""payload"          "\xc4\x00";              // empty payload
+    ssize_t len = sizeof(bytes) - 1;
+    wrp_msg_t *msg = NULL;
+
+    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+}
+
+
+void test_req_13()    // check that invalid types in the metadata are handled
+{
+    const char bytes[] = "\x87"                                            // map, size 8
+                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
+                         "\xa6""source"           "\xb8""mac:112233445566/example"
+                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                         "\xa8""metadata"         "\x86"
+                             "\xa3""foo"          "\xc3"                   // true
+                             "\xa3""bar"          "\xc2"                   // false
+                             "\xa3""num"          "\xd3\x00\x00\x00\x00\x00\x00\x00\x0c" // 12
+                             "\xa3""big"          "\xcf\x00\x00\x00\x00\x00\x00\x00\x0c" // 12
+                             "\xa3""neg"          "\xd3\xff\xff\xff\xff\xff\xff\xff\xf4" // -12
+                             "\xa3""bin"          "\xc4\x00"
+                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                         "\xad""include_spans"    "\xc3"
+                         "\xa7""payload"          "\xc4""\x00";            // empty payload
+    ssize_t len = sizeof(bytes) - 1;
+    wrp_msg_t *msg = NULL;
+
+    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+}
+
+
+
+void test_crud_00()    // check negative status
+{
+    const char bytes[] = "\x87"                                            // map, size 6
+                         "\xa8""msg_type"         "\x05"                   // msg_type: 5
+                         "\xa6""status"           "\xd0\xff"
+                         "\xa6""source"           "\xb8""mac:112233445566/example"
+                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                         "\xa4""path"             "\xa4""/foo"
+                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                         "\xa7""payload"          "\xc4\x00";              // empty payload
+    ssize_t bytes_len = sizeof(bytes) - 1;
+
+    wrp_msg_t s = { .msg_type = WRP_MSG_TYPE__CREATE,
+                          .u.crud.transaction_uuid = "f8013ad2-438a-46dd-8b62-45a3e1f95561",
+                          .u.crud.source = "mac:112233445566/example",
+                          .u.crud.dest = "dns:identifier/ignored",
+                          .u.crud.path = "/foo",
+                          .u.crud.payload = NULL,
+                          .u.crud.payload_size = 0,
+                          .u.crud.metadata = NULL,
+                          .u.crud.headers = NULL,
+                          .u.crud.partner_ids = NULL,
+                          .u.crud.content_type = NULL,
+                          .u.crud.include_spans = false,
+                          .u.crud.status = -1,
+                        };
+
+    run_test_to_struct( bytes, bytes_len, &s );
+}
+
+
+
+
+
+
 void add_suites( CU_pSuite *suite )
 {
     *suite = CU_add_suite( "utils.c tests", NULL, NULL );
+    CU_add_test( *suite, "auth 00", test_auth_00 );
+    CU_add_test( *suite, "auth 01", test_auth_01 );
+    CU_add_test( *suite, "auth 02", test_auth_02 );
     CU_add_test( *suite, "test 00", test_00 );
     CU_add_test( *suite, "event 00", test_event_00 );
     CU_add_test( *suite, "event 01", test_event_01 );
@@ -508,6 +730,15 @@ void add_suites( CU_pSuite *suite )
     CU_add_test( *suite, "req 03", test_req_03 );
     CU_add_test( *suite, "req 04", test_req_04 );
     CU_add_test( *suite, "req 05", test_req_05 );
+    CU_add_test( *suite, "req 06", test_req_06 );
+    CU_add_test( *suite, "req 07", test_req_07 );
+    CU_add_test( *suite, "req 08", test_req_08 );
+    CU_add_test( *suite, "req 09", test_req_09 );
+    CU_add_test( *suite, "req 10", test_req_10 );
+    CU_add_test( *suite, "req 11", test_req_11 );
+    CU_add_test( *suite, "req 12", test_req_12 );
+    CU_add_test( *suite, "req 13", test_req_13 );
+    CU_add_test( *suite, "crud 00", test_crud_00 );
 }
 
 

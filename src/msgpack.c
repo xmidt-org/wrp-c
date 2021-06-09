@@ -544,6 +544,7 @@ static int mp_metadata_dup( const msgpack_object_map *m, data_t **out )
     *out = p;
     for( size_t i = 0; i < p->count; i++ ) {
         struct data *d = &p->data_items[i];
+        bool null_check = true;
 
         /* copy the key */
         if( mp_strdup(&m->ptr[i].key.via.str, &d->name) ) {
@@ -572,11 +573,16 @@ static int mp_metadata_dup( const msgpack_object_map *m, data_t **out )
                                         (size_t) m->ptr[i].val.via.str.size );
                 break;
 
+            case MSGPACK_OBJECT_NIL:
+                d->value = NULL;
+                null_check = false;
+                break;
+
             default:
                 return -2;
         }
 
-        if( !d->value ) {
+        if( null_check && !d->value ) {
             return -1;
         }
     }
@@ -601,12 +607,12 @@ static int mp_spans_dup( const msgpack_object_array *a, struct money_trace_spans
 
 static int dec_bools( const msgpack_object_kv *p, struct all_fields *all )
 {
-    if( is_key(&p->key, &WRP_INCLUDE_SPANS) ) {
-        if( NULL == all->include_spans ) {
-            all->include_spans = &p->val.via.boolean;
-            return 0;
-        }
-    } else {
+    if( !is_key(&p->key, &WRP_INCLUDE_SPANS) ) {
+        return 0;
+    }
+
+    if( NULL == all->include_spans ) {
+        all->include_spans = &p->val.via.boolean;
         return 0;
     }
 
@@ -713,19 +719,19 @@ static int dec_array( const msgpack_object_kv *p, struct all_fields *all )
 
 static int dec_map( const msgpack_object_kv *p, struct all_fields *all )
 {
-    if( is_key(&p->key, &WRP_METADATA) ) {
-        if( NULL == all->metadata ) {
-            /* Validate the keys are all strings. */
-            for( uint32_t i = 0; i < p->val.via.map.size; i++ ) {
-                if( MSGPACK_OBJECT_STR != p->val.via.map.ptr[i].key.type ) {
-                    return -1;
-                }
-            }
+    if( !is_key(&p->key, &WRP_METADATA) ) {
+        return 0;
+    }
 
-            all->metadata = &p->val.via.map;
-            return 0;
+    if( NULL == all->metadata ) {
+        /* Validate the keys are all strings. */
+        for( uint32_t i = 0; i < p->val.via.map.size; i++ ) {
+            if( MSGPACK_OBJECT_STR != p->val.via.map.ptr[i].key.type ) {
+                return -1;
+            }
         }
-    } else {
+
+        all->metadata = &p->val.via.map;
         return 0;
     }
 
@@ -735,12 +741,12 @@ static int dec_map( const msgpack_object_kv *p, struct all_fields *all )
 
 static int dec_bin( const msgpack_object_kv *p, struct all_fields *all )
 {
-    if( is_key(&p->key, &WRP_PAYLOAD) ) {
-        if( NULL == all->payload ) {
-            all->payload = &p->val.via.bin;
-            return 0;
-        }
-    } else {
+    if( !is_key(&p->key, &WRP_PAYLOAD) ) {
+        return 0;
+    }
+
+    if( NULL == all->payload ) {
+        all->payload = &p->val.via.bin;
         return 0;
     }
 
@@ -803,11 +809,7 @@ static int dec_map_all_possible( const msgpack_object *obj, struct all_fields *a
 
 static int dec_trans_auth( const struct all_fields *all, wrp_msg_t *p )
 {
-    if( !all->status ) {
-        return -1;
-    }
-
-    if( all->status && (INT_MAX < *all->status) ) {
+    if( !all->status || (INT_MAX < *all->status) ) {
         return -1;
     }
 
