@@ -235,6 +235,11 @@ void run_test_to_struct( const char *bytes, ssize_t len, const wrp_msg_t *s )
 }
 
 
+/*----------------------------------------------------------------------------*/
+/*                                    Tests                                   */
+/*----------------------------------------------------------------------------*/
+
+
 void test_00()  /* Simple boudary tests */
 {
     const wrp_msg_t in = { .msg_type = (enum wrp_msg_type) 900 };
@@ -247,58 +252,116 @@ void test_00()  /* Simple boudary tests */
     CU_ASSERT( NULL == out );
 }
 
-/*----------------------------------------------------------------------------*/
-/*                                Event Tests                                 */
-/*----------------------------------------------------------------------------*/
+
+void test_01()
+{
+    const char b[] = "\x82"
+                     "\xa8""msg_type" "\xcc\xff"
+                     "\xa6""status"   "\xcc\xff";
+    ssize_t b_len = sizeof(b) - 1;
+    wrp_msg_t *msg = NULL;
+
+    /* Error: Invalid msg_type */
+    CU_ASSERT( -1 == wrp_to_struct(b, b_len, WRP_BYTES, &msg) );
+}
+
+
+void test_02()
+{
+    const char b[] = "\x80";
+    ssize_t b_len = sizeof(b) - 1;
+    wrp_msg_t *msg = NULL;
+
+    /* Error: 0 length map */
+    CU_ASSERT( -1 == wrp_to_struct(b, b_len, WRP_BYTES, &msg) );
+}
+
+
+void test_03()
+{
+    const char b[] = "\xc0";
+    ssize_t b_len = sizeof(b) - 1;
+    wrp_msg_t *msg = NULL;
+
+    /* Error: a non-map */
+    CU_ASSERT( -1 == wrp_to_struct(b, b_len, WRP_BYTES, &msg) );
+}
+
+
+/*---------------------------------Auth Tests---------------------------------*/
+
+
 void test_auth_00()
 {
-    const char bytes[] = "\x81"                                            // map, size 1
-                         "\xa8""msg_type" "\x02";                          // msg_type: 2
-    ssize_t len = sizeof(bytes) - 1;
-    wrp_msg_t *msg = NULL;
-
-    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
-}
-
-
-void test_auth_01()
-{
-    const char bytes[] = "\x82"                                            // map, size 2
-                         "\xa8""msg_type" "\x02"                           // msg_type: 2
-                         "\xa6""status"   "\xcf\x00\xff\xff\xff\xff\xff\xff\xff"; // Larger than int
-    ssize_t len = sizeof(bytes) - 1;
-    wrp_msg_t *msg = NULL;
-
-    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
-}
-
-void test_auth_02()
-{
-    const char bytes[] = "\x82"                                            // map, size 2
-                         "\xa8""msg_type" "\x02"                           // msg_type: 2
-                         "\xa6""status"   "\xcc\xff";   // 255
-    ssize_t bytes_len = sizeof(bytes) - 1;
+    const char b[] = "\x82"
+                     "\xa8""msg_type" "\x02"
+                     "\xa6""status"   "\xcc\xff";
+    ssize_t b_len = sizeof(b) - 1;
 
     const wrp_msg_t s = { .msg_type = WRP_MSG_TYPE__AUTH,
                           .u.auth.status = 255,
                         };
 
-    run_test_to_struct( bytes, bytes_len, &s );
-    run_test_to_bytes( bytes, bytes_len, &s );
+    /* Success */
+    run_test_to_struct( b, b_len, &s );
+    run_test_to_bytes( b, b_len, &s );
 }
 
 
+void test_auth_01()
+{
+    const char b[] = "\x81"
+                     "\xa8""msg_type" "\x02";
+    ssize_t b_len = sizeof(b) - 1;
+    wrp_msg_t *msg = NULL;
 
+    /* Error: missing status */
+    CU_ASSERT( -1 == wrp_to_struct(b, b_len, WRP_BYTES, &msg) );
+}
+
+
+void test_auth_02()
+{
+    const char b[] = "\x82"
+                     "\xa8""msg_type" "\x02"
+                                      /* larger than MAX_INT number */
+                     "\xa6""status"   "\xcf\x00\xff\xff\xff\xff\xff\xff\xff";
+    ssize_t b_len = sizeof(b) - 1;
+    wrp_msg_t *msg = NULL;
+
+    /* Error: status is larger than an int */
+    CU_ASSERT( -1 == wrp_to_struct(b, b_len, WRP_BYTES, &msg) );
+}
+
+
+/*----------------------------Service Alive Tests-----------------------------*/
+
+
+void test_svc_00()
+{
+    const char b[] = "\x81"
+                     "\xa8""msg_type" "\x0a";
+    ssize_t b_len = sizeof(b) - 1;
+
+    const wrp_msg_t s = { .msg_type = WRP_MSG_TYPE__SVC_ALIVE };
+
+    /* Success */
+    run_test_to_struct( b, b_len, &s );
+    run_test_to_bytes( b, b_len, &s );
+}
+
+
+/*--------------------------------Event Tests---------------------------------*/
 
 
 void test_event_00()
 {
-    const char bytes[] = "\x84"                                            // map, size 4
-                         "\xa8""msg_type" "\x04"                           // msg_type: 4
-                         "\xa6""source"   "\xb8""mac:112233445566/example"
-                         "\xa4""dest"     "\xb8""event:identifier/ignored"
-                         "\xa7""payload"  "\xc4""\x00";                    // empty payload
-    ssize_t bytes_len = sizeof(bytes) - 1;
+    const char b[] = "\x84"
+                     "\xa8""msg_type" "\x04"
+                     "\xa6""source"   "\xb8""mac:112233445566/example"
+                     "\xa4""dest"     "\xb8""event:identifier/ignored"
+                     "\xa7""payload"  "\xc4""\x00";
+    ssize_t b_len = sizeof(b) - 1;
 
     const wrp_msg_t s = { .msg_type = WRP_MSG_TYPE__EVENT,
                           .u.event.source = "mac:112233445566/example",
@@ -311,23 +374,27 @@ void test_event_00()
                           .u.event.content_type = NULL,
                         };
 
-    run_test_to_struct( bytes, bytes_len, &s );
-    run_test_to_bytes( bytes, bytes_len, &s );
+    /* Success */
+    run_test_to_struct( b, b_len, &s );
+    run_test_to_bytes( b, b_len, &s );
 }
 
-void test_event_01()    // alternate form of payload
+
+void test_event_01()
 {
-    const char bytes[] = "\x84"                                            // map, size 4
-                         "\xa8""msg_type" "\x04"                           // msg_type: 4
-                         "\xa6""source"   "\xb8""mac:112233445566/example"
-                         "\xa4""dest"     "\xb8""event:identifier/ignored"
-                         "\xa7""payload"  "\xc4""\x00";                    // empty payload
-    ssize_t bytes_len = sizeof(bytes) - 1;
+    const char b[] = "\x84"
+                     "\xa8""msg_type" "\x04"
+                     "\xa6""source"   "\xb8""mac:112233445566/example"
+                     "\xa4""dest"     "\xb8""event:identifier/ignored"
+                     "\xa7""payload"  "\xc4""\x00";
+    ssize_t b_len = sizeof(b) - 1;
 
     const wrp_msg_t s = { .msg_type = WRP_MSG_TYPE__EVENT,
                           .u.event.source = "mac:112233445566/example",
                           .u.event.dest = "event:identifier/ignored",
+
                           .u.event.payload = "not null",
+
                           .u.event.payload_size = 0,
                           .u.event.metadata = NULL,
                           .u.event.headers = NULL,
@@ -335,58 +402,147 @@ void test_event_01()    // alternate form of payload
                           .u.event.content_type = NULL,
                         };
 
-    run_test_to_bytes( bytes, bytes_len, &s );
+    /* Success, with a non-NULL pointer for the payload */
+    run_test_to_bytes( b, b_len, &s );
 }
 
-void test_event_02()    // alternate form of payload
+
+void test_event_02()
 {
-    const char bytes[] = "\x84"                                            // map, size 4
-                         "\xa8""msg_type" "\x04"                           // msg_type: 4
-                         "\xa6""source"   "\xb8""mac:112233445566/example"
-                         "\xa4""dest"     "\xb8""event:identifier/ignored"
-                         "\xa7""payload"  "\xc4""\x00";                    // empty payload
-    ssize_t bytes_len = sizeof(bytes) - 1;
+    const char b[] = "\x84"
+                     "\xa8""msg_type" "\x04"
+                     "\xa6""source"   "\xb8""mac:112233445566/example"
+                     "\xa4""dest"     "\xb8""event:identifier/ignored"
+                     "\xa7""payload"  "\xc4""\x00";
+    ssize_t b_len = sizeof(b) - 1;
 
     const wrp_msg_t s = { .msg_type = WRP_MSG_TYPE__EVENT,
                           .u.event.source = "mac:112233445566/example",
                           .u.event.dest = "event:identifier/ignored",
                           .u.event.payload = NULL,
+
                           .u.event.payload_size = 123,
+
                           .u.event.metadata = NULL,
                           .u.event.headers = NULL,
                           .u.event.partner_ids = NULL,
                           .u.event.content_type = NULL,
                         };
 
-    run_test_to_bytes( bytes, bytes_len, &s );
+    /* Success, with a NULL pointer but non-zero length  payload */
+    run_test_to_bytes( b, b_len, &s );
 }
 
-void test_event_03()    // alternate form of payload
+
+void test_event_03()
 {
+    const char b[] = "\x84"
+                     "\xa8""msg_type" "\x04"
+                     "\xa6""source"   "\xc0"
+                     "\xa4""dest"     "\xb8""event:identifier/ignored"
+                     "\xa7""payload"  "\xc4""\x00";
+    ssize_t b_len = sizeof(b) - 1;
+
+    const char c[] = "\x83"
+                     "\xa8""msg_type" "\x04"
+                     "\xa4""dest"     "\xb8""event:identifier/ignored"
+                     "\xa7""payload"  "\xc4""\x00";
+    ssize_t c_len = sizeof(b) - 1;
+
+
     const wrp_msg_t s = { .msg_type = WRP_MSG_TYPE__EVENT,
                           .u.event.source = NULL,
                           .u.event.dest = "event:identifier/ignored",
                           .u.event.payload = NULL,
-                          .u.event.payload_size = 123,
+                          .u.event.payload_size = 0,
                           .u.event.metadata = NULL,
                           .u.event.headers = NULL,
                           .u.event.partner_ids = NULL,
                           .u.event.content_type = NULL,
                         };
+    wrp_msg_t *msg = NULL;
 
+
+    /* Error: Missing source */
     run_test_to_bytes( NULL, -1, &s );
+
+    CU_ASSERT( -1 == wrp_to_struct(b, b_len, WRP_BYTES, &msg) );
+    CU_ASSERT( -1 == wrp_to_struct(c, c_len, WRP_BYTES, &msg) );
 }
 
-void test_req_00()    // check bool values
+
+void test_event_04()
 {
-    const char bytes[] = "\x86"                                            // map, size 6
-                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xad""include_spans"    "\xc3"
-                         "\xa7""payload"          "\xc4""\x00";            // empty payload
-    ssize_t bytes_len = sizeof(bytes) - 1;
+    const char b[] = "\x84"
+                     "\xa8""msg_type" "\x04"
+                     "\xa6""source"   "\xb8""mac:112233445566/example"
+                     "\xa4""dest"     "\xc0"
+                     "\xa7""payload"  "\xc4""\x00";
+    ssize_t b_len = sizeof(b) - 1;
+
+    const char c[] = "\x83"
+                     "\xa8""msg_type" "\x04"
+                     "\xa6""source"   "\xb8""mac:112233445566/example"
+                     "\xa7""payload"  "\xc4""\x00";
+    ssize_t c_len = sizeof(b) - 1;
+
+
+    const wrp_msg_t s = { .msg_type = WRP_MSG_TYPE__EVENT,
+                          .u.event.source = "mac:112233445566/example",
+                          .u.event.dest = NULL,
+                          .u.event.payload = NULL,
+                          .u.event.payload_size = 0,
+                          .u.event.metadata = NULL,
+                          .u.event.headers = NULL,
+                          .u.event.partner_ids = NULL,
+                          .u.event.content_type = NULL,
+                        };
+    wrp_msg_t *msg = NULL;
+
+    /* Error: Missing dest */
+    run_test_to_bytes( NULL, -1, &s );
+
+    CU_ASSERT( -1 == wrp_to_struct(b, b_len, WRP_BYTES, &msg) );
+    CU_ASSERT( -1 == wrp_to_struct(c, c_len, WRP_BYTES, &msg) );
+}
+
+
+void test_event_05()
+{
+    const char b[] = "\x84"
+                     "\xa8""msg_type" "\x04"
+                     "\xa6""source"   "\xb8""mac:112233445566/example"
+                     "\xa4""dest"     "\xb8""event:identifier/ignored"
+                     "\xa7""payload"  "\xa8""bad type";
+    ssize_t b_len = sizeof(b) - 1;
+
+    const char c[] = "\x83"
+                     "\xa8""msg_type" "\x04"
+                     "\xa6""source"   "\xb8""mac:112233445566/example"
+                     "\xa4""dest"     "\xb8""event:identifier/ignored";
+    ssize_t c_len = sizeof(b) - 1;
+    wrp_msg_t *msg = NULL;
+
+    /* Error: Missing payload */
+    CU_ASSERT( -1 == wrp_to_struct(b, b_len, WRP_BYTES, &msg) );
+    CU_ASSERT( -1 == wrp_to_struct(c, c_len, WRP_BYTES, &msg) );
+}
+
+
+
+/*-------------------------------Request Tests--------------------------------*/
+
+
+void test_req_00()
+{
+    const char b[] = "\x86"
+                     "\xa8""msg_type"         "\x03"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xad""include_spans"    "\xc3"
+                     "\xa7""payload"          "\xc4""\x00";
+    ssize_t b_len = sizeof(b) - 1;
 
     const wrp_msg_t s = { .msg_type = WRP_MSG_TYPE__REQ,
                           .u.req.transaction_uuid = "f8013ad2-438a-46dd-8b62-45a3e1f95561",
@@ -401,28 +557,29 @@ void test_req_00()    // check bool values
                           .u.req.include_spans = true,
                         };
 
-    run_test_to_bytes( bytes, bytes_len, &s );
-    run_test_to_struct( bytes, bytes_len, &s );
+    /* Success, spans test */
+    run_test_to_bytes( b, b_len, &s );
+    run_test_to_struct( b, b_len, &s );
 }
 
 
-void test_req_01()    // check bool values in metadata
+void test_req_01()
 {
-    const char bytes[] = "\x87"                                            // map, size 8
-                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xa8""metadata"         "\x86"
-                             "\xa3""foo"          "\xc3"                   // true
-                             "\xa3""bar"          "\xc2"                   // false
-                             "\xa3""num"          "\xd3\x00\x00\x00\x00\x00\x00\x00\x0c" // 12
-                             "\xa3""big"          "\xcf\x00\x00\x00\x00\x00\x00\x00\x0c" // 12
-                             "\xa3""neg"          "\xd3\xff\xff\xff\xff\xff\xff\xff\xf4" // -12
-                             "\xa3""nil"          "\xc0"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xad""include_spans"    "\xc3"
-                         "\xa7""payload"          "\xc4""\x00";            // empty payload
-    ssize_t bytes_len = sizeof(bytes) - 1;
+    const char b[] = "\x87"
+                     "\xa8""msg_type"         "\x03"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xa8""metadata"         "\x86"
+                         "\xa3""foo"          "\xc3"
+                         "\xa3""bar"          "\xc2"
+                         "\xa3""num"          "\xd3\x00\x00\x00\x00\x00\x00\x00\x0c" //  12
+                         "\xa3""big"          "\xcf\x00\x00\x00\x00\x00\x00\x00\x0c" //  12
+                         "\xa3""neg"          "\xd3\xff\xff\xff\xff\xff\xff\xff\xf4" // -12
+                         "\xa3""nil"          "\xc0"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xad""include_spans"    "\xc3"
+                     "\xa7""payload"          "\xc4""\x00";
+    ssize_t b_len = sizeof(b) - 1;
 
     struct data d[6] = {
         { .name = "foo", .value = "true" },
@@ -448,27 +605,28 @@ void test_req_01()    // check bool values in metadata
 
     s.u.req.metadata = &metadata;
 
-    run_test_to_struct( bytes, bytes_len, &s );
+    /* Success, metadata testing */
+    run_test_to_struct( b, b_len, &s );
 }
 
 
-void test_req_02()    // check ignored fields
+void test_req_02()
 {
-    const char bytes[] = "\x8d"                                            // map, size 13
-                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xad""include_spans"    "\xc3"
-                         "\xad""ignored_field"    "\xc3"                   // bool ignored
-                         "\xad""ignored_field"    "\x03"                   // int ignored
-                         "\xad""ignored_field"    "\xa3""doh"              // str ignored
-                         "\xad""ignored_field"    "\x90"                   // arr ignored
-                         "\xad""ignored_field"    "\xc0"                   // nil ignored
-                         "\xad""ignored_field"    "\x80"                   // map ignored
-                         "\xad""ignored_field"    "\xc4\x00"               // bin ignored
-                         "\xa7""payload"          "\xc4\x00";              // empty payload
-    ssize_t bytes_len = sizeof(bytes) - 1;
+    const char b[] = "\x8d"
+                     "\xa8""msg_type"         "\x03"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xad""include_spans"    "\xc3"
+                     "\xad""ignored_field"    "\xc3"
+                     "\xad""ignored_field"    "\x03"
+                     "\xad""ignored_field"    "\xa3""doh"
+                     "\xad""ignored_field"    "\x90"
+                     "\xad""ignored_field"    "\xc0"
+                     "\xad""ignored_field"    "\x80"
+                     "\xad""ignored_field"    "\xc4\x00"
+                     "\xa7""payload"          "\xc4\x00";
+    ssize_t b_len = sizeof(b) - 1;
 
     wrp_msg_t s = { .msg_type = WRP_MSG_TYPE__REQ,
                           .u.req.transaction_uuid = "f8013ad2-438a-46dd-8b62-45a3e1f95561",
@@ -483,229 +641,223 @@ void test_req_02()    // check ignored fields
                           .u.req.include_spans = true,
                         };
 
-    run_test_to_struct( bytes, bytes_len, &s );
+    /* Success, ignore fields */
+    run_test_to_struct( b, b_len, &s );
 }
 
 
-void test_req_03()    // check duplicate fields
+void test_req_03()
 {
-    const char bytes[] = "\x85"                                            // map, size 7
-                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xad""include_spans"    "\xc3"
-                         "\xa7""payload"          "\xc4\x00"               // empty payload
-                         "\xa7""payload"          "\xc4\x00";              // dup
-    ssize_t len = sizeof(bytes) - 1;
+    const char b[] = "\x85"
+                     "\xa8""msg_type"         "\x03"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xad""include_spans"    "\xc3"
+                     "\xa7""payload"          "\xc4\x00"
+                     "\xa7""payload"          "\xc4\x00";
+    ssize_t len = sizeof(b) - 1;
     wrp_msg_t *msg = NULL;
 
-    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+    /* Error: duplicate payload */
+    CU_ASSERT( -1 == wrp_to_struct(b, len, WRP_BYTES, &msg) );
 }
 
-void test_req_04()    // check duplicate fields
+
+void test_req_04()
 {
-    const char bytes[] = "\x87"                                            // map, size 7
-                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xad""include_spans"    "\xc3"
-                         "\xa7""payload"          "\xc4\x00"               // empty payload
-                         "\xad""include_spans"    "\xc2";                  // dup
-    ssize_t len = sizeof(bytes) - 1;
+    const char b[] = "\x87"
+                     "\xa8""msg_type"         "\x03"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xad""include_spans"    "\xc3"
+                     "\xad""include_spans"    "\xc2"
+                     "\xa7""payload"          "\xc4\x00";
+    ssize_t len = sizeof(b) - 1;
     wrp_msg_t *msg = NULL;
 
-    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+    /* Error: duplicate spans */
+    CU_ASSERT( -1 == wrp_to_struct(b, len, WRP_BYTES, &msg) );
 }
 
-void test_req_05()    // check duplicate fields
+
+void test_req_05()
 {
-    const char bytes[] = "\x87"                                            // map, size 7
-                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xad""include_spans"    "\xc3"
-                         "\xa7""payload"          "\xc4\x00"               // empty payload
-                         "\xa4""dest"             "\xa4zzzz";              // dup
-    ssize_t len = sizeof(bytes) - 1;
+    const char b[] = "\x87"
+                     "\xa8""msg_type"         "\x03"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xa4""dest"             "\xa4zzzz"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xad""include_spans"    "\xc3"
+                     "\xa7""payload"          "\xc4\x00";
+    ssize_t len = sizeof(b) - 1;
     wrp_msg_t *msg = NULL;
 
-    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+    /* Error: duplicate dest */
+    CU_ASSERT( -1 == wrp_to_struct(b, len, WRP_BYTES, &msg) );
 }
 
 
-void test_req_06()    // check invalid metadata
+void test_req_06()
 {
-    const char bytes[] = "\x86"                                            // map, size 6
-                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xa8""metadata"         "\x81"
-                             "\xc3"               "\xa3""foo"              // bool key
-                         "\xa7""payload"          "\xc4\x00";              // empty payload
-    ssize_t len = sizeof(bytes) - 1;
+    const char b[] = "\x87"
+                     "\xa8""msg_type"         "\x03"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xa8""metadata"         "\x80"
+                     "\xa8""metadata"         "\x80"
+                     "\xa7""payload"          "\xc4\x00";
+    ssize_t len = sizeof(b) - 1;
     wrp_msg_t *msg = NULL;
 
-    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+    /* Error: duplicate metadata */
+    CU_ASSERT( -1 == wrp_to_struct(b, len, WRP_BYTES, &msg) );
 }
 
 
-void test_req_07()    // check duplicate metadata
+void test_req_07()
 {
-    const char bytes[] = "\x87"                                            // map, size 6
-                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xa8""metadata"         "\x80"
-                         "\xa8""metadata"         "\x80"
-                         "\xa7""payload"          "\xc4\x00";              // empty payload
-    ssize_t len = sizeof(bytes) - 1;
+    const char b[] = "\x87"
+                     "\xa8""msg_type"         "\x03"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xa7""headers"          "\x90"
+                     "\xa7""headers"          "\x90"
+                     "\xa7""payload"          "\xc4\x00";
+    ssize_t len = sizeof(b) - 1;
     wrp_msg_t *msg = NULL;
 
-    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+    /* Error: duplicate headers */
+    CU_ASSERT( -1 == wrp_to_struct(b, len, WRP_BYTES, &msg) );
 }
 
 
-void test_req_08()    // check duplicate headers
+void test_req_08()
 {
-    const char bytes[] = "\x87"                                            // map, size 6
-                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xa7""headers"          "\x90"
-                         "\xa7""headers"          "\x90"
-                         "\xa7""payload"          "\xc4\x00";              // empty payload
-    ssize_t len = sizeof(bytes) - 1;
+    const char b[] = "\x87"
+                     "\xa8""msg_type"         "\x03"
+                     "\xa8""msg_type"         "\x03"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xa8""metadata"         "\x80"
+                     "\xa7""payload"          "\xc4\x00";
+    ssize_t len = sizeof(b) - 1;
     wrp_msg_t *msg = NULL;
 
-    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+    /* Error: duplicate msg_type */
+    CU_ASSERT( -1 == wrp_to_struct(b, len, WRP_BYTES, &msg) );
 }
 
 
-void test_req_09()    // check headers are all strings
+void test_req_09()
 {
-    const char bytes[] = "\x86"                                            // map, size 6
-                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xa7""headers"          "\x91"
-                            "\xc3"
-                         "\xa7""payload"          "\xc4\x00";              // empty payload
-    ssize_t len = sizeof(bytes) - 1;
+    const char b[] = "\x86"
+                     "\xa8""msg_type"         "\x03"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xa8""metadata"         "\x81"
+                         "\xc3"               "\xa3""foo"
+                     "\xa7""payload"          "\xc4\x00";
+    ssize_t len = sizeof(b) - 1;
     wrp_msg_t *msg = NULL;
 
-    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+    /* Error: invalid metadata key type - bool */
+    CU_ASSERT( -1 == wrp_to_struct(b, len, WRP_BYTES, &msg) );
 }
 
 
-void test_req_10()    // check duplicate payload
+void test_req_10()
 {
-    const char bytes[] = "\x87"                                            // map, size 6
-                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xa8""metadata"         "\x80"
-                         "\xa7""payload"          "\xc4\x00"
-                         "\xa7""payload"          "\xc4\x00";              // empty payload
-    ssize_t len = sizeof(bytes) - 1;
+    const char b[] = "\x86"
+                     "\xa8""msg_type"         "\x03"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xa7""headers"          "\x91"
+                        "\xc3"
+                     "\xa7""payload"          "\xc4\x00";
+    ssize_t len = sizeof(b) - 1;
     wrp_msg_t *msg = NULL;
 
-    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+    /* Error: headers are not all strings */
+    CU_ASSERT( -1 == wrp_to_struct(b, len, WRP_BYTES, &msg) );
 }
 
 
-void test_req_11()    // check duplicate msg_type
+void test_req_11()
 {
-    const char bytes[] = "\x87"                                            // map, size 6
-                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
-                         "\xa8""msg_type"         "\x03"
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xa8""metadata"         "\x80"
-                         "\xa7""payload"          "\xc4\x00";              // empty payload
-    ssize_t len = sizeof(bytes) - 1;
+    const char b[] = "\x86"
+                     "\xa8""msg_type"         "\xcf\xff\xff\xff\xff\xff\xff\xff\xff"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xa8""metadata"         "\x80"
+                     "\xa7""payload"          "\xc4\x00";
+    ssize_t len = sizeof(b) - 1;
     wrp_msg_t *msg = NULL;
 
-    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+    /* Error: really large msg_type */
+    CU_ASSERT( -1 == wrp_to_struct(b, len, WRP_BYTES, &msg) );
 }
 
 
-void test_req_12()    // check for a really large msg_type
+void test_req_12()
 {
-    const char bytes[] = "\x86"                                            // map, size 6
-                         "\xa8""msg_type"         "\xcf\xff\xff\xff\xff\xff\xff\xff\xff"
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xa8""metadata"         "\x80"
-                         "\xa7""payload"          "\xc4\x00";              // empty payload
-    ssize_t len = sizeof(bytes) - 1;
+    const char b[] = "\x87"
+                     "\xa8""msg_type"         "\x03"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xa8""metadata"         "\x86"
+                         "\xa3""bin"          "\xc4\x00"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xad""include_spans"    "\xc3"
+                     "\xa7""payload"          "\xc4""\x00";
+    ssize_t len = sizeof(b) - 1;
     wrp_msg_t *msg = NULL;
 
-    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
+    /* Error: binary type is not allowed in metadata */
+    CU_ASSERT( -1 == wrp_to_struct(b, len, WRP_BYTES, &msg) );
 }
 
 
-void test_req_13()    // check that invalid types in the metadata are handled
+/*---------------------------------CRUD Tests---------------------------------*/
+
+
+void test_crud_00()
 {
-    const char bytes[] = "\x87"                                            // map, size 8
-                         "\xa8""msg_type"         "\x03"                   // msg_type: 3
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xa8""metadata"         "\x86"
-                             "\xa3""foo"          "\xc3"                   // true
-                             "\xa3""bar"          "\xc2"                   // false
-                             "\xa3""num"          "\xd3\x00\x00\x00\x00\x00\x00\x00\x0c" // 12
-                             "\xa3""big"          "\xcf\x00\x00\x00\x00\x00\x00\x00\x0c" // 12
-                             "\xa3""neg"          "\xd3\xff\xff\xff\xff\xff\xff\xff\xf4" // -12
-                             "\xa3""bin"          "\xc4\x00"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xad""include_spans"    "\xc3"
-                         "\xa7""payload"          "\xc4""\x00";            // empty payload
-    ssize_t len = sizeof(bytes) - 1;
-    wrp_msg_t *msg = NULL;
-
-    CU_ASSERT( -1 == wrp_to_struct(bytes, len, WRP_BYTES, &msg) );
-}
-
-
-
-void test_crud_00()    // check negative status
-{
-    const char bytes[] = "\x87"                                            // map, size 6
-                         "\xa8""msg_type"         "\x05"                   // msg_type: 5
-                         "\xa6""status"           "\xd0\xff"
-                         "\xa6""source"           "\xb8""mac:112233445566/example"
-                         "\xa4""dest"             "\xb6""dns:identifier/ignored"
-                         "\xa4""path"             "\xa4""/foo"
-                         "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
-                         "\xa7""payload"          "\xc4\x00";              // empty payload
-    ssize_t bytes_len = sizeof(bytes) - 1;
+    const char b[] = "\x87"
+                     "\xa8""msg_type"         "\x05"
+                     "\xa6""status"           "\xd0\xff"
+                     "\xa6""source"           "\xb8""mac:112233445566/example"
+                     "\xa4""dest"             "\xb6""dns:identifier/ignored"
+                     "\xa4""path"             "\xa4""/foo"
+                     "\xb0""transaction_uuid" "\xd9\x24""f8013ad2-438a-46dd-8b62-45a3e1f95561"
+                     "\xa7""payload"          "\xc4\x00";
+    ssize_t b_len = sizeof(b) - 1;
 
     wrp_msg_t s = { .msg_type = WRP_MSG_TYPE__CREATE,
-                          .u.crud.transaction_uuid = "f8013ad2-438a-46dd-8b62-45a3e1f95561",
-                          .u.crud.source = "mac:112233445566/example",
-                          .u.crud.dest = "dns:identifier/ignored",
-                          .u.crud.path = "/foo",
-                          .u.crud.payload = NULL,
-                          .u.crud.payload_size = 0,
-                          .u.crud.metadata = NULL,
-                          .u.crud.headers = NULL,
-                          .u.crud.partner_ids = NULL,
-                          .u.crud.content_type = NULL,
-                          .u.crud.include_spans = false,
-                          .u.crud.status = -1,
-                        };
+                    .u.crud.transaction_uuid = "f8013ad2-438a-46dd-8b62-45a3e1f95561",
+                    .u.crud.source = "mac:112233445566/example",
+                    .u.crud.dest = "dns:identifier/ignored",
+                    .u.crud.path = "/foo",
+                    .u.crud.payload = NULL,
+                    .u.crud.payload_size = 0,
+                    .u.crud.metadata = NULL,
+                    .u.crud.headers = NULL,
+                    .u.crud.partner_ids = NULL,
+                    .u.crud.content_type = NULL,
+                    .u.crud.include_spans = false,
+                    .u.crud.status = -1,
+                  };
 
-    run_test_to_struct( bytes, bytes_len, &s );
+    /* Success */
+    run_test_to_struct( b, b_len, &s );
 }
 
 
@@ -715,15 +867,25 @@ void test_crud_00()    // check negative status
 
 void add_suites( CU_pSuite *suite )
 {
-    *suite = CU_add_suite( "utils.c tests", NULL, NULL );
+    *suite = CU_add_suite( "msgpack encoding/decoding tests", NULL, NULL );
+    CU_add_test( *suite, "test 00", test_00 );
+    CU_add_test( *suite, "test 01", test_01 );
+    CU_add_test( *suite, "test 02", test_02 );
+    CU_add_test( *suite, "test 03", test_03 );
+
     CU_add_test( *suite, "auth 00", test_auth_00 );
     CU_add_test( *suite, "auth 01", test_auth_01 );
     CU_add_test( *suite, "auth 02", test_auth_02 );
-    CU_add_test( *suite, "test 00", test_00 );
+
+    CU_add_test( *suite, "svc 00", test_svc_00 );
+
     CU_add_test( *suite, "event 00", test_event_00 );
     CU_add_test( *suite, "event 01", test_event_01 );
     CU_add_test( *suite, "event 02", test_event_02 );
     CU_add_test( *suite, "event 03", test_event_03 );
+    CU_add_test( *suite, "event 04", test_event_04 );
+    CU_add_test( *suite, "event 05", test_event_05 );
+
     CU_add_test( *suite, "req 00", test_req_00 );
     CU_add_test( *suite, "req 01", test_req_01 );
     CU_add_test( *suite, "req 02", test_req_02 );
@@ -737,7 +899,7 @@ void add_suites( CU_pSuite *suite )
     CU_add_test( *suite, "req 10", test_req_10 );
     CU_add_test( *suite, "req 11", test_req_11 );
     CU_add_test( *suite, "req 12", test_req_12 );
-    CU_add_test( *suite, "req 13", test_req_13 );
+
     CU_add_test( *suite, "crud 00", test_crud_00 );
 }
 

@@ -809,7 +809,10 @@ static int dec_map_all_possible( const msgpack_object *obj, struct all_fields *a
 
 static int dec_trans_auth( const struct all_fields *all, wrp_msg_t *p )
 {
-    if( !all->status || (INT_MAX < *all->status) ) {
+    if(    !all->status
+        || (INT_MAX < *all->status)
+        || (*all->status < INT_MIN) )
+    {
         return -1;
     }
 
@@ -822,13 +825,13 @@ static int dec_trans_req( const struct all_fields *all, wrp_msg_t *p )
 {
     struct wrp_req_msg *r = &p->u.req;
 
-    if( !all->uuid || !all->source || !all->dest || !all->payload ) {
-        return -1;
-    }
-
     r->include_spans = (all->include_spans) ? *all->include_spans : 0;
 
-    if(    (0 == mp_strdup(all->uuid, &r->transaction_uuid))
+    if(    (all->uuid)
+        && (all->source)
+        && (all->dest)
+        && (all->payload)
+        && (0 == mp_strdup(all->uuid, &r->transaction_uuid))
         && (0 == mp_strdup(all->content_type, &r->content_type))
         && (0 == mp_strdup(all->accept, &r->accept))
         && (0 == mp_strdup(all->source, &r->source))
@@ -850,11 +853,10 @@ static int dec_trans_event( const struct all_fields *all, wrp_msg_t *p )
 {
     struct wrp_event_msg *e = &p->u.event;
 
-    if( !all->source || !all->dest || !all->payload ) {
-        return -1;
-    }
-
-    if(    (0 == mp_strdup(all->content_type, &e->content_type))
+    if(    (all->source)
+        && (all->dest)
+        && (all->payload)
+        && (0 == mp_strdup(all->content_type, &e->content_type))
         && (0 == mp_strdup(all->source, &e->source))
         && (0 == mp_strdup(all->dest, &e->dest))
         && (0 == mp_partners_dup(all->partner_ids, &e->partner_ids))
@@ -873,22 +875,12 @@ static int dec_trans_crud( const struct all_fields *all, wrp_msg_t *p )
 {
     struct wrp_crud_msg *c = &p->u.crud;
 
-    if( !all->uuid || !all->source || !all->dest ) {
-        return -1;
-    }
-
-    if( all->status && (INT_MAX < *all->status) ) {
-        return -1;
-    }
-    if( all->rdr && (INT_MAX < *all->rdr) ) {
-        return -1;
-    }
-
-    c->include_spans = (all->include_spans) ? *all->include_spans : 0;
-    c->status = (all->status) ? (int) *all->status : 0;
-    c->rdr = (all->rdr) ? (int) *all->rdr : 0;
-
-    if(    (0 == mp_strdup(all->uuid, &c->transaction_uuid))
+    if(    (all->source)
+        && (all->dest)
+        && (all->uuid)
+        && (!all->status || (INT_MIN <= *all->status && *all->status <= INT_MAX))
+        && (!all->rdr || (INT_MIN <= *all->rdr && *all->rdr <= INT_MAX))
+        && (0 == mp_strdup(all->uuid, &c->transaction_uuid))
         && (0 == mp_strdup(all->content_type, &c->content_type))
         && (0 == mp_strdup(all->accept, &c->accept))
         && (0 == mp_strdup(all->source, &c->source))
@@ -900,6 +892,10 @@ static int dec_trans_crud( const struct all_fields *all, wrp_msg_t *p )
         && (0 == mp_metadata_dup(all->metadata, &c->metadata))
         && (0 == mp_spans_dup(all->spans, &c->spans)) )
     {
+        c->include_spans = (all->include_spans) ? *all->include_spans : 0;
+        c->status = (all->status) ? (int) *all->status : 0;
+        c->rdr = (all->rdr) ? (int) *all->rdr : 0;
+
         return 0;
     }
 
@@ -911,11 +907,9 @@ static int dec_trans_reg( const struct all_fields *all, wrp_msg_t *p )
 {
     struct wrp_svc_registration_msg *r = &p->u.reg;
 
-    if( !all->service_name || !all->url ) {
-        return -1;
-    }
-
-    if(    (0 == mp_strdup(all->url, &r->url))
+    if(    (all->service_name)
+        && (all->url)
+        && (0 == mp_strdup(all->url, &r->url))
         && (0 == mp_strdup(all->service_name, &r->service_name)) )
     {
         return 0;
