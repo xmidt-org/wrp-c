@@ -29,3 +29,16 @@ target_link_libraries(test_utils ${CUNIT_LIBRARIES} gcov)
 add_test(NAME Test_locator COMMAND ${MEMORY_CHECK} ./test_locator)
 add_executable(test_locator test_locator.c ../src/locator.c)
 target_link_libraries(test_locator ${CUNIT_LIBRARIES} gcov)
+
+add_test(NAME Test_msgpack COMMAND ${MEMORY_CHECK} ./test_msgpack)
+add_executable(test_msgpack test_msgpack.c ../src/b64.c
+                                           ../src/locator.c
+                                           ../src/msgpack.c
+                                           ../src/string.c
+                                           ../src/utils.c
+                                           ../src/wrp-c.c)
+target_link_libraries (test_msgpack ${TROWER_LIBRARIES}
+                                    ${CIMPLOG_LIBRARIES}
+                                    ${MSGPACK_LIBRARIES}
+                                    ${CUNIT_LIBRARIES}
+                                    gcov)
