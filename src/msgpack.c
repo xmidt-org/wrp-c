@@ -24,28 +24,6 @@ struct wrp_token {
     size_t length;
 };
 
-struct req_res_t {
-    int msgType;
-    int statusValue;
-    char* source;
-    char* dest;
-    char* transaction_uuid;
-    partners_t *partner_ids;
-    headers_t *headers;
-    void *payload;
-    size_t payload_size;
-    bool include_spans;
-    struct money_trace_spans spans;
-    data_t *metadata;
-    int status;
-    int rdr;
-    char *path;
-    char *service_name;
-    char *url;
-    char *content_type;
-    char *accept;
-};
-
 struct all_fields {
     const int64_t *msg_type;
     const int64_t *status;
@@ -106,10 +84,10 @@ static const struct wrp_token WRP_PARTNER_IDS   = MAKE_TOKEN( "partner_ids" );
 /*                              Encoder Helpers                               */
 /*----------------------------------------------------------------------------*/
 
-static void enc_nstring( msgpack_packer *pk, const char *s, size_t n )
+static void enc_nstring( msgpack_packer *pk, const char *s, size_t maxlen )
 {
-    msgpack_pack_str( pk, n );
-    msgpack_pack_str_body( pk, s, n );
+    msgpack_pack_str( pk, maxlen );
+    msgpack_pack_str_body( pk, s, maxlen );
 }
 
 
@@ -134,6 +112,7 @@ static void enc_key_string( msgpack_packer *pk, const struct wrp_token *token,
         enc_string( pk, value );
     }
 }
+
 
 static void enc_msg_type( msgpack_packer *pk, enum wrp_msg_type type )
 {
@@ -605,6 +584,7 @@ static int mp_spans_dup( const msgpack_object_array *a, struct money_trace_spans
 /*                                  Decoders                                  */
 /*----------------------------------------------------------------------------*/
 
+
 static int dec_bools( const msgpack_object_kv *p, struct all_fields *all )
 {
     if( !is_key(&p->key, &WRP_INCLUDE_SPANS) ) {
@@ -807,7 +787,12 @@ static int dec_map_all_possible( const msgpack_object *obj, struct all_fields *a
 }
 
 
-static int dec_trans_auth( const struct all_fields *all, wrp_msg_t *p )
+/*----------------------------------------------------------------------------*/
+/*        Maps that convert from the large struct to the concise struct       */
+/*----------------------------------------------------------------------------*/
+
+
+static int map_auth( const struct all_fields *all, wrp_msg_t *p )
 {
     if(    !all->status
         || (INT_MAX < *all->status)
@@ -821,7 +806,7 @@ static int dec_trans_auth( const struct all_fields *all, wrp_msg_t *p )
 }
 
 
-static int dec_trans_req( const struct all_fields *all, wrp_msg_t *p )
+static int map_req( const struct all_fields *all, wrp_msg_t *p )
 {
     struct wrp_req_msg *r = &p->u.req;
 
@@ -849,7 +834,7 @@ static int dec_trans_req( const struct all_fields *all, wrp_msg_t *p )
 }
 
 
-static int dec_trans_event( const struct all_fields *all, wrp_msg_t *p )
+static int map_event( const struct all_fields *all, wrp_msg_t *p )
 {
     struct wrp_event_msg *e = &p->u.event;
 
@@ -871,7 +856,7 @@ static int dec_trans_event( const struct all_fields *all, wrp_msg_t *p )
 }
 
 
-static int dec_trans_crud( const struct all_fields *all, wrp_msg_t *p )
+static int map_crud( const struct all_fields *all, wrp_msg_t *p )
 {
     struct wrp_crud_msg *c = &p->u.crud;
 
@@ -903,7 +888,7 @@ static int dec_trans_crud( const struct all_fields *all, wrp_msg_t *p )
 }
 
 
-static int dec_trans_reg( const struct all_fields *all, wrp_msg_t *p )
+static int map_reg( const struct all_fields *all, wrp_msg_t *p )
 {
     struct wrp_svc_registration_msg *r = &p->u.reg;
 
@@ -919,7 +904,7 @@ static int dec_trans_reg( const struct all_fields *all, wrp_msg_t *p )
 }
 
 
-static int dec_translate( const struct all_fields *all, wrp_msg_t *p )
+static int map_to_final( const struct all_fields *all, wrp_msg_t *p )
 {
     if( !all->msg_type ) {
         return -1;
@@ -929,22 +914,22 @@ static int dec_translate( const struct all_fields *all, wrp_msg_t *p )
 
     switch( p->msg_type ) {
         case WRP_MSG_TYPE__AUTH:
-            return dec_trans_auth( all, p );
+            return map_auth( all, p );
 
         case WRP_MSG_TYPE__REQ:
-            return dec_trans_req( all, p );
+            return map_req( all, p );
 
         case WRP_MSG_TYPE__EVENT:
-            return dec_trans_event( all, p );
+            return map_event( all, p );
 
         case WRP_MSG_TYPE__CREATE:
         case WRP_MSG_TYPE__RETREIVE:
         case WRP_MSG_TYPE__UPDATE:
         case WRP_MSG_TYPE__DELETE:
-            return dec_trans_crud( all, p );
+            return map_crud( all, p );
 
         case WRP_MSG_TYPE__SVC_REGISTRATION:
-            return dec_trans_reg( all, p );
+            return map_reg( all, p );
 
         case WRP_MSG_TYPE__SVC_ALIVE:
             return 0;
@@ -960,6 +945,7 @@ static int dec_translate( const struct all_fields *all, wrp_msg_t *p )
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
+
 
 ssize_t wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 {
@@ -1014,6 +1000,7 @@ ssize_t wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
     msgpack_sbuffer_destroy( &sbuf );
     return rv;
 }
+
 
 /**
  *  Encode/pack only metadata from wrp_msg_t structure.
@@ -1072,7 +1059,7 @@ ssize_t wrp_bytes_to_struct( const void *bytes, size_t length,
         struct all_fields all;
 
         if( (0 == dec_map_all_possible(&obj, &all)) &&
-            (0 == dec_translate(&all, *msg_ptr)) )
+            (0 == map_to_final(&all, *msg_ptr)) )
         {
             rv = length;
         }
