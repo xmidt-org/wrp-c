@@ -33,9 +33,9 @@ static ssize_t __wrp_auth_struct_to_string( const struct wrp_auth_msg *auth,
 static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char **bytes );
 static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
         char **bytes );
-static char* __get_header_string( headers_t *headers );
+static char* __get_header_string( const headers_t *headers );
 static char* __get_spans_string( const struct money_trace_spans *spans );
-static char* __get_partner_ids_string( partners_t *partner_ids );
+static char* __get_partner_ids_string( const partners_t *partner_ids );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -206,7 +206,7 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
  *
  *  @return The string representation of the headers or NULL if none.
  */
-static char* __get_header_string( headers_t *headers )
+static char* __get_header_string( const headers_t *headers )
 {
     char *rv = NULL;
     char *p = NULL;
@@ -241,7 +241,7 @@ static char* __get_header_string( headers_t *headers )
 }
 
 
-static char* __get_partner_ids_string( partners_t *partner_ids )
+static char* __get_partner_ids_string( const partners_t *partner_ids )
 {
     char *rv = NULL;
     char *p = NULL;
