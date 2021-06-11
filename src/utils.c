@@ -77,6 +77,7 @@ char* mlvaprintf( size_t *len, const char *format, va_list args )
 
     va_copy( copy, args );
     l = vsnprintf( NULL, 0, format, copy );
+    va_end( copy );
     if( 0 < l ) {
 
         buf = malloc( l + 1 );
