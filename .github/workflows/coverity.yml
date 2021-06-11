@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2021 Comcast Cable Communications Management, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+name: Coverity Check
+
+on:
+  push:
+    paths-ignore:
+      - 'AUTHORS'
+      - 'LICENSE'
+      - 'NOTICE'
+      - '**.md'
+      - '.gitignore'
+    tags-ignore:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Coverity Check
+    runs-on: ubuntu-latest
+    steps: 
+
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      # Install the dependent packages
+      - name: Install packages
+        run: |
+          sudo apt update
+          sudo apt-get -y install libmsgpack-dev
+
+      - name: Make Build Directory
+        run: mkdir build
+
+      - name: Coverity Download
+        working-directory: build
+        env:
+          COVERITY_SECRET: ${{ secrets.COVERITY_KEY }}
+        run: |
+          ../.github/scripts/get_coverity.sh $COVERITY_SECRET $GITHUB_REPOSITORY
+
+      - name: CMake
+        working-directory: build
+        run: |
+          cmake .. -DBUILD_TESTING=0
+
+      - name: Prebuild
+        working-directory: build
+        run: |
+          make
+
+      - name: Clean
+        working-directory: build
+        run: |
+          make clean
+
+      - name: Coverity Analysis
+        working-directory: build
+        run: |
+          ./coverity/bin/cov-build --dir cov-int make
+
+      - name: Archive Results
+        working-directory: build
+        run: |
+          tar czvf coverity.tgz cov-int
+
+      - name: Upload Results
+        working-directory: build
+        env:
+          COVERITY_SECRET: ${{ secrets.COVERITY_KEY }}
+        run: |
+          curl --form token=$COVERITY_SECRET \
+               --form email=weston_schmidt@alumni.purdue.edu \
+               --form file=@coverity.tgz \
+               --form version="$GITHUB_SHA" \
+               --form description="`date`" \
+               "https://scan.coverity.com/builds?project=${GITHUB_REPOSITORY//\//\%2F}"
