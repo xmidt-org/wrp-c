@@ -10,8 +10,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v1.1.3]
+- Major re-write of the msgpack handling code that
+    - Reduces calls to malloc
+    - Increases test coverage
+    - Does more strict boundary checking for types
+    - Reduces function complexity
+
 ### Fixed
+- [Issue #103](https://github.com/xmidt-org/wrp-c/issues/103) where multiple partner_ids are supported now
 - [Issue #105](https://github.com/xmidt-org/wrp-c/issues/105) where memory bounds are not respected
+- [Issue #108](https://github.com/xmidt-org/wrp-c/issues/105) where va_copy() could leak memory
 
 
 ## [v1.1.2] - 2021-05-07
@@ -40,8 +49,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial creation
 
-[Unreleased]: https://github.com/Comcast/wrp-c/compare/v1.1.2...HEAD
-[v1.1.2]: https://github.com/Comcast/wrp-c/compare/v1.1.1...v1.1.2
-[v1.1.1]: https://github.com/Comcast/wrp-c/compare/v1.1.0...v1.1.1
-[v1.1.0]: https://github.com/Comcast/wrp-c/compare/v1.0.0...v1.1.0
-[v1.0.0]: https://github.com/Comcast/wrp-c/compare/40cd45f5ce6723fa8d4aaf6e66fc3e3302758ec4...v1.0.0
+[Unreleased]: https://github.com/xmidt-org/wrp-c/compare/v1.1.3...HEAD
+[v1.1.3]: https://github.com/xmidt-org/wrp-c/compare/v1.1.2...v1.1.3
+[v1.1.2]: https://github.com/xmidt-org/wrp-c/compare/v1.1.1...v1.1.2
+[v1.1.1]: https://github.com/xmidt-org/wrp-c/compare/v1.1.0...v1.1.1
+[v1.1.0]: https://github.com/xmidt-org/wrp-c/compare/v1.0.0...v1.1.0
+[v1.0.0]: https://github.com/xmidt-org/wrp-c/compare/40cd45f5ce6723fa8d4aaf6e66fc3e3302758ec4...v1.0.0
