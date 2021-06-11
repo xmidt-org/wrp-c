@@ -16,20 +16,20 @@
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
 enum wrp_msg_type {
-    WRP_MSG_TYPE__AUTH          = 2,
-    WRP_MSG_TYPE__REQ           = 3,
-    WRP_MSG_TYPE__EVENT         = 4,
-    WRP_MSG_TYPE__CREATE        = 5,
-    WRP_MSG_TYPE__RETREIVE      = 6,
-    WRP_MSG_TYPE__UPDATE        = 7,
-    WRP_MSG_TYPE__DELETE        = 8,
-    WRP_MSG_TYPE__SVC_REGISTRATION      = 9,
-    WRP_MSG_TYPE__SVC_ALIVE     = 10,
-    WRP_MSG_TYPE__UNKNOWN = 200
+    WRP_MSG_TYPE__AUTH             = 2,
+    WRP_MSG_TYPE__REQ              = 3,
+    WRP_MSG_TYPE__EVENT            = 4,
+    WRP_MSG_TYPE__CREATE           = 5,
+    WRP_MSG_TYPE__RETREIVE         = 6,
+    WRP_MSG_TYPE__UPDATE           = 7,
+    WRP_MSG_TYPE__DELETE           = 8,
+    WRP_MSG_TYPE__SVC_REGISTRATION = 9,
+    WRP_MSG_TYPE__SVC_ALIVE        = 10,
+    WRP_MSG_TYPE__UNKNOWN          = 200
 };
 
 enum wrp_format {
-    WRP_BYTES = 0,
+    WRP_BYTES  = 0,
     WRP_BASE64 = 1,
     WRP_STRING = 2
 };
@@ -43,7 +43,7 @@ enum wrp_device_id_element {
 
 enum wrp_token_name {
     SOURCE = 0,
-    DEST = 1
+    DEST   = 1
 };
 
 struct wrp_auth_msg {
@@ -60,7 +60,6 @@ struct money_trace_spans {
     struct money_trace_span *spans;
     size_t count;
 };
-
 
 typedef struct headers_struct {
     size_t count;

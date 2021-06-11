@@ -26,7 +26,7 @@ add_library(wrp-c SHARED "")
 # Find or acquire software dependencies
 ################################################################################
 
-find_msgpack(      PATH ${MSGPACK_PATH} VERSION "2.1.5" GIT_TAG "7a98138f27f27290e680bf8fbf1f8d1b089bf138")
+find_msgpack(      PATH ${MSGPACK_PATH} VERSION "3.1.0" GIT_TAG "b6803a5fecbe321458faafd6a079dac466614ff9")
 find_trower_base64(PATH ${TROWER_PATH}  VERSION "1.2.0" GIT_TAG "")
 find_cimplog(      PATH ${CIMPLOG_PATH}                 GIT_TAG "8a5fb3c2f182241d17f5342bea5b7688c28cd1fd")
 
@@ -38,5 +38,5 @@ add_subdirectory(src)
 
 if (BUILD_TESTING)
     include(FindCunit)
-	add_subdirectory(tests)
+    add_subdirectory(tests)
 endif (BUILD_TESTING)
