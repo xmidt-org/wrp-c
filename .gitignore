@@ -4,6 +4,11 @@
 build
 tags
 
+# Subprojects
+subprojects/cutils-*
+subprojects/mpack-*
+subprojects/packagecache
+
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o
 *.a
