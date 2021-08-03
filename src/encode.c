@@ -40,11 +40,11 @@ static void enc_str__(mpack_writer_t *w, int flags, const struct wrp_token *toke
     bool val_present = ((0 < s->len) && (NULL != s->s)) ? true : false;
 
     if (val_present || (REQUIRED == flags)) {
-        mpack_write_str(w, token->s, token->len);
+        mpack_write_str(w, token->s, (uint32_t)token->len);
     }
 
     if (val_present) {
-        mpack_write_str(w, s->s, s->len);
+        mpack_write_str(w, s->s, (uint32_t)s->len);
     } else if (REQUIRED) {
         mpack_write_str(w, NULL, 0);
     }
@@ -55,7 +55,7 @@ static void enc_int__(mpack_writer_t *w, int flags, const struct wrp_token *toke
 {
     (void)flags;
 
-    mpack_write_str(w, token->s, token->len);
+    mpack_write_str(w, token->s, (uint32_t)token->len);
     mpack_write_int(w, i);
 }
 
@@ -66,7 +66,7 @@ static void enc_blob_(mpack_writer_t *w, int flags, const struct wrp_token *toke
     bool val_present = ((0 < blob->len) && (NULL != blob->data)) ? true : false;
 
     if (val_present || (REQUIRED == flags)) {
-        mpack_write_str(w, token->s, token->len);
+        mpack_write_str(w, token->s, (uint32_t)token->len);
     }
 
     if (val_present) {
@@ -83,13 +83,13 @@ static void enc_slist(mpack_writer_t *w, int flags, const struct wrp_token *toke
     bool val_present = ((0 < l->count) && (NULL != l->list)) ? true : false;
 
     if (val_present || (REQUIRED == flags)) {
-        mpack_write_str(w, token->s, token->len);
+        mpack_write_str(w, token->s, (uint32_t)token->len);
     }
 
     if (val_present) {
         mpack_start_array(w, l->count);
         for (size_t i = 0; i < l->count; i++) {
-            mpack_write_str(w, l->list[i].s, l->list[i].len);
+            mpack_write_str(w, l->list[i].s, (uint32_t)l->list[i].len);
         }
         mpack_finish_array(w);
     } else if (REQUIRED) {
@@ -105,14 +105,14 @@ static void enc_nvpl_(mpack_writer_t *w, int flags, const struct wrp_token *toke
     bool val_present = ((0 < l->count) && (NULL != l->list)) ? true : false;
 
     if (val_present || (REQUIRED == flags)) {
-        mpack_write_str(w, token->s, token->len);
+        mpack_write_str(w, token->s, (uint32_t)token->len);
     }
 
     if (val_present) {
         mpack_start_map(w, l->count);
         for (size_t i = 0; i < l->count; i++) {
-            mpack_write_str(w, l->list[i].name.s, l->list[i].name.len);
-            mpack_write_str(w, l->list[i].value.s, l->list[i].value.len);
+            mpack_write_str(w, l->list[i].name.s, (uint32_t)l->list[i].name.len);
+            mpack_write_str(w, l->list[i].value.s, (uint32_t)l->list[i].value.len);
         }
         mpack_finish_map(w);
     } else if (REQUIRED) {
@@ -125,7 +125,7 @@ static void enc_nvpl_(mpack_writer_t *w, int flags, const struct wrp_token *toke
 static void enc_auth(mpack_writer_t *w, const struct wrp_auth_msg *a)
 {
     mpack_start_map(w, 2);
-    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, (int)WRP_MSG_TYPE__AUTH);
+    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, WRP_MSG_TYPE__AUTH);
     enc_int__(w, REQUIRED, &WRP_STATUS__, a->status);
     mpack_finish_map(w);
 }
@@ -148,7 +148,7 @@ static void enc_req(mpack_writer_t *w, const struct wrp_req_msg *req)
     count += (req->metadata.count) ? 1 : 0;
 
     mpack_start_map(w, count);
-    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, (int)WRP_MSG_TYPE__REQ);
+    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, WRP_MSG_TYPE__REQ);
     enc_str__(w, REQUIRED, &WRP_SOURCE__, &req->source);
     enc_str__(w, REQUIRED, &WRP_DEST____, &req->dest);
     enc_slist(w, OPTIONAL, &WRP_PARTNERS, &req->partner_ids);
@@ -177,7 +177,7 @@ static void enc_event(mpack_writer_t *w, const struct wrp_event_msg *event)
     count += (event->metadata.count) ? 1 : 0;
 
     mpack_start_map(w, count);
-    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, (int)WRP_MSG_TYPE__EVENT);
+    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, WRP_MSG_TYPE__EVENT);
     enc_str__(w, REQUIRED, &WRP_SOURCE__, &event->source);
     enc_str__(w, REQUIRED, &WRP_DEST____, &event->dest);
     enc_slist(w, OPTIONAL, &WRP_PARTNERS, &event->partner_ids);
@@ -210,7 +210,7 @@ static void enc_crud(mpack_writer_t *w, const struct wrp_crud_msg *crud,
     count += (crud->path.len) ? 1 : 0;
 
     mpack_start_map(w, count);
-    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, (int)msg_type);
+    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, msg_type);
     enc_str__(w, REQUIRED, &WRP_SOURCE__, &crud->source);
     enc_str__(w, REQUIRED, &WRP_DEST____, &crud->dest);
     enc_slist(w, OPTIONAL, &WRP_PARTNERS, &crud->partner_ids);
@@ -233,7 +233,7 @@ static void enc_crud(mpack_writer_t *w, const struct wrp_crud_msg *crud,
 static void enc_svc_reg(mpack_writer_t *w, const struct wrp_svc_reg_msg *r)
 {
     mpack_start_map(w, 3);
-    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, (int)WRP_MSG_TYPE__SVC_REG);
+    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, WRP_MSG_TYPE__SVC_REG);
     enc_str__(w, REQUIRED, &WRP_SN______, &r->service_name);
     enc_str__(w, REQUIRED, &WRP_URL_____, &r->url);
     mpack_finish_map(w);
@@ -243,7 +243,7 @@ static void enc_svc_reg(mpack_writer_t *w, const struct wrp_svc_reg_msg *r)
 static void enc_svc_alive(mpack_writer_t *w)
 {
     mpack_start_map(w, 1);
-    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, (int)WRP_MSG_TYPE__SVC_ALIVE);
+    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, WRP_MSG_TYPE__SVC_ALIVE);
     mpack_finish_map(w);
 }
 

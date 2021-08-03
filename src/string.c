@@ -267,6 +267,8 @@ static WRPcode keep_alive_to_string(const wrp_msg_t *msg, char **dst, size_t *le
     size_t _len;
     WRPcode rv = WRPE_OUT_OF_MEMORY;
 
+    (void)msg;
+
     *dst = mlaprintf(&_len, "wrp_keep_alive_msg {}\n");
     if (NULL != *dst) {
         *len = _len;
@@ -327,7 +329,7 @@ WRPcode wrp_to_string(const wrp_msg_t *msg, char **dst, size_t *len)
 }
 
 
-WRPcode wrp_loc_to_string(wrp_locator_t *loc, char **dst, size_t *len)
+WRPcode wrp_loc_to_string(const wrp_locator_t *loc, char **dst, size_t *len)
 {
     WRPcode rv = WRPE_OUT_OF_MEMORY;
     size_t _len = 0;

@@ -59,9 +59,7 @@ WRPcode wrp_loc_split(const char *loc, size_t len, wrp_locator_t *out)
 
     slash_0 = find_in_str(loc, '/', 0, len);
     colon = find_in_str(loc, ':', 0, slash_0);
-
     slash_1 = find_in_str(loc, '/', slash_0 + 1, len);
-    //printf("colon = %zd, slash_0 = %zd, slash_1 = %zd\n", colon, slash_0, slash_1);
 
     if (0 < colon) {
         out->scheme.s = loc;

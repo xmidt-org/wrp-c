@@ -240,5 +240,5 @@ WRPcode wrp_loc_split(const char *loc, size_t len, wrp_locator_t *out);
 
 /**
  */
-WRPcode wrp_loc_to_string(wrp_locator_t *loc, char **dst, size_t *len);
+WRPcode wrp_loc_to_string(const wrp_locator_t *loc, char **dst, size_t *len);
 #endif

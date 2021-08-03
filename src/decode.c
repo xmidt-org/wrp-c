@@ -183,8 +183,8 @@ static void decode_root(struct wrp_internal *p)
         dec_str__(root, OPTIONAL, &WRP_CT______, &p->msg.u.req.content_type);
         dec_str__(root, OPTIONAL, &WRP_ACCEPT__, &p->msg.u.req.accept);
         dec_blob_(root, OPTIONAL, &WRP_PAYLOAD_, &p->msg.u.req.payload);
-        dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.req.partner_ids, (void **)&p->partner_ids);
-        dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.req.metadata, (void **)&p->metadata);
+        dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.req.partner_ids, &p->partner_ids);
+        dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.req.metadata, &p->metadata);
         break;
 
     case WRP_MSG_TYPE__EVENT:
@@ -193,8 +193,8 @@ static void decode_root(struct wrp_internal *p)
         dec_str__(root, OPTIONAL, &WRP_TRANS_ID, &p->msg.u.event.trans_id);
         dec_str__(root, OPTIONAL, &WRP_CT______, &p->msg.u.event.content_type);
         dec_blob_(root, OPTIONAL, &WRP_PAYLOAD_, &p->msg.u.event.payload);
-        dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.event.partner_ids, (void **)&p->partner_ids);
-        dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.event.metadata, (void **)&p->metadata);
+        dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.event.partner_ids, &p->partner_ids);
+        dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.event.metadata, &p->metadata);
         break;
 
     case WRP_MSG_TYPE__CREATE:
@@ -210,8 +210,8 @@ static void decode_root(struct wrp_internal *p)
         dec_int__(root, OPTIONAL, &WRP_RDR_____, &p->msg.u.crud.rdr);
         dec_int__(root, OPTIONAL, &WRP_STATUS__, &p->msg.u.crud.status);
         dec_blob_(root, OPTIONAL, &WRP_PAYLOAD_, &p->msg.u.crud.payload);
-        dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.crud.partner_ids, (void **)&p->partner_ids);
-        dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.crud.metadata, (void **)&p->metadata);
+        dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.crud.partner_ids, &p->partner_ids);
+        dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.crud.metadata, &p->metadata);
         break;
 
     case WRP_MSG_TYPE__SVC_REG:
