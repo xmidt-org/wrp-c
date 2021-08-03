@@ -87,7 +87,7 @@ static void enc_slist(mpack_writer_t *w, int flags, const struct wrp_token *toke
     }
 
     if (val_present) {
-        mpack_start_array(w, l->count);
+        mpack_start_array(w, (uint32_t)l->count);
         for (size_t i = 0; i < l->count; i++) {
             mpack_write_str(w, l->list[i].s, (uint32_t)l->list[i].len);
         }
@@ -109,7 +109,7 @@ static void enc_nvpl_(mpack_writer_t *w, int flags, const struct wrp_token *toke
     }
 
     if (val_present) {
-        mpack_start_map(w, l->count);
+        mpack_start_map(w, (uint32_t)l->count);
         for (size_t i = 0; i < l->count; i++) {
             mpack_write_str(w, l->list[i].name.s, (uint32_t)l->list[i].name.len);
             mpack_write_str(w, l->list[i].value.s, (uint32_t)l->list[i].value.len);
