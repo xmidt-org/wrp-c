@@ -6,8 +6,8 @@
 // clang-format off
 const struct test_vector test = {
     .wrp_from_msgpack_rv = WRPE_NOT_A_WRP_MSG,
-    .wrp_to_msgpack_rv = WRPE_NOT_A_WRP_MSG,
-    .wrp_to_string_rv = WRPE_NOT_A_WRP_MSG,
+    .wrp_to_msgpack_rv   = WRPE_NOT_A_WRP_MSG,
+    .wrp_to_string_rv    = WRPE_NOT_A_WRP_MSG,
 
     .in.msg_type = 0,
 

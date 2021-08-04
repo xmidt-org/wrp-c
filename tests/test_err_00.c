@@ -18,8 +18,8 @@ const struct wrp_nvp meta[3] = {
 
 const struct test_vector test = {
     .wrp_from_msgpack_rv = WRPE_NOT_MSGPACK_FORMAT,
-    .wrp_to_msgpack_rv = WRPE_NOT_A_WRP_MSG,
-    .wrp_to_string_rv = WRPE_NOT_A_WRP_MSG,
+    .wrp_to_msgpack_rv   = WRPE_NOT_A_WRP_MSG,
+    .wrp_to_string_rv    = WRPE_NOT_A_WRP_MSG,
 
     .in.msg_type                  = 99,
     .in.u.event.trans_id.s        = "c07ee5e1-70be-444c-a156-097c767ad8aa",

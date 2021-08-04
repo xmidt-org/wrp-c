@@ -31,7 +31,6 @@ subdir('include/'+meson.project_name())
 # Define the dependencies
 ################################################################################
 ludocode_mpack_dep = dependency('mpack', version: '>=1.0',
-                                #default_options: [ 'MPACK_STDLIB=1' ],
                                 fallback: ['ludocode-mpack', 'ludocode_mpack_dep'],
                                 )
 cutils_dep = dependency('cutils', version: '>=1.0.0')

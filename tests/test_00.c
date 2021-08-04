@@ -6,11 +6,11 @@
 // clang-format off
 const struct test_vector test = {
     .wrp_from_msgpack_rv = WRPE_OK,
-    .wrp_to_msgpack_rv = WRPE_OK,
-    .wrp_to_string_rv = WRPE_OK,
+    .wrp_to_msgpack_rv   = WRPE_OK,
+    .wrp_to_string_rv    = WRPE_OK,
 
-    .in.msg_type            = WRP_MSG_TYPE__AUTH,
-    .in.u.auth.status       = 123,
+    .in.msg_type         = WRP_MSG_TYPE__AUTH,
+    .in.u.auth.status    = 123,
 
     .string = "wrp_auth_msg {\n"
               "    .status = 123\n"
@@ -18,9 +18,9 @@ const struct test_vector test = {
 
     .msgpack_len = 19,
     .msgpack =
-        "\x82"                  // 2 name value pairs
-            "\xa8""msg_type" /* = */ "\x02"
-            "\xa6""status"   /* = */ "\x7b" // 123
+        "\x82"  /* 2 name value pairs */
+            "\xa8""msg_type" /* : */ "\x02"
+            "\xa6""status"   /* : */ "\x7b" // 123
 };
 // clang-format on
 

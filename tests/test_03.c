@@ -16,8 +16,8 @@ const struct wrp_nvp meta[3] = {
 
 const struct test_vector test = {
     .wrp_from_msgpack_rv = WRPE_OK,
-    .wrp_to_msgpack_rv = WRPE_OK,
-    .wrp_to_string_rv = WRPE_OK,
+    .wrp_to_msgpack_rv   = WRPE_OK,
+    .wrp_to_string_rv    = WRPE_OK,
 
     .in.msg_type                = WRP_MSG_TYPE__REQ,
     .in.u.req.trans_id.s        = "c07ee5e1-70be-444c-a156-097c767ad8aa",
@@ -37,19 +37,18 @@ const struct test_vector test = {
     .in.u.req.metadata.count    = 1,
     .in.u.req.metadata.list     = (struct wrp_nvp*) meta,
 
-    .string =
-    "wrp_req_msg {\n"
-    "    .trans_id      = 'c07ee5e1-70be-444c-a156-097c767ad8aa'\n"
-    "    .source        = 'source-address'\n"
-    "    .dest          = 'dest-address'\n"
-    "    .partner_ids   = 'Partner 1, Partner 2, Example'\n"
-    "    .content_type  = 'application/json'\n"
-    "    .accept        = 'json'\n"
-    "    .payload (len) = 3\n"
-    "    .metadata      = {\n"
-    "        .n1: 'v1'\n"
-    "    }\n"
-    "}\n",
+    .string = "wrp_req_msg {\n"
+              "    .trans_id      = 'c07ee5e1-70be-444c-a156-097c767ad8aa'\n"
+              "    .source        = 'source-address'\n"
+              "    .dest          = 'dest-address'\n"
+              "    .partner_ids   = 'Partner 1, Partner 2, Example'\n"
+              "    .content_type  = 'application/json'\n"
+              "    .accept        = 'json'\n"
+              "    .payload (len) = 3\n"
+              "    .metadata      = {\n"
+              "        .n1: 'v1'\n"
+              "    }\n"
+              "}\n",
 
     .msgpack_len = 218,
     .msgpack =

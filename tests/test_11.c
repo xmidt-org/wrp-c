@@ -12,22 +12,22 @@ const struct wrp_nvp meta[3] = {
 
 const struct test_vector test = {
     .wrp_from_msgpack_rv = WRPE_OK,
-    .wrp_to_msgpack_rv = WRPE_OK,
-    .wrp_to_string_rv = WRPE_OK,
+    .wrp_to_msgpack_rv   = WRPE_OK,
+    .wrp_to_string_rv    = WRPE_OK,
 
-    .in.msg_type                  = 4,
-    .in.u.event.trans_id.s        = "c07ee5e1-70be-444c-a156-097c767ad8aa",
-    .in.u.event.trans_id.len      = 36,
-    .in.u.event.source.s          = "source-address",
-    .in.u.event.source.len        = 14,
-    .in.u.event.dest.s            = "dest-address",
-    .in.u.event.dest.len          = 12,
-    .in.u.event.content_type.s    = "application/json",
-    .in.u.event.content_type.len  = 16,
-    .in.u.event.payload.data      = (const uint8_t*) "event 1234",
-    .in.u.event.payload.len       = 10,
-    .in.u.event.metadata.count    = 3,
-    .in.u.event.metadata.list     = (struct wrp_nvp*) meta,
+    .in.msg_type                 = 4,
+    .in.u.event.trans_id.s       = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+    .in.u.event.trans_id.len     = 36,
+    .in.u.event.source.s         = "source-address",
+    .in.u.event.source.len       = 14,
+    .in.u.event.dest.s           = "dest-address",
+    .in.u.event.dest.len         = 12,
+    .in.u.event.content_type.s   = "application/json",
+    .in.u.event.content_type.len = 16,
+    .in.u.event.payload.data     = (const uint8_t*) "event 1234",
+    .in.u.event.payload.len      = 10,
+    .in.u.event.metadata.count   = 3,
+    .in.u.event.metadata.list    = (struct wrp_nvp*) meta,
 
     .string = "wrp_event_msg {\n"
               "    .trans_id      = 'c07ee5e1-70be-444c-a156-097c767ad8aa'\n"
@@ -43,7 +43,7 @@ const struct test_vector test = {
               "    }\n"
               "}\n",
 
-    .asymetric_active = true,
+    .asymetric_active      = true,
     .asymetric_msgpack_len = 180,
     .asymetric_msgpack =
         "\x87"  /* 7 name value pairs */

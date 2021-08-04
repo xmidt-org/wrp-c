@@ -12,10 +12,10 @@ const struct wrp_string list[3] = {
 
 const struct test_vector test = {
     .wrp_from_msgpack_rv = WRPE_OK,
-    .wrp_to_msgpack_rv = WRPE_OK,
-    .wrp_to_string_rv = WRPE_OK,
+    .wrp_to_msgpack_rv   = WRPE_OK,
+    .wrp_to_string_rv    = WRPE_OK,
 
-    .in.msg_type                = WRP_MSG_TYPE__DELETE,
+    .in.msg_type                 = WRP_MSG_TYPE__DELETE,
     .in.u.crud.trans_id.s        = "c07ee5e1-70be-444c-a156-097c767ad8aa",
     .in.u.crud.trans_id.len      = 36,
     .in.u.crud.source.s          = "source-address",
@@ -47,7 +47,7 @@ const struct test_vector test = {
               "    .metadata      = {}\n"
               "}\n",
 
-    .asymetric_active = true,
+    .asymetric_active      = true,
     .asymetric_msgpack_len = 222,
     .asymetric_msgpack =
         "\x8a"  /* 10 name value pairs */

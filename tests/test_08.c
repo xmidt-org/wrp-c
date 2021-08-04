@@ -6,10 +6,10 @@
 // clang-format off
 const struct test_vector test = {
     .wrp_from_msgpack_rv = WRPE_OK,
-    .wrp_to_msgpack_rv = WRPE_OK,
-    .wrp_to_string_rv = WRPE_OK,
+    .wrp_to_msgpack_rv   = WRPE_OK,
+    .wrp_to_string_rv    = WRPE_OK,
 
-    .in.msg_type                = WRP_MSG_TYPE__SVC_ALIVE,
+    .in.msg_type = WRP_MSG_TYPE__SVC_ALIVE,
 
  
     .string = "wrp_keep_alive_msg {}\n",
