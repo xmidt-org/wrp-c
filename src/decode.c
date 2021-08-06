@@ -253,7 +253,7 @@ WRPcode wrp_from_msgpack(const void *data, size_t len, wrp_msg_t **msg)
     mpack_error_t err;
     WRPcode rv = WRPE_OK;
 
-    if (!data || !len || !(msg)) {
+    if (!data || !len || !msg) {
         return WRPE_INVALID_ARGS;
     }
 
