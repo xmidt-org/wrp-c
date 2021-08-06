@@ -28,6 +28,7 @@ struct wrp_internal {
     /* The list of things to free */
     void *partner_ids;
     void *metadata;
+    void *headers;
 
     wrp_msg_t msg;
 };

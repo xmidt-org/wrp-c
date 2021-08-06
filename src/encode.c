@@ -50,13 +50,26 @@ static void enc_str__(mpack_writer_t *w, int flags, const struct wrp_token *toke
     }
 }
 
-static void enc_int__(mpack_writer_t *w, int flags, const struct wrp_token *token,
-                      int i)
-{
-    (void)flags;
 
-    mpack_write_str(w, token->s, (uint32_t)token->len);
+static void enc_mtype(mpack_writer_t *w, enum wrp_msg_type i)
+{
+    mpack_write_str(w, WRP_MSG_TYPE.s, (uint32_t)WRP_MSG_TYPE.len);
     mpack_write_int(w, i);
+}
+
+
+static void enc_int__(mpack_writer_t *w, int flags, const struct wrp_token *token,
+                      const struct wrp_int *i)
+{
+    if (i->valid || (REQUIRED == flags)) {
+        mpack_write_str(w, token->s, (uint32_t)token->len);
+    }
+
+    if (i->valid) {
+        mpack_write_int(w, i->n);
+    } else if (REQUIRED) {
+        mpack_write_nil(w);
+    }
 }
 
 
@@ -125,8 +138,8 @@ static void enc_nvpl_(mpack_writer_t *w, int flags, const struct wrp_token *toke
 static void enc_auth(mpack_writer_t *w, const struct wrp_auth_msg *a)
 {
     mpack_start_map(w, 2);
-    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, WRP_MSG_TYPE__AUTH);
-    enc_int__(w, REQUIRED, &WRP_STATUS__, a->status);
+    enc_mtype(w, WRP_MSG_TYPE__AUTH);
+    enc_int__(w, REQUIRED, &WRP_STATUS__, &a->status);
     mpack_finish_map(w);
 }
 
@@ -142,21 +155,32 @@ static void enc_req(mpack_writer_t *w, const struct wrp_req_msg *req)
      */
     int count = 5;
 
-    count += (req->content_type.len) ? 1 : 0;
     count += (req->accept.len) ? 1 : 0;
-    count += (req->partner_ids.count) ? 1 : 0;
+    count += (req->content_type.len) ? 1 : 0;
+    count += (req->headers.count) ? 1 : 0;
     count += (req->metadata.count) ? 1 : 0;
+    count += (req->msg_id.len) ? 1 : 0;
+    count += (req->partner_ids.count) ? 1 : 0;
+    count += (req->rdr.valid) ? 1 : 0;
+    count += (req->session_id.len) ? 1 : 0;
+    count += (req->status.valid) ? 1 : 0;
 
     mpack_start_map(w, count);
-    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, WRP_MSG_TYPE__REQ);
-    enc_str__(w, REQUIRED, &WRP_SOURCE__, &req->source);
+    enc_mtype(w, WRP_MSG_TYPE__REQ);
     enc_str__(w, REQUIRED, &WRP_DEST____, &req->dest);
-    enc_slist(w, OPTIONAL, &WRP_PARTNERS, &req->partner_ids);
-    enc_nvpl_(w, OPTIONAL, &WRP_METADATA, &req->metadata);
-    enc_str__(w, REQUIRED, &WRP_TRANS_ID, &req->trans_id);
-    enc_str__(w, OPTIONAL, &WRP_CT______, &req->content_type);
-    enc_str__(w, OPTIONAL, &WRP_ACCEPT__, &req->accept);
     enc_blob_(w, REQUIRED, &WRP_PAYLOAD_, &req->payload);
+    enc_str__(w, REQUIRED, &WRP_SOURCE__, &req->source);
+    enc_str__(w, REQUIRED, &WRP_TRANS_ID, &req->trans_id);
+
+    enc_str__(w, OPTIONAL, &WRP_ACCEPT__, &req->accept);
+    enc_str__(w, OPTIONAL, &WRP_CT______, &req->content_type);
+    enc_slist(w, OPTIONAL, &WRP_HEADERS_, &req->headers);
+    enc_nvpl_(w, OPTIONAL, &WRP_METADATA, &req->metadata);
+    enc_str__(w, OPTIONAL, &WRP_MSG_ID__, &req->msg_id);
+    enc_slist(w, OPTIONAL, &WRP_PARTNERS, &req->partner_ids);
+    enc_int__(w, OPTIONAL, &WRP_RDR_____, &req->rdr);
+    enc_str__(w, OPTIONAL, &WRP_SESS_ID_, &req->session_id);
+    enc_int__(w, OPTIONAL, &WRP_STATUS__, &req->status);
     mpack_finish_map(w);
 }
 
@@ -171,20 +195,24 @@ static void enc_event(mpack_writer_t *w, const struct wrp_event_msg *event)
     int count = 3;
 
     count += (event->content_type.len) ? 1 : 0;
-    count += (event->trans_id.len) ? 1 : 0;
     count += (event->payload.len) ? 1 : 0;
     count += (event->partner_ids.count) ? 1 : 0;
     count += (event->metadata.count) ? 1 : 0;
+    count += (event->headers.count) ? 1 : 0;
+    count += (event->msg_id.len) ? 1 : 0;
+    count += (event->session_id.len) ? 1 : 0;
 
     mpack_start_map(w, count);
-    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, WRP_MSG_TYPE__EVENT);
-    enc_str__(w, REQUIRED, &WRP_SOURCE__, &event->source);
+    enc_mtype(w, WRP_MSG_TYPE__EVENT);
     enc_str__(w, REQUIRED, &WRP_DEST____, &event->dest);
-    enc_slist(w, OPTIONAL, &WRP_PARTNERS, &event->partner_ids);
-    enc_nvpl_(w, OPTIONAL, &WRP_METADATA, &event->metadata);
-    enc_str__(w, OPTIONAL, &WRP_TRANS_ID, &event->trans_id);
+    enc_str__(w, REQUIRED, &WRP_SOURCE__, &event->source);
     enc_str__(w, OPTIONAL, &WRP_CT______, &event->content_type);
+    enc_slist(w, OPTIONAL, &WRP_HEADERS_, &event->headers);
+    enc_nvpl_(w, OPTIONAL, &WRP_METADATA, &event->metadata);
+    enc_str__(w, OPTIONAL, &WRP_MSG_ID__, &event->msg_id);
+    enc_slist(w, OPTIONAL, &WRP_PARTNERS, &event->partner_ids);
     enc_blob_(w, OPTIONAL, &WRP_PAYLOAD_, &event->payload);
+    enc_str__(w, OPTIONAL, &WRP_SESS_ID_, &event->session_id);
     mpack_finish_map(w);
 }
 
@@ -200,32 +228,34 @@ static void enc_crud(mpack_writer_t *w, const struct wrp_crud_msg *crud,
      */
     int count = 4;
 
-    count += (crud->content_type.len) ? 1 : 0;
     count += (crud->accept.len) ? 1 : 0;
-    count += (crud->partner_ids.count) ? 1 : 0;
+    count += (crud->content_type.len) ? 1 : 0;
+    count += (crud->headers.count) ? 1 : 0;
     count += (crud->metadata.count) ? 1 : 0;
-    count += (crud->payload.len) ? 1 : 0;
-    count += (0 != crud->status) ? 1 : 0;
-    count += (0 != crud->rdr) ? 1 : 0;
+    count += (crud->msg_id.len) ? 1 : 0;
+    count += (crud->partner_ids.count) ? 1 : 0;
     count += (crud->path.len) ? 1 : 0;
+    count += (crud->payload.len) ? 1 : 0;
+    count += (crud->rdr.valid) ? 1 : 0;
+    count += (crud->session_id.len) ? 1 : 0;
+    count += (crud->status.valid) ? 1 : 0;
 
     mpack_start_map(w, count);
-    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, msg_type);
-    enc_str__(w, REQUIRED, &WRP_SOURCE__, &crud->source);
+    enc_mtype(w, msg_type);
     enc_str__(w, REQUIRED, &WRP_DEST____, &crud->dest);
-    enc_slist(w, OPTIONAL, &WRP_PARTNERS, &crud->partner_ids);
-    enc_nvpl_(w, OPTIONAL, &WRP_METADATA, &crud->metadata);
+    enc_str__(w, REQUIRED, &WRP_SOURCE__, &crud->source);
     enc_str__(w, REQUIRED, &WRP_TRANS_ID, &crud->trans_id);
-    if (0 != crud->status) {
-        enc_int__(w, OPTIONAL, &WRP_STATUS__, crud->status);
-    }
-    if (0 != crud->rdr) {
-        enc_int__(w, OPTIONAL, &WRP_RDR_____, crud->rdr);
-    }
-    enc_str__(w, OPTIONAL, &WRP_PATH____, &crud->path);
-    enc_str__(w, OPTIONAL, &WRP_CT______, &crud->content_type);
     enc_str__(w, OPTIONAL, &WRP_ACCEPT__, &crud->accept);
+    enc_str__(w, OPTIONAL, &WRP_CT______, &crud->content_type);
+    enc_slist(w, OPTIONAL, &WRP_HEADERS_, &crud->headers);
+    enc_nvpl_(w, OPTIONAL, &WRP_METADATA, &crud->metadata);
+    enc_str__(w, OPTIONAL, &WRP_MSG_ID__, &crud->msg_id);
+    enc_slist(w, OPTIONAL, &WRP_PARTNERS, &crud->partner_ids);
+    enc_str__(w, OPTIONAL, &WRP_PATH____, &crud->path);
     enc_blob_(w, OPTIONAL, &WRP_PAYLOAD_, &crud->payload);
+    enc_int__(w, OPTIONAL, &WRP_RDR_____, &crud->rdr);
+    enc_str__(w, OPTIONAL, &WRP_SESS_ID_, &crud->session_id);
+    enc_int__(w, OPTIONAL, &WRP_STATUS__, &crud->status);
     mpack_finish_map(w);
 }
 
@@ -233,7 +263,7 @@ static void enc_crud(mpack_writer_t *w, const struct wrp_crud_msg *crud,
 static void enc_svc_reg(mpack_writer_t *w, const struct wrp_svc_reg_msg *r)
 {
     mpack_start_map(w, 3);
-    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, WRP_MSG_TYPE__SVC_REG);
+    enc_mtype(w, WRP_MSG_TYPE__SVC_REG);
     enc_str__(w, REQUIRED, &WRP_SN______, &r->service_name);
     enc_str__(w, REQUIRED, &WRP_URL_____, &r->url);
     mpack_finish_map(w);
@@ -243,7 +273,7 @@ static void enc_svc_reg(mpack_writer_t *w, const struct wrp_svc_reg_msg *r)
 static void enc_svc_alive(mpack_writer_t *w)
 {
     mpack_start_map(w, 1);
-    enc_int__(w, REQUIRED, &WRP_MSG_TYPE, WRP_MSG_TYPE__SVC_ALIVE);
+    enc_mtype(w, WRP_MSG_TYPE__SVC_ALIVE);
     mpack_finish_map(w);
 }
 

@@ -17,13 +17,11 @@ const struct wrp_nvp meta[3] = {
 };
 
 const struct test_vector test = {
-    .wrp_from_msgpack_rv = WRPE_NOT_MSGPACK_FORMAT,
+    .wrp_from_msgpack_rv = WRPE_NOT_A_WRP_MSG,
     .wrp_to_msgpack_rv   = WRPE_NOT_A_WRP_MSG,
     .wrp_to_string_rv    = WRPE_NOT_A_WRP_MSG,
 
     .in.msg_type                  = 99,
-    .in.u.event.trans_id.s        = "c07ee5e1-70be-444c-a156-097c767ad8aa",
-    .in.u.event.trans_id.len      = 36,
     .in.u.event.source.s          = "source-address",
     .in.u.event.source.len        = 14,
     .in.u.event.dest.s            = "dest-address",
@@ -52,7 +50,6 @@ const struct test_vector test = {
                                                  "\xa2""n2" "\xa2""12"
                                                  "\xa2""n3" "\xa3""abc"
 
-            "\xb0""transaction_uuid" /* : */ "\xd9\x24""c07ee5e1-70be-444c-a156-097c767ad8aa"
             "\xac""content_type"     /* : */ "\xb0""application/json"
             "\xa7""payload"          /* : */ "\xc4""\x0a" /* len 10 */
                                              "event 1234"

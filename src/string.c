@@ -18,7 +18,10 @@
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
-/* none */
+struct wrp_str {
+    size_t len;
+    char *s;
+};
 
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
@@ -36,21 +39,31 @@
 /*----------------------------------------------------------------------------*/
 static void string_list_to_string(const struct wrp_string_list *list, char **dst, size_t *len)
 {
-    const char *comma = "";
+    char *p = NULL;
+    const char *nl = "\n";
+    const char *comma = ",";
 
     *dst = NULL;
     *len = 0;
 
     for (size_t i = 0; i < list->count; i++) {
-        char *p = NULL;
-
-        p = mlaprintf(len, "%.*s%s%.*s", (int)*len, *dst, comma, (int)list->list[i].len, list->list[i].s);
+        if (i == (list->count - 1)) {
+            comma = "";
+        }
+        p = mlaprintf(len, "%s%.*s        '%.*s'%s\n", nl, (int)*len, *dst,
+                      (int)list->list[i].len, list->list[i].s, comma);
+        nl = "";
         free(*dst);
         *dst = p;
         if (!*dst) {
             return;
         }
-        comma = ", ";
+    }
+
+    if (0 < *len) {
+        p = mlaprintf(len, "%s    ", *dst);
+        free(*dst);
+        *dst = p;
     }
 }
 
@@ -89,9 +102,9 @@ static WRPcode auth_to_string(const wrp_msg_t *msg, char **dst, size_t *len)
     WRPcode rv = WRPE_OUT_OF_MEMORY;
 
     *dst = mlaprintf(&_len, "wrp_auth_msg {\n"
-                            "    .status = %d\n"
+                            "    .status = '%.*d'\n"
                             "}\n",
-                     msg->u.auth.status);
+                     (true == msg->u.auth.status.valid) ? 1 : 0, msg->u.auth.status.n);
 
     if (NULL != *dst) {
         *len = _len;
@@ -106,41 +119,54 @@ static WRPcode req_to_string(const wrp_msg_t *msg, char **dst, size_t *len)
 {
     WRPcode rv = WRPE_OUT_OF_MEMORY;
     const struct wrp_req_msg *req = &msg->u.req;
-    char *partners = NULL;
-    char *metadata = NULL;
-    size_t partner_len = 0;
-    size_t metadata_len = 0;
+    struct wrp_str headers = { 0, NULL };
+    struct wrp_str partners = { 0, NULL };
+    struct wrp_str metadata = { 0, NULL };
     size_t _len = 0;
 
-    string_list_to_string(&req->partner_ids, &partners, &partner_len);
-    nvp_list_to_string(&req->metadata, &metadata, &metadata_len);
+    string_list_to_string(&req->headers, &headers.s, &headers.len);
+    string_list_to_string(&req->partner_ids, &partners.s, &partners.len);
+    nvp_list_to_string(&req->metadata, &metadata.s, &metadata.len);
 
     *dst = mlaprintf(&_len, "wrp_req_msg {\n"
-                            "    .trans_id      = '%.*s'\n"
-                            "    .source        = '%.*s'\n"
                             "    .dest          = '%.*s'\n"
-                            "    .partner_ids   = '%.*s'\n"
-                            "    .content_type  = '%.*s'\n"
-                            "    .accept        = '%.*s'\n"
                             "    .payload (len) = %zd\n"
+                            "    .source        = '%.*s'\n"
+                            "    .trans_id      = '%.*s'\n"
+                            "     - - optional - -\n"
+                            "    .accept        = '%.*s'\n"
+                            "    .content_type  = '%.*s'\n"
+                            "    .headers       = [%.*s]\n"
                             "    .metadata      = {%.*s}\n"
+                            "    .msg_id        = '%.*s'\n"
+                            "    .partner_ids   = [%.*s]\n"
+                            "    .rdr           = '%.*d'\n"
+                            "    .session_id    = '%.*s'\n"
+                            "    .status        = '%.*d'\n"
                             "}\n",
-                     (int)req->trans_id.len, req->trans_id.s,
-                     (int)req->source.len, req->source.s,
                      (int)req->dest.len, req->dest.s,
-                     (int)partner_len, partners,
-                     (int)req->content_type.len, req->content_type.s,
-                     (int)req->accept.len, req->accept.s,
                      req->payload.len,
-                     (int)metadata_len, metadata);
+                     (int)req->source.len, req->source.s,
+                     (int)req->trans_id.len, req->trans_id.s,
+
+                     (int)req->accept.len, req->accept.s,
+                     (int)req->content_type.len, req->content_type.s,
+                     (int)headers.len, headers.s,
+                     (int)metadata.len, metadata.s,
+                     (int)req->msg_id.len, req->msg_id.s,
+                     (int)partners.len, partners.s,
+                     (true == req->rdr.valid) ? 1 : 0, req->rdr.n,
+                     (int)req->session_id.len, req->session_id.s,
+                     (true == req->status.valid) ? 1 : 0, req->status.n);
 
     if (NULL != *dst) {
         *len = _len;
         rv = WRPE_OK;
     }
 
-    if (partners) free(partners);
-    if (metadata) free(metadata);
+    if (headers.s) free(headers.s);
+    if (partners.s) free(partners.s);
+    if (metadata.s) free(metadata.s);
 
     return rv;
 }
@@ -150,39 +176,46 @@ static WRPcode event_to_string(const wrp_msg_t *msg, char **dst, size_t *len)
 {
     WRPcode rv = WRPE_OUT_OF_MEMORY;
     const struct wrp_event_msg *event = &msg->u.event;
-    char *partners = NULL;
-    char *metadata = NULL;
-    size_t partner_len = 0;
-    size_t metadata_len = 0;
+    struct wrp_str headers = { 0, NULL };
+    struct wrp_str partners = { 0, NULL };
+    struct wrp_str metadata = { 0, NULL };
     size_t _len = 0;
 
-    string_list_to_string(&event->partner_ids, &partners, &partner_len);
-    nvp_list_to_string(&event->metadata, &metadata, &metadata_len);
+    string_list_to_string(&event->headers, &headers.s, &headers.len);
+    string_list_to_string(&event->partner_ids, &partners.s, &partners.len);
+    nvp_list_to_string(&event->metadata, &metadata.s, &metadata.len);
 
     *dst = mlaprintf(&_len, "wrp_event_msg {\n"
-                            "    .trans_id      = '%.*s'\n"
-                            "    .source        = '%.*s'\n"
                             "    .dest          = '%.*s'\n"
-                            "    .partner_ids   = '%.*s'\n"
+                            "    .source        = '%.*s'\n"
+                            "     - - optional - -\n"
                             "    .content_type  = '%.*s'\n"
-                            "    .payload (len) = %zd\n"
+                            "    .headers       = [%.*s]\n"
                             "    .metadata      = {%.*s}\n"
+                            "    .msg_id        = '%.*s'\n"
+                            "    .partner_ids   = [%.*s]\n"
+                            "    .payload (len) = %zd\n"
+                            "    .session_id    = '%.*s'\n"
                             "}\n",
-                     (int)event->trans_id.len, event->trans_id.s,
-                     (int)event->source.len, event->source.s,
                      (int)event->dest.len, event->dest.s,
-                     (int)partner_len, partners,
+                     (int)event->source.len, event->source.s,
+
                      (int)event->content_type.len, event->content_type.s,
+                     (int)headers.len, headers.s,
+                     (int)metadata.len, metadata.s,
+                     (int)event->msg_id.len, event->msg_id.s,
+                     (int)partners.len, partners.s,
                      event->payload.len,
-                     (int)metadata_len, metadata);
+                     (int)event->session_id.len, event->session_id.s);
 
     if (NULL != *dst) {
         *len = _len;
         rv = WRPE_OK;
     }
 
-    if (partners) free(partners);
-    if (metadata) free(metadata);
+    if (headers.s) free(headers.s);
+    if (partners.s) free(partners.s);
+    if (metadata.s) free(metadata.s);
 
     return rv;
 }
@@ -193,48 +226,56 @@ static WRPcode crud_to_string(const wrp_msg_t *msg, char **dst, size_t *len,
 {
     WRPcode rv = WRPE_OUT_OF_MEMORY;
     const struct wrp_crud_msg *crud = &msg->u.crud;
-    char *partners = NULL;
-    char *metadata = NULL;
-    size_t partner_len = 0;
-    size_t metadata_len = 0;
+    struct wrp_str headers = { 0, NULL };
+    struct wrp_str partners = { 0, NULL };
+    struct wrp_str metadata = { 0, NULL };
     size_t _len = 0;
 
-    string_list_to_string(&crud->partner_ids, &partners, &partner_len);
-    nvp_list_to_string(&crud->metadata, &metadata, &metadata_len);
+    string_list_to_string(&crud->headers, &headers.s, &headers.len);
+    string_list_to_string(&crud->partner_ids, &partners.s, &partners.len);
+    nvp_list_to_string(&crud->metadata, &metadata.s, &metadata.len);
 
     *dst = mlaprintf(&_len, "wrp_crud_msg (%s) {\n"
-                            "    .trans_id      = '%.*s'\n"
-                            "    .source        = '%.*s'\n"
                             "    .dest          = '%.*s'\n"
-                            "    .partner_ids   = '%.*s'\n"
-                            "    .content_type  = '%.*s'\n"
+                            "    .source        = '%.*s'\n"
+                            "    .trans_id      = '%.*s'\n"
+                            "     - - optional - -\n"
                             "    .accept        = '%.*s'\n"
-                            "    .status        = %d\n"
-                            "    .rdr           = %d\n"
+                            "    .content_type  = '%.*s'\n"
+                            "    .headers       = [%.*s]\n"
+                            "    .metadata      = {%.*s}\n"
+                            "    .msg_id        = '%.*s'\n"
+                            "    .partner_ids   = [%.*s]\n"
                             "    .path          = '%.*s'\n"
                             "    .payload (len) = %zd\n"
-                            "    .metadata      = {%.*s}\n"
+                            "    .rdr           = '%.*d'\n"
+                            "    .session_id    = '%.*s'\n"
+                            "    .status        = '%.*d'\n"
                             "}\n",
                      type,
-                     (int)crud->trans_id.len, crud->trans_id.s,
-                     (int)crud->source.len, crud->source.s,
                      (int)crud->dest.len, crud->dest.s,
-                     (int)partner_len, partners,
-                     (int)crud->content_type.len, crud->content_type.s,
+                     (int)crud->source.len, crud->source.s,
+                     (int)crud->trans_id.len, crud->trans_id.s,
                      (int)crud->accept.len, crud->accept.s,
-                     crud->status,
-                     crud->rdr,
+                     (int)crud->content_type.len, crud->content_type.s,
+                     (int)headers.len, headers.s,
+                     (int)metadata.len, metadata.s,
+                     (int)crud->msg_id.len, crud->msg_id.s,
+                     (int)partners.len, partners.s,
                      (int)crud->path.len, crud->path.s,
                      crud->payload.len,
-                     (int)metadata_len, metadata);
+                     (true == crud->rdr.valid) ? 1 : 0, crud->rdr.n,
+                     (int)crud->session_id.len, crud->session_id.s,
+                     (true == crud->status.valid) ? 1 : 0, crud->status.n);
 
     if (NULL != *dst) {
         *len = _len;
         rv = WRPE_OK;
     }
 
-    if (partners) free(partners);
-    if (metadata) free(metadata);
+    if (headers.s) free(headers.s);
+    if (partners.s) free(partners.s);
+    if (metadata.s) free(metadata.s);
 
     return rv;
 }

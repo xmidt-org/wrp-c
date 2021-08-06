@@ -34,6 +34,35 @@
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
+static int assert_wrp_int_eq(const struct wrp_int *exp,
+                             const struct wrp_int *got)
+{
+    if (!exp && !got) {
+        return 0;
+    }
+
+    if (!exp && got) {
+        CU_FAIL("We got a non-NULL wrp_int when expecting NULL.");
+        return -1;
+    }
+
+    if (exp && !got) {
+        CU_FAIL("We got a NULL wrp_int when expecting non-NULL.");
+        return -1;
+    }
+
+    if ((exp->valid != got->valid) || (exp->n != got->n)) {
+        CU_FAIL("wrp_int are not equal");
+        printf("wrp_int Expected: %d,%d != Got %d,%d\n",
+               exp->valid, exp->n,
+               got->valid, got->n);
+        return -1;
+    }
+
+    return 0;
+}
+
+
 static int assert_wrp_string_eq(const struct wrp_string *exp,
                                 const struct wrp_string *got)
 {
@@ -132,15 +161,16 @@ static int assert_wrp_blob_eq(const struct wrp_blob *exp,
         return -1;
     }
 
-    CU_ASSERT_FATAL(NULL != exp->data);
-    CU_ASSERT_FATAL(NULL != got->data);
-    if (0 != memcmp(exp->data, got->data, exp->len)) {
-        printf("Expected: \n");
-        xxd(exp->data, exp->len, stdout);
-        printf("\nGot: \n");
-        xxd(got->data, got->len, stdout);
-        CU_FAIL("wrp_blob data is not the same");
-        return -1;
+    if (exp->data) {
+        CU_ASSERT_FATAL(NULL != got->data);
+        if (0 != memcmp(exp->data, got->data, exp->len)) {
+            printf("Expected: \n");
+            xxd(exp->data, exp->len, stdout);
+            printf("\nGot: \n");
+            xxd(got->data, got->len, stdout);
+            CU_FAIL("wrp_blob data is not the same");
+            return -1;
+        }
     }
 
     return 0;
@@ -208,14 +238,7 @@ static int assert_wrp_nvp_list_eq(const struct wrp_nvp_list *exp,
 static int assert_auth_equals(const struct wrp_auth_msg *exp,
                               const struct wrp_auth_msg *got)
 {
-    CU_ASSERT(exp->status == got->status);
-    if (exp->status != got->status) {
-        printf("auth.status Expected: %d != Got %d\n",
-               exp->status, got->status);
-        return -1;
-    }
-
-    return 0;
+    return assert_wrp_int_eq(&exp->status, &got->status);
 }
 
 
@@ -224,14 +247,20 @@ static int assert_req_equals(const struct wrp_req_msg *exp,
 {
     int rv = 0;
 
-    rv |= assert_wrp_string_eq(&exp->source, &got->source);
     rv |= assert_wrp_string_eq(&exp->dest, &got->dest);
-    rv |= assert_wrp_string_eq(&exp->content_type, &got->content_type);
-    rv |= assert_wrp_string_list_eq(&exp->partner_ids, &got->partner_ids);
+    rv |= assert_wrp_string_eq(&exp->source, &got->source);
     rv |= assert_wrp_blob_eq(&exp->payload, &got->payload);
-    rv |= assert_wrp_nvp_list_eq(&exp->metadata, &got->metadata);
     rv |= assert_wrp_string_eq(&exp->trans_id, &got->trans_id);
+
     rv |= assert_wrp_string_eq(&exp->accept, &got->accept);
+    rv |= assert_wrp_string_eq(&exp->content_type, &got->content_type);
+    rv |= assert_wrp_string_list_eq(&exp->headers, &got->headers);
+    rv |= assert_wrp_nvp_list_eq(&exp->metadata, &got->metadata);
+    rv |= assert_wrp_string_eq(&exp->msg_id, &got->msg_id);
+    rv |= assert_wrp_string_list_eq(&exp->partner_ids, &got->partner_ids);
+    rv |= assert_wrp_int_eq(&exp->rdr, &got->rdr);
+    rv |= assert_wrp_string_eq(&exp->session_id, &got->session_id);
+    rv |= assert_wrp_int_eq(&exp->status, &got->status);
 
     return rv;
 }
@@ -242,13 +271,16 @@ static int assert_event_equals(const struct wrp_event_msg *exp,
 {
     int rv = 0;
 
-    rv |= assert_wrp_string_eq(&exp->source, &got->source);
     rv |= assert_wrp_string_eq(&exp->dest, &got->dest);
+    rv |= assert_wrp_string_eq(&exp->source, &got->source);
+
     rv |= assert_wrp_string_eq(&exp->content_type, &got->content_type);
+    rv |= assert_wrp_string_list_eq(&exp->headers, &got->headers);
+    rv |= assert_wrp_nvp_list_eq(&exp->metadata, &got->metadata);
+    rv |= assert_wrp_string_eq(&exp->msg_id, &got->msg_id);
     rv |= assert_wrp_string_list_eq(&exp->partner_ids, &got->partner_ids);
     rv |= assert_wrp_blob_eq(&exp->payload, &got->payload);
-    rv |= assert_wrp_nvp_list_eq(&exp->metadata, &got->metadata);
-    rv |= assert_wrp_string_eq(&exp->trans_id, &got->trans_id);
+    rv |= assert_wrp_string_eq(&exp->session_id, &got->session_id);
 
     return rv;
 }
@@ -259,17 +291,21 @@ static int assert_crud_equals(const struct wrp_crud_msg *exp,
 {
     int rv = 0;
 
-    rv |= assert_wrp_string_eq(&exp->source, &got->source);
     rv |= assert_wrp_string_eq(&exp->dest, &got->dest);
-    rv |= assert_wrp_string_eq(&exp->content_type, &got->content_type);
-    rv |= assert_wrp_string_list_eq(&exp->partner_ids, &got->partner_ids);
     rv |= assert_wrp_blob_eq(&exp->payload, &got->payload);
-    rv |= assert_wrp_nvp_list_eq(&exp->metadata, &got->metadata);
+    rv |= assert_wrp_string_eq(&exp->source, &got->source);
     rv |= assert_wrp_string_eq(&exp->trans_id, &got->trans_id);
+
     rv |= assert_wrp_string_eq(&exp->accept, &got->accept);
-    CU_ASSERT(exp->status == got->status);
-    CU_ASSERT(exp->rdr == got->rdr);
+    rv |= assert_wrp_string_eq(&exp->content_type, &got->content_type);
+    rv |= assert_wrp_string_list_eq(&exp->headers, &got->headers);
+    rv |= assert_wrp_nvp_list_eq(&exp->metadata, &got->metadata);
+    rv |= assert_wrp_string_eq(&exp->msg_id, &got->msg_id);
+    rv |= assert_wrp_string_list_eq(&exp->partner_ids, &got->partner_ids);
     rv |= assert_wrp_string_eq(&exp->path, &got->path);
+    rv |= assert_wrp_int_eq(&exp->rdr, &got->rdr);
+    rv |= assert_wrp_string_eq(&exp->session_id, &got->session_id);
+    rv |= assert_wrp_int_eq(&exp->status, &got->status);
 
     return rv;
 }
@@ -370,6 +406,12 @@ static void test_wrp_to_msgpack_helper(uint8_t **got, size_t *len)
             printf("Got:\n");
             xxd(*got, *len, stdout);
             CU_FAIL("Buffers didn't match");
+            for (size_t i = 0; i < *len; i++) {
+                const uint8_t *g = *got;
+                if (g[i] != (uint8_t)goal_bytes[i]) {
+                    printf("difference at offset: 0x%02zx\n", i);
+                }
+            }
         }
     }
 }
@@ -444,6 +486,12 @@ static void test_wrp_to_string()
             xxd(test.string, exp_len, stdout);
             printf("Got:\n");
             xxd(got, len, stdout);
+
+            for (size_t i = 0; i < exp_len; i++) {
+                if (got[i] != test.string[i]) {
+                    printf("difference at offset: 0x%02zx\n", i);
+                }
+            }
         }
     }
 

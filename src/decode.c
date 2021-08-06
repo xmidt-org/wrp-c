@@ -61,13 +61,17 @@ static void dec_str__(mpack_node_t root, int flags, const struct wrp_token *toke
 }
 
 
-static void dec_int__(mpack_node_t root, int flags, const struct wrp_token *token, int *i)
+static void dec_int__(mpack_node_t root, int flags, const struct wrp_token *token,
+                      struct wrp_int *i)
 {
     mpack_node_t val;
 
+    i->valid = false;
+    i->n = 0;
     val = get_node(root, flags, token);
     if (is_valid_node(val)) {
-        *i = mpack_node_int(val);
+        i->valid = true;
+        i->n = mpack_node_int(val);
     }
 }
 
@@ -182,19 +186,26 @@ static void decode_root(struct wrp_internal *p)
         dec_str__(root, REQUIRED, &WRP_TRANS_ID, &p->msg.u.req.trans_id);
         dec_str__(root, OPTIONAL, &WRP_CT______, &p->msg.u.req.content_type);
         dec_str__(root, OPTIONAL, &WRP_ACCEPT__, &p->msg.u.req.accept);
+        dec_int__(root, OPTIONAL, &WRP_RDR_____, &p->msg.u.req.rdr);
+        dec_int__(root, OPTIONAL, &WRP_STATUS__, &p->msg.u.req.status);
         dec_blob_(root, OPTIONAL, &WRP_PAYLOAD_, &p->msg.u.req.payload);
         dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.req.partner_ids, &p->partner_ids);
         dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.req.metadata, &p->metadata);
+        dec_slist(root, OPTIONAL, &WRP_HEADERS_, &p->msg.u.req.headers, &p->headers);
+        dec_str__(root, OPTIONAL, &WRP_MSG_ID__, &p->msg.u.req.msg_id);
+        dec_str__(root, OPTIONAL, &WRP_SESS_ID_, &p->msg.u.req.session_id);
         break;
 
     case WRP_MSG_TYPE__EVENT:
         dec_str__(root, REQUIRED, &WRP_SOURCE__, &p->msg.u.event.source);
         dec_str__(root, REQUIRED, &WRP_DEST____, &p->msg.u.event.dest);
-        dec_str__(root, OPTIONAL, &WRP_TRANS_ID, &p->msg.u.event.trans_id);
         dec_str__(root, OPTIONAL, &WRP_CT______, &p->msg.u.event.content_type);
         dec_blob_(root, OPTIONAL, &WRP_PAYLOAD_, &p->msg.u.event.payload);
         dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.event.partner_ids, &p->partner_ids);
         dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.event.metadata, &p->metadata);
+        dec_slist(root, OPTIONAL, &WRP_HEADERS_, &p->msg.u.event.headers, &p->headers);
+        dec_str__(root, OPTIONAL, &WRP_MSG_ID__, &p->msg.u.event.msg_id);
+        dec_str__(root, OPTIONAL, &WRP_SESS_ID_, &p->msg.u.event.session_id);
         break;
 
     case WRP_MSG_TYPE__CREATE:
@@ -212,6 +223,9 @@ static void decode_root(struct wrp_internal *p)
         dec_blob_(root, OPTIONAL, &WRP_PAYLOAD_, &p->msg.u.crud.payload);
         dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.crud.partner_ids, &p->partner_ids);
         dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.crud.metadata, &p->metadata);
+        dec_slist(root, OPTIONAL, &WRP_HEADERS_, &p->msg.u.crud.headers, &p->headers);
+        dec_str__(root, OPTIONAL, &WRP_MSG_ID__, &p->msg.u.crud.msg_id);
+        dec_str__(root, OPTIONAL, &WRP_SESS_ID_, &p->msg.u.crud.session_id);
         break;
 
     case WRP_MSG_TYPE__SVC_REG:
@@ -238,6 +252,10 @@ WRPcode wrp_from_msgpack(const void *data, size_t len, wrp_msg_t **msg)
     struct wrp_internal *p;
     mpack_error_t err;
     WRPcode rv = WRPE_OK;
+
+    if (!data || !len || !(msg)) {
+        return WRPE_INVALID_ARGS;
+    }
 
     p = calloc(1, sizeof(struct wrp_internal));
     if (!p) {
@@ -284,6 +302,9 @@ WRPcode wrp_destroy(wrp_msg_t *msg)
     }
     if (p->metadata) {
         free(p->metadata);
+    }
+    if (p->headers) {
+        free(p->headers);
     }
 
     free(p);

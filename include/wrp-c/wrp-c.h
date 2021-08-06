@@ -3,6 +3,7 @@
 #ifndef __WRP_C_H__
 #define __WRP_C_H__
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <sys/types.h>
 
@@ -42,6 +43,11 @@ struct wrp_string {
 struct wrp_string_list {
     size_t count;
     struct wrp_string *list;
+};
+
+struct wrp_int {
+    bool valid;
+    int n;
 };
 
 struct wrp_blob {
@@ -100,48 +106,55 @@ enum wrp_msg_type {
 
 
 struct wrp_auth_msg {
-    int status;                             /* Required */
+    struct wrp_int status;                  /* Required */
 };
 
 struct wrp_req_msg {
-    struct wrp_string       source;         /* Required */
     struct wrp_string       dest;           /* Required */
-    struct wrp_string       trans_id;       /* Required */
+    struct wrp_string       source;         /* Required */
     struct wrp_blob         payload;        /* Required */
-    struct wrp_string       content_type;   /* Optional */
-    struct wrp_string_list  partner_ids;    /* Optional */
-    struct wrp_nvp_list     metadata;       /* Optional */
+    struct wrp_string       trans_id;       /* Required */
+
     struct wrp_string       accept;         /* Optional */
-    // headers
-    // tracing
+    struct wrp_string       content_type;   /* Optional */
+    struct wrp_string_list  headers;        /* Optional */
+    struct wrp_nvp_list     metadata;       /* Optional */
+    struct wrp_string       msg_id;         /* Optional */
+    struct wrp_string_list  partner_ids;    /* Optional */
+    struct wrp_int          rdr;            /* Optional */
+    struct wrp_string       session_id;     /* Optional */
+    struct wrp_int          status;         /* Optional */
 };
 
 struct wrp_event_msg {
-    struct wrp_string       source;         /* Required */
     struct wrp_string       dest;           /* Required */
-    struct wrp_string       trans_id;       /* Optional, but should be REQUIRED */
+    struct wrp_string       source;         /* Required */
+
     struct wrp_string       content_type;   /* Optional */
+    struct wrp_string_list  headers;        /* Optional */
+    struct wrp_nvp_list     metadata;       /* Optional */
+    struct wrp_string       msg_id;         /* Optional */
     struct wrp_string_list  partner_ids;    /* Optional */
     struct wrp_blob         payload;        /* Optional */
-    struct wrp_nvp_list     metadata;       /* Optional */
-    // headers
-    // tracing
+    struct wrp_string       session_id;     /* Optional */
 };
 
 struct wrp_crud_msg {
-    struct wrp_string       source;         /* Required */
     struct wrp_string       dest;           /* Required */
+    struct wrp_string       source;         /* Required */
     struct wrp_string       trans_id;       /* Required */
-    struct wrp_string       content_type;   /* Optional */
-    struct wrp_string_list  partner_ids;    /* Optional */
-    struct wrp_blob         payload;        /* Optional */
-    struct wrp_nvp_list     metadata;       /* Optional */
+
     struct wrp_string       accept;         /* Optional */
-    int                     status;         /* Optional */
-    int                     rdr;            /* Optional */
+    struct wrp_string       content_type;   /* Optional */
+    struct wrp_string_list  headers;        /* Optional */
+    struct wrp_nvp_list     metadata;       /* Optional */
+    struct wrp_string       msg_id;         /* Optional */
+    struct wrp_string_list  partner_ids;    /* Optional */
     struct wrp_string       path;           /* Optional */
-    // headers
-    // tracing
+    struct wrp_blob         payload;        /* Optional */
+    struct wrp_int          rdr;            /* Optional */
+    struct wrp_string       session_id;     /* Optional */
+    struct wrp_int          status;         /* Optional */
 };
 
 struct wrp_svc_reg_msg {
@@ -156,10 +169,10 @@ typedef struct {
 
     union {
         struct wrp_auth_msg     auth;
-        struct wrp_req_msg      req;
-        struct wrp_event_msg    event;
         struct wrp_crud_msg     crud;
+        struct wrp_event_msg    event;
         struct wrp_svc_reg_msg  reg;
+        struct wrp_req_msg      req;
     } u;
 
     struct wrp_blob original;   /* The original message for convenience. This is
@@ -176,47 +189,67 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 
 /**
- * Converts a buffer with a msgpack encoded wrp into the c structure.
+ *  Converts a buffer with a msgpack encoded wrp into the c structure.
  *
- * @note The resulting message structure references the original data.
- *       The user should call wrp_destroy() on the returned msg before
- *       releaseing the original data object.
+ *  @note The resulting message structure references the original data.
+ *        The user should call wrp_destroy() on the returned msg before
+ *        releaseing the original data object.
  *
- * @param src  the buffer with the msgpack data
- * @param len  the length of the src buffer
- * @param dest the resulting object (must be released 
+ *  @param src  the buffer with the msgpack data
+ *  @param len  the length of the src buffer
+ *  @param dest the resulting object (must be released 
+ *
+ *  @retval WRPE_OK
+ *  @retval WRPE_INVALID_ARGS
+ *  @retval WRPE_NOT_MSGPACK_FORMAT
+ *  @retval WRPE_NOT_A_WRP_MSG
+ *  @retval WRPE_MSG_TOO_BIG
+ *  @retval WRPE_OUT_OF_MEMORY
+ *  @retval WRPE_OTHER_ERROR
  */
 WRPcode wrp_from_msgpack(const void *src, size_t len, wrp_msg_t **dest);
 
 
 /**
- * Converts a wrp structure to a message pack encoded form, either in a user
- * specified buffer or one allocated by the function.
+ *  Converts a wrp structure to a message pack encoded form, either in a user
+ *  specified buffer or one allocated by the function.
  *
- * @param src  the message to encode
- * @param dest If *dest != NULL then encode into the specified buffer.
- *             If *dest == NULL then the function will allocate a buffer and
- *             return a pointer to it here.
- * @param len  The dest buffer length if provided, and the number of valid
- *             encoded byte in dest.
+ *  @param src  the message to encode
+ *  @param dest If *dest != NULL then encode into the specified buffer.
+ *              If *dest == NULL then the function will allocate a buffer and
+ *              return a pointer to it here.
+ *  @param len  The dest buffer length if provided, and the number of valid
+ *              encoded byte in dest.
+ *
+ *  @retval WRPE_OK
+ *  @retval WRPE_INVALID_ARGS
+ *  @retval WRPE_NOT_A_WRP_MSG
+ *  @retval WRPE_MSG_TOO_BIG
+ *  @retval WRPE_OUT_OF_MEMORY
+ *  @retval WRPE_OTHER_ERROR
  */
 WRPcode wrp_to_msgpack(const wrp_msg_t *src, uint8_t **dest, size_t *len);
 
 
 /**
- * Cleans up the allocations from the msg.
+ *  Cleans up the allocations from the msg.
+ *
+ *  @retval WRPE_OK
+ *  @retval WRPE_NOT_FROM_WRPC
  */
 WRPcode wrp_destroy(wrp_msg_t *msg);
 
 
 /**
- *  Converts a wrp_msg_t structure into an array of bytes that must be freed.
+ *  Prints a wrp_msg_t structure into an array of bytes that must be freed.
  *
  *  @param msg the message to convert
  *  @param dst the resulting buffer
  *  @param len the resultint length
  *
- *  @return WRP_OK on success, error otherwise
+ *  @retval WRPE_OK
+ *  @retval WRPE_OUT_OF_MEMORY
+ *  @retval WRPE_INVALID_ARGS
  */
 WRPcode wrp_to_string(const wrp_msg_t *msg, char **dst, size_t *len);
 
@@ -233,12 +266,24 @@ WRPcode wrp_to_string(const wrp_msg_t *msg, char **dst, size_t *len);
  *  @param len  the length of the loc field
  *  @param out  the locator struct to populate based on the loc string
  *
- *  @return WRPE_OK on success, error otherwise
+ *  @retval WRP_OK
+ *  @retval WRPE_INVALID_ARGS
+ *  @retval WRPE_NO_SCHEME
+ *  @retval WRPE_NO_AUTHORITY
  */
 WRPcode wrp_loc_split(const char *loc, size_t len, wrp_locator_t *out);
 
 
 /**
+ *  Prints a wrp_locator_t structure into an array of bytes that must be freed.
+ *
+ *  @param loc the locator to convert
+ *  @param dst the resulting buffer
+ *  @param len the resultint length
+ *
+ *  @retval WRP_OK
+ *  @retval WRPE_OUT_OF_MEMORY
+ *  @retval WRPE_INVALID_ARGS
  */
 WRPcode wrp_loc_to_string(const wrp_locator_t *loc, char **dst, size_t *len);
 #endif

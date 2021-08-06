@@ -81,9 +81,7 @@ if not meson.is_subproject()
            'test_11',
            'test_12',
            'test_13',
-           'test_14',
-           'test_15',
-
+#
            'test_err_00',
            'test_err_01',
            'test_err_02',

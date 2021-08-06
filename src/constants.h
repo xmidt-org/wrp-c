@@ -10,19 +10,22 @@ struct wrp_token {
     size_t len;
 };
 
-extern const struct wrp_token WRP_MSG_TYPE;
-extern const struct wrp_token WRP_SOURCE__;
-extern const struct wrp_token WRP_DEST____;
-extern const struct wrp_token WRP_CT______;
-extern const struct wrp_token WRP_PARTNERS;
-extern const struct wrp_token WRP_PAYLOAD_;
-extern const struct wrp_token WRP_METADATA;
-extern const struct wrp_token WRP_TRANS_ID;
 extern const struct wrp_token WRP_ACCEPT__;
-extern const struct wrp_token WRP_STATUS__;
-extern const struct wrp_token WRP_RDR_____;
+extern const struct wrp_token WRP_CT______;
+extern const struct wrp_token WRP_DEST____;
+extern const struct wrp_token WRP_HEADERS_;
+extern const struct wrp_token WRP_METADATA;
+extern const struct wrp_token WRP_MSG_ID__;
+extern const struct wrp_token WRP_MSG_TYPE;
+extern const struct wrp_token WRP_PARTNERS;
 extern const struct wrp_token WRP_PATH____;
+extern const struct wrp_token WRP_PAYLOAD_;
+extern const struct wrp_token WRP_RDR_____;
+extern const struct wrp_token WRP_SESS_ID_;
 extern const struct wrp_token WRP_SN______;
+extern const struct wrp_token WRP_SOURCE__;
+extern const struct wrp_token WRP_STATUS__;
+extern const struct wrp_token WRP_TRANS_ID;
 extern const struct wrp_token WRP_URL_____;
 
 #endif

@@ -3,6 +3,8 @@
 
 #include "test_common.h"
 
+/* Test a service registration message. */
+
 // clang-format off
 const struct test_vector test = {
     .wrp_from_msgpack_rv = WRPE_OK,
