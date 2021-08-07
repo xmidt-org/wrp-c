@@ -47,12 +47,12 @@ const struct test_vector test = {
     .in.u.req.msg_id.len        = 36,
     .in.u.req.partner_ids.count = sizeof(parts)/sizeof(struct wrp_string),
     .in.u.req.partner_ids.list  = (struct wrp_string*) parts,
-    .in.u.req.rdr.valid         = true,
-    .in.u.req.rdr.n             = 12,
+    .in.u.req.rdr.num           = (int*) &(test.in.u.req.rdr._n),
+    .in.u.req.rdr._n            = 12,
     .in.u.req.session_id.s      = "bebc43de-501b-4435-a8b1-8a4d174a1a91",
     .in.u.req.session_id.len    = 36,
-    .in.u.req.status.valid      = true,
-    .in.u.req.status.n          = 19,
+    .in.u.req.status.num        = (int*) &(test.in.u.req.status._n),
+    .in.u.req.status._n         = 19,
 
     .string = "wrp_req_msg {\n"
               "    .dest          = 'dest-address'\n"

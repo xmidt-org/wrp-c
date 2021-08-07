@@ -51,11 +51,24 @@ static int assert_wrp_int_eq(const struct wrp_int *exp,
         return -1;
     }
 
-    if ((exp->valid != got->valid) || (exp->n != got->n)) {
+    if (!exp->num && !got->num) {
+        return 0;
+    }
+
+    if (!exp->num && got->num) {
+        CU_FAIL("We got a non-NULL wrp_int when expecting NULL.");
+        return -1;
+    }
+
+    if (exp->num && !got->num) {
+        CU_FAIL("We got a NULL wrp_int when expecting non-NULL.");
+        return -1;
+    }
+
+    if (*exp->num != *got->num) {
         CU_FAIL("wrp_int are not equal");
-        printf("wrp_int Expected: %d,%d != Got %d,%d\n",
-               exp->valid, exp->n,
-               got->valid, got->n);
+        printf("wrp_int Expected: %d != Got %d\n",
+               *exp->num, *got->num);
         return -1;
     }
 

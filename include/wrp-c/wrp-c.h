@@ -3,9 +3,7 @@
 #ifndef __WRP_C_H__
 #define __WRP_C_H__
 
-#include <stdbool.h>
 #include <stdint.h>
-#include <sys/types.h>
 
 /*----------------------------------------------------------------------------*/
 /*                                Return Codes                                */
@@ -46,8 +44,8 @@ struct wrp_string_list {
 };
 
 struct wrp_int {
-    bool valid;
-    int n;
+    int *num;
+    int _n; /* Don't directly use this.  It's for the pointer to point to. */
 };
 
 struct wrp_blob {

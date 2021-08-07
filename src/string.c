@@ -104,7 +104,7 @@ static WRPcode auth_to_string(const wrp_msg_t *msg, char **dst, size_t *len)
     *dst = mlaprintf(&_len, "wrp_auth_msg {\n"
                             "    .status = '%.*d'\n"
                             "}\n",
-                     (true == msg->u.auth.status.valid) ? 1 : 0, msg->u.auth.status.n);
+                     (msg->u.auth.status.num) ? 1 : 0, *msg->u.auth.status.num);
 
     if (NULL != *dst) {
         *len = _len;
@@ -155,9 +155,9 @@ static WRPcode req_to_string(const wrp_msg_t *msg, char **dst, size_t *len)
                      (int)metadata.len, metadata.s,
                      (int)req->msg_id.len, req->msg_id.s,
                      (int)partners.len, partners.s,
-                     (true == req->rdr.valid) ? 1 : 0, req->rdr.n,
+                     (req->rdr.num) ? 1 : 0, (req->rdr.num) ? *req->rdr.num : 0,
                      (int)req->session_id.len, req->session_id.s,
-                     (true == req->status.valid) ? 1 : 0, req->status.n);
+                     (req->status.num) ? 1 : 0, (req->status.num) ? *req->status.num : 0);
 
     if (NULL != *dst) {
         *len = _len;
@@ -264,9 +264,9 @@ static WRPcode crud_to_string(const wrp_msg_t *msg, char **dst, size_t *len,
                      (int)partners.len, partners.s,
                      (int)crud->path.len, crud->path.s,
                      crud->payload.len,
-                     (true == crud->rdr.valid) ? 1 : 0, crud->rdr.n,
+                     (crud->rdr.num) ? 1 : 0, (crud->rdr.num) ? *crud->rdr.num : 0,
                      (int)crud->session_id.len, crud->session_id.s,
-                     (true == crud->status.valid) ? 1 : 0, crud->status.n);
+                     (crud->status.num) ? 1 : 0, (crud->status.num) ? *crud->status.num : 0);
 
     if (NULL != *dst) {
         *len = _len;

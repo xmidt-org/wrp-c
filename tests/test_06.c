@@ -49,12 +49,12 @@ const struct test_vector test = {
     .in.u.crud.path.len          = 9,
     .in.u.crud.payload.data      = (const uint8_t*) "123",
     .in.u.crud.payload.len       = 3,
-    .in.u.crud.rdr.valid         = true,
-    .in.u.crud.rdr.n             = 12,
+    .in.u.crud.rdr.num           = (int*)&(test.in.u.crud.rdr._n),
+    .in.u.crud.rdr._n            = 12,
     .in.u.crud.session_id.s      = "bebc43de-501b-4435-a8b1-8a4d174a1a91",
     .in.u.crud.session_id.len    = 36,
-    .in.u.crud.status.valid      = true,
-    .in.u.crud.status.n          = 19,
+    .in.u.crud.status.num        = (int*)&(test.in.u.crud.status._n),
+    .in.u.crud.status._n         = 19,
 
     .string = "wrp_crud_msg (CREATE) {\n"
               "    .dest          = 'dest-address'\n"

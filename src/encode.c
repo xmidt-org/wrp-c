@@ -61,12 +61,12 @@ static void enc_mtype(mpack_writer_t *w, enum wrp_msg_type i)
 static void enc_int__(mpack_writer_t *w, int flags, const struct wrp_token *token,
                       const struct wrp_int *i)
 {
-    if (i->valid || (REQUIRED == flags)) {
+    if (i->num || (REQUIRED == flags)) {
         mpack_write_str(w, token->s, (uint32_t)token->len);
     }
 
-    if (i->valid) {
-        mpack_write_int(w, i->n);
+    if (i->num) {
+        mpack_write_int(w, *i->num);
     } else if (REQUIRED) {
         mpack_write_nil(w);
     }
@@ -161,9 +161,9 @@ static void enc_req(mpack_writer_t *w, const struct wrp_req_msg *req)
     count += (req->metadata.count) ? 1 : 0;
     count += (req->msg_id.len) ? 1 : 0;
     count += (req->partner_ids.count) ? 1 : 0;
-    count += (req->rdr.valid) ? 1 : 0;
+    count += (req->rdr.num) ? 1 : 0;
     count += (req->session_id.len) ? 1 : 0;
-    count += (req->status.valid) ? 1 : 0;
+    count += (req->status.num) ? 1 : 0;
 
     mpack_start_map(w, count);
     enc_mtype(w, WRP_MSG_TYPE__REQ);
@@ -236,9 +236,9 @@ static void enc_crud(mpack_writer_t *w, const struct wrp_crud_msg *crud,
     count += (crud->partner_ids.count) ? 1 : 0;
     count += (crud->path.len) ? 1 : 0;
     count += (crud->payload.len) ? 1 : 0;
-    count += (crud->rdr.valid) ? 1 : 0;
+    count += (crud->rdr.num) ? 1 : 0;
     count += (crud->session_id.len) ? 1 : 0;
-    count += (crud->status.valid) ? 1 : 0;
+    count += (crud->status.num) ? 1 : 0;
 
     mpack_start_map(w, count);
     enc_mtype(w, msg_type);

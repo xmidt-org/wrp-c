@@ -66,12 +66,12 @@ static void dec_int__(mpack_node_t root, int flags, const struct wrp_token *toke
 {
     mpack_node_t val;
 
-    i->valid = false;
-    i->n = 0;
+    i->num = NULL;
+    i->_n = 0;
     val = get_node(root, flags, token);
     if (is_valid_node(val)) {
-        i->valid = true;
-        i->n = mpack_node_int(val);
+        i->_n = mpack_node_int(val);
+        i->num = &i->_n;
     }
 }
 
