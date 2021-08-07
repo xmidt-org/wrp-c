@@ -45,7 +45,7 @@ struct wrp_string_list {
 
 struct wrp_int {
     int *num;
-    int _n; /* Don't directly use this.  It's for the pointer to point to. */
+    int __internal_only; /* Don't directly use this. */
 };
 
 struct wrp_blob {

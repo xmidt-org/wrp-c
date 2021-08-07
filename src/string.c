@@ -104,7 +104,8 @@ static WRPcode auth_to_string(const wrp_msg_t *msg, char **dst, size_t *len)
     *dst = mlaprintf(&_len, "wrp_auth_msg {\n"
                             "    .status = '%.*d'\n"
                             "}\n",
-                     (msg->u.auth.status.num) ? 1 : 0, *msg->u.auth.status.num);
+                     (msg->u.auth.status.num) ? 1 : 0,
+                     (msg->u.auth.status.num) ? *msg->u.auth.status.num : 0);
 
     if (NULL != *dst) {
         *len = _len;

@@ -67,11 +67,11 @@ static void dec_int__(mpack_node_t root, int flags, const struct wrp_token *toke
     mpack_node_t val;
 
     i->num = NULL;
-    i->_n = 0;
+    i->__internal_only = 0;
     val = get_node(root, flags, token);
     if (is_valid_node(val)) {
-        i->_n = mpack_node_int(val);
-        i->num = &i->_n;
+        i->__internal_only = mpack_node_int(val);
+        i->num = &i->__internal_only;
     }
 }
 

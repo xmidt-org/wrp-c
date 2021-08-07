@@ -11,9 +11,9 @@ const struct test_vector test = {
     .wrp_to_msgpack_rv   = WRPE_OK,
     .wrp_to_string_rv    = WRPE_OK,
 
-    .in.msg_type          = WRP_MSG_TYPE__AUTH,
-    .in.u.auth.status.num = (int*) &test.in.u.auth.status._n,
-    .in.u.auth.status._n  = 123,
+    .in.msg_type                      = WRP_MSG_TYPE__AUTH,
+    .in.u.auth.status.num             = (int*) &test.in.u.auth.status.__internal_only,
+    .in.u.auth.status.__internal_only = 123,
 
     .string = "wrp_auth_msg {\n"
               "    .status = '123'\n"
