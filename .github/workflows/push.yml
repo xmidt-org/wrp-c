@@ -62,11 +62,12 @@ jobs:
         run: |
           ninja test
 
-      - name: Merge GCOV Reports for Sonarcloud
+      - name: Coverage Report Generation
         working-directory: build
         run: |
+          ninja coverage
           #ninja coverage-sonarqube ## for now this isn't supported
-          gcovr --sonarqube coverage.xml -r ..
+          gcovr --sonarqube sonarqube.xml -r ..
 
       - name: Upload SonarCloud
         run: |
@@ -75,7 +76,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Codecov.io
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v2
         with:
           directory: .
+          files: build/meson-logs/coverage.xml
           fail_ci_if_error: true
