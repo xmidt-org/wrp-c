@@ -14,23 +14,20 @@ C implementation of the Web Routing Protocol
 [![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/wrp-c/blob/main/LICENSE.txt)
 [![GitHub Release](https://img.shields.io/github/release/xmidt-org/wrp-c.svg)](CHANGELOG.md)
 
+This is a simple library that converts between c structures and msgpack encoded
+structures, with a few helper functions thrown in.
 
-# Building and Testing Instructions
+## Dependencies
+
+- [cutils](https://github.com/xmidt-org/cutils)
+- [ludocode/mpack](https://github.com/ludocode/mpack)
+
+## Building and Testing Instructions
 
 ```
-mkdir build
+meson build
+meson compile -C build
 cd build
-cmake ..
-make
-make test
-make coverage
-firefox index.html
-```
-
-# Coding Formatter Settings
-
-Please format pull requests using the following command to keep the style consistent.
-
-```
-astyle -A10 -S -f -U -p -D -c -xC90 -xL
+ninja test coverage
+firefox ./meson-logs/coveragereport/index.html
 ```
