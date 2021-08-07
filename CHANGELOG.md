@@ -10,6 +10,26 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v2.0.0]A
+
+A major version change that has several breaking changes.
+
+### Changed
+- Switch to use mpack for msgpack encoding/decoding for performance gains.
+- Change the interface to simply overall use.
+- Change the strings so they all have a length.
+
+### Fixed
+- Fix [Issue #73](https://github.com/xmidt-org/wrp-c/issues/73) 'retrieve' spelling.
+- Fix [Issue #68](https://github.com/xmidt-org/wrp-c/issues/68) by adding fields.
+- Fix [Issue #81](https://github.com/xmidt-org/wrp-c/issues/81) by adding 'session_id' field.
+
+### Added
+- Add support for `msg_id` field.
+
+### Removed
+- Support for `spans`, `include_spans`, `span_parent` has removed.
+
 ## [v1.1.3]
 - Major re-write of the msgpack handling code that
     - Reduces calls to malloc
@@ -49,7 +69,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial creation
 
-[Unreleased]: https://github.com/xmidt-org/wrp-c/compare/v1.1.3...HEAD
+[Unreleased]: https://github.com/xmidt-org/wrp-c/compare/v2.0.0...HEAD
+[v2.0.0]: https://github.com/xmidt-org/wrp-c/compare/v1.1.3...v2.0.0
 [v1.1.3]: https://github.com/xmidt-org/wrp-c/compare/v1.1.2...v1.1.3
 [v1.1.2]: https://github.com/xmidt-org/wrp-c/compare/v1.1.1...v1.1.2
 [v1.1.1]: https://github.com/xmidt-org/wrp-c/compare/v1.1.0...v1.1.1
