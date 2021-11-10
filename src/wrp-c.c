@@ -22,7 +22,10 @@
 #include <string.h>
 #include <msgpack.h>
 #include <trower-base64/base64.h>
+
+#if ! defined(DEVICE_EXTENDER)
 #include <cimplog/cimplog.h>
+#endif
 
 #include "wrp-c.h"
 
@@ -31,10 +34,15 @@
 /*----------------------------------------------------------------------------*/
 #define LOGGING_MODULE   "WRP-C"
 
+#if ! defined(DEVICE_EXTENDER)
 #define WRP_ERROR( ... ) cimplog_error(LOGGING_MODULE, __VA_ARGS__)
 #define WRP_INFO( ... )  cimplog_info(LOGGING_MODULE, __VA_ARGS__)
 #define WRP_DEBUG( ... ) cimplog_debug(LOGGING_MODULE, __VA_ARGS__)
-
+#else
+#define WRP_ERROR( ... ) printf(__VA_ARGS__)
+#define WRP_INFO( ... )  printf(__VA_ARGS__)
+#define WRP_DEBUG( ... ) printf(__VA_ARGS__)
+#endif
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
