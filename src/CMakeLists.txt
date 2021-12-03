@@ -23,6 +23,10 @@ set_target_properties(${PROJ_WRPC}.shared PROPERTIES OUTPUT_NAME ${PROJ_WRPC})
 set_property(TARGET ${PROJ_WRPC} PROPERTY C_STANDARD 99)
 set_property(TARGET ${PROJ_WRPC}.shared PROPERTY C_STANDARD 99)
 
+if (DEVICE_EXTENDER)
+add_definitions(-DDEVICE_EXTENDER)
+endif()
+
 install (TARGETS ${PROJ_WRPC} DESTINATION lib${LIB_SUFFIX})
 install (TARGETS ${PROJ_WRPC}.shared DESTINATION lib${LIB_SUFFIX})
 install (FILES wrp-c.h DESTINATION include/${PROJ_WRPC})
