@@ -109,10 +109,10 @@ void test_00(void)
                              "    .service   = ''\n"
                              "    .app       = ''\n"
                              "}\n" },
-        { WRPE_NO_AUTHORITY, "mac:/" },
-        { WRPE_NO_SCHEME, ":/" },
-        { WRPE_NO_SCHEME, ":foo/fo" },
-        { WRPE_NO_AUTHORITY, "sfoo/fo" },
+        { WRPE_NO_AUTHORITY, "mac:/", NULL },
+        { WRPE_NO_SCHEME, ":/", NULL },
+        { WRPE_NO_SCHEME, ":foo/fo", NULL },
+        { WRPE_NO_AUTHORITY, "sfoo/fo", NULL },
     };
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(struct test_vector); i++) {
