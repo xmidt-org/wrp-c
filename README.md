@@ -25,9 +25,8 @@ structures, with a few helper functions thrown in.
 ## Building and Testing Instructions
 
 ```
-meson build
-meson compile -C build
+meson setup --warnlevel 3 --werror build
 cd build
-ninja test coverage
-firefox ./meson-logs/coveragereport/index.html
+ninja all test coverage
+firefox meson-logs/coveragereport/index.html
 ```
