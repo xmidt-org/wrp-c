@@ -1,4 +1,4 @@
-/* SPDX-FileCopyrightText: 2010-2021 Comcast Cable Communications Management, LLC */
+/* SPDX-FileCopyrightText: 2010-2022 Comcast Cable Communications Management, LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 #ifndef __WRP_C_H__
 #define __WRP_C_H__
@@ -195,7 +195,7 @@ typedef struct {
  *
  *  @param src  the buffer with the msgpack data
  *  @param len  the length of the src buffer
- *  @param dest the resulting object (must be released 
+ *  @param dest the resulting object (must be released)
  *
  *  @retval WRPE_OK
  *  @retval WRPE_INVALID_ARGS

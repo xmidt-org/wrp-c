@@ -1,4 +1,4 @@
-/* SPDX-FileCopyrightText: 2021 Comcast Cable Communications Management, LLC */
+/* SPDX-FileCopyrightText: 2021-2022 Comcast Cable Communications Management, LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <stdbool.h>
@@ -40,11 +40,11 @@ static void enc_str__(mpack_writer_t *w, int flags, const struct wrp_token *toke
     bool val_present = ((0 < s->len) && (NULL != s->s)) ? true : false;
 
     if (val_present || (REQUIRED == flags)) {
-        mpack_write_str(w, token->s, (uint32_t)token->len);
+        mpack_write_str(w, token->s, (uint32_t) token->len);
     }
 
     if (val_present) {
-        mpack_write_str(w, s->s, (uint32_t)s->len);
+        mpack_write_str(w, s->s, (uint32_t) s->len);
     } else if (REQUIRED) {
         mpack_write_str(w, NULL, 0);
     }
@@ -53,7 +53,7 @@ static void enc_str__(mpack_writer_t *w, int flags, const struct wrp_token *toke
 
 static void enc_mtype(mpack_writer_t *w, enum wrp_msg_type i)
 {
-    mpack_write_str(w, WRP_MSG_TYPE.s, (uint32_t)WRP_MSG_TYPE.len);
+    mpack_write_str(w, WRP_MSG_TYPE.s, (uint32_t) WRP_MSG_TYPE.len);
     mpack_write_int(w, i);
 }
 
@@ -62,7 +62,7 @@ static void enc_int__(mpack_writer_t *w, int flags, const struct wrp_token *toke
                       const struct wrp_int *i)
 {
     if (i->num || (REQUIRED == flags)) {
-        mpack_write_str(w, token->s, (uint32_t)token->len);
+        mpack_write_str(w, token->s, (uint32_t) token->len);
     }
 
     if (i->num) {
@@ -79,11 +79,11 @@ static void enc_blob_(mpack_writer_t *w, int flags, const struct wrp_token *toke
     bool val_present = ((0 < blob->len) && (NULL != blob->data)) ? true : false;
 
     if (val_present || (REQUIRED == flags)) {
-        mpack_write_str(w, token->s, (uint32_t)token->len);
+        mpack_write_str(w, token->s, (uint32_t) token->len);
     }
 
     if (val_present) {
-        mpack_write_bin(w, (const char *)blob->data, (uint32_t)blob->len);
+        mpack_write_bin(w, (const char *) blob->data, (uint32_t) blob->len);
     } else if (REQUIRED) {
         mpack_write_bin(w, NULL, 0);
     }
@@ -96,13 +96,13 @@ static void enc_slist(mpack_writer_t *w, int flags, const struct wrp_token *toke
     bool val_present = ((0 < l->count) && (NULL != l->list)) ? true : false;
 
     if (val_present || (REQUIRED == flags)) {
-        mpack_write_str(w, token->s, (uint32_t)token->len);
+        mpack_write_str(w, token->s, (uint32_t) token->len);
     }
 
     if (val_present) {
-        mpack_start_array(w, (uint32_t)l->count);
+        mpack_start_array(w, (uint32_t) l->count);
         for (size_t i = 0; i < l->count; i++) {
-            mpack_write_str(w, l->list[i].s, (uint32_t)l->list[i].len);
+            mpack_write_str(w, l->list[i].s, (uint32_t) l->list[i].len);
         }
         mpack_finish_array(w);
     } else if (REQUIRED) {
@@ -118,14 +118,14 @@ static void enc_nvpl_(mpack_writer_t *w, int flags, const struct wrp_token *toke
     bool val_present = ((0 < l->count) && (NULL != l->list)) ? true : false;
 
     if (val_present || (REQUIRED == flags)) {
-        mpack_write_str(w, token->s, (uint32_t)token->len);
+        mpack_write_str(w, token->s, (uint32_t) token->len);
     }
 
     if (val_present) {
-        mpack_start_map(w, (uint32_t)l->count);
+        mpack_start_map(w, (uint32_t) l->count);
         for (size_t i = 0; i < l->count; i++) {
-            mpack_write_str(w, l->list[i].name.s, (uint32_t)l->list[i].name.len);
-            mpack_write_str(w, l->list[i].value.s, (uint32_t)l->list[i].value.len);
+            mpack_write_str(w, l->list[i].name.s, (uint32_t) l->list[i].name.len);
+            mpack_write_str(w, l->list[i].value.s, (uint32_t) l->list[i].value.len);
         }
         mpack_finish_map(w);
     } else if (REQUIRED) {
@@ -147,7 +147,7 @@ static void enc_auth(mpack_writer_t *w, const struct wrp_auth_msg *a)
 static void enc_req(mpack_writer_t *w, const struct wrp_req_msg *req)
 {
     /* Required:
-     *   msg_type 
+     *   msg_type
      *   transaction_uuid
      *   source
      *   dest
@@ -188,7 +188,7 @@ static void enc_req(mpack_writer_t *w, const struct wrp_req_msg *req)
 static void enc_event(mpack_writer_t *w, const struct wrp_event_msg *event)
 {
     /* Required:
-     *   msg_type 
+     *   msg_type
      *   source
      *   dest
      */
@@ -221,7 +221,7 @@ static void enc_crud(mpack_writer_t *w, const struct wrp_crud_msg *crud,
                      enum wrp_msg_type msg_type)
 {
     /* Required:
-     *   msg_type 
+     *   msg_type
      *   transaction_uuid
      *   source
      *   dest
@@ -290,42 +290,42 @@ WRPcode wrp_to_msgpack(const wrp_msg_t *msg, uint8_t **buf, size_t *len)
     }
 
     if (*buf) {
-        mpack_writer_init(&writer, (char *)*buf, *len);
+        mpack_writer_init(&writer, (char *) *buf, *len);
     } else {
-        mpack_writer_init_growable(&writer, (char **)buf, len);
+        mpack_writer_init_growable(&writer, (char **) buf, len);
     }
 
     switch (msg->msg_type) {
-    case WRP_MSG_TYPE__AUTH:
-        enc_auth(&writer, &msg->u.auth);
-        break;
+        case WRP_MSG_TYPE__AUTH:
+            enc_auth(&writer, &msg->u.auth);
+            break;
 
-    case WRP_MSG_TYPE__REQ:
-        enc_req(&writer, &msg->u.req);
-        break;
+        case WRP_MSG_TYPE__REQ:
+            enc_req(&writer, &msg->u.req);
+            break;
 
-    case WRP_MSG_TYPE__EVENT:
-        enc_event(&writer, &msg->u.event);
-        break;
+        case WRP_MSG_TYPE__EVENT:
+            enc_event(&writer, &msg->u.event);
+            break;
 
-    case WRP_MSG_TYPE__SVC_REG:
-        enc_svc_reg(&writer, &msg->u.reg);
-        break;
+        case WRP_MSG_TYPE__SVC_REG:
+            enc_svc_reg(&writer, &msg->u.reg);
+            break;
 
-    case WRP_MSG_TYPE__CREATE:
-    case WRP_MSG_TYPE__RETRIEVE:
-    case WRP_MSG_TYPE__UPDATE:
-    case WRP_MSG_TYPE__DELETE:
-        enc_crud(&writer, &msg->u.crud, msg->msg_type);
-        break;
+        case WRP_MSG_TYPE__CREATE:
+        case WRP_MSG_TYPE__RETRIEVE:
+        case WRP_MSG_TYPE__UPDATE:
+        case WRP_MSG_TYPE__DELETE:
+            enc_crud(&writer, &msg->u.crud, msg->msg_type);
+            break;
 
-    case WRP_MSG_TYPE__SVC_ALIVE:
-        enc_svc_alive(&writer);
-        break;
+        case WRP_MSG_TYPE__SVC_ALIVE:
+            enc_svc_alive(&writer);
+            break;
 
-    default:
-        rv = WRPE_NOT_A_WRP_MSG;
-        break;
+        default:
+            rv = WRPE_NOT_A_WRP_MSG;
+            break;
     }
 
     if (WRPE_OK == rv) {

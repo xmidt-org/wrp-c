@@ -1,4 +1,4 @@
-/* SPDX-FileCopyrightText: 2021 Comcast Cable Communications Management, LLC */
+/* SPDX-FileCopyrightText: 2021-2022 Comcast Cable Communications Management, LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 #include <stddef.h>
 #include <stdint.h>
@@ -94,13 +94,13 @@ static int assert_wrp_string_eq(const struct wrp_string *exp,
     }
 
     if (exp->len != got->len) {
-        printf("Expected: %.*s\n", (int)exp->len, exp->s);
+        printf("Expected: %.*s\n", (int) exp->len, exp->s);
         CU_FAIL("wrp_string lengths are not equal");
         return -1;
     }
 
     if (0 == exp->len) {
-        //printf("got->s: %p\n", got->s);
+        // printf("got->s: %p\n", got->s);
         CU_ASSERT(NULL == got->s);
         return 0;
     }
@@ -109,7 +109,7 @@ static int assert_wrp_string_eq(const struct wrp_string *exp,
     CU_ASSERT_FATAL(NULL != got->s);
     if (0 != memcmp(exp->s, got->s, exp->len)) {
         printf("Expected: '%.*s', Got: '%.*s'\n",
-               (int)exp->len, exp->s, (int)got->len, got->s);
+               (int) exp->len, exp->s, (int) got->len, got->s);
         CU_FAIL("wrp_string strings are not the same");
         return -1;
     }
@@ -360,30 +360,30 @@ static int assert_wrp_equals(const wrp_msg_t *exp, const wrp_msg_t *got)
     rv |= assert_wrp_string_eq(exp->dest, got->dest);
 
     switch (exp->msg_type) {
-    case WRP_MSG_TYPE__AUTH:
-        rv |= assert_auth_equals(&exp->u.auth, &got->u.auth);
-        break;
-    case WRP_MSG_TYPE__REQ:
-        rv |= assert_req_equals(&exp->u.req, &got->u.req);
-        break;
-    case WRP_MSG_TYPE__EVENT:
-        rv |= assert_event_equals(&exp->u.event, &got->u.event);
-        break;
-    case WRP_MSG_TYPE__CREATE:
-    case WRP_MSG_TYPE__RETRIEVE:
-    case WRP_MSG_TYPE__UPDATE:
-    case WRP_MSG_TYPE__DELETE:
-        rv |= assert_crud_equals(&exp->u.crud, &got->u.crud);
-        break;
-    case WRP_MSG_TYPE__SVC_REG:
-        rv |= assert_svc_reg_equals(&exp->u.reg, &got->u.reg);
-        break;
-    case WRP_MSG_TYPE__SVC_ALIVE:
-        break;
-    default:
-        CU_FAIL("Invalid msg_type.");
-        rv |= -1;
-        break;
+        case WRP_MSG_TYPE__AUTH:
+            rv |= assert_auth_equals(&exp->u.auth, &got->u.auth);
+            break;
+        case WRP_MSG_TYPE__REQ:
+            rv |= assert_req_equals(&exp->u.req, &got->u.req);
+            break;
+        case WRP_MSG_TYPE__EVENT:
+            rv |= assert_event_equals(&exp->u.event, &got->u.event);
+            break;
+        case WRP_MSG_TYPE__CREATE:
+        case WRP_MSG_TYPE__RETRIEVE:
+        case WRP_MSG_TYPE__UPDATE:
+        case WRP_MSG_TYPE__DELETE:
+            rv |= assert_crud_equals(&exp->u.crud, &got->u.crud);
+            break;
+        case WRP_MSG_TYPE__SVC_REG:
+            rv |= assert_svc_reg_equals(&exp->u.reg, &got->u.reg);
+            break;
+        case WRP_MSG_TYPE__SVC_ALIVE:
+            break;
+        default:
+            CU_FAIL("Invalid msg_type.");
+            rv |= -1;
+            break;
     }
 
     return rv;
@@ -400,10 +400,10 @@ static void test_wrp_to_msgpack_helper(uint8_t **got, size_t *len)
     CU_ASSERT_FATAL(test.wrp_to_msgpack_rv == rv);
 
     if (WRPE_OK == rv) {
-        size_t goal_len = test.msgpack_len;
+        size_t goal_len        = test.msgpack_len;
         const char *goal_bytes = test.msgpack;
         if (test.asymetric_active) {
-            goal_len = test.asymetric_msgpack_len;
+            goal_len   = test.asymetric_msgpack_len;
             goal_bytes = test.asymetric_msgpack;
         }
 
@@ -421,7 +421,7 @@ static void test_wrp_to_msgpack_helper(uint8_t **got, size_t *len)
             CU_FAIL("Buffers didn't match");
             for (size_t i = 0; i < *len; i++) {
                 const uint8_t *g = *got;
-                if (g[i] != (uint8_t)goal_bytes[i]) {
+                if (g[i] != (uint8_t) goal_bytes[i]) {
                     printf("difference at offset: 0x%02zx\n", i);
                 }
             }
@@ -450,11 +450,11 @@ static void test_wrp_from_msgpack()
 static void test_wrp_to_msgpack()
 {
     uint8_t *got = NULL;
-    size_t len = 0;
+    size_t len   = 0;
     uint8_t buf[1024];
 
     /* Use the local buffer */
-    got = (uint8_t *)buf;
+    got = (uint8_t *) buf;
     len = 1024;
     test_wrp_to_msgpack_helper(&got, &len);
 
@@ -471,7 +471,7 @@ static void test_wrp_to_msgpack()
 
 static void test_wrp_to_string()
 {
-    char *got = NULL;
+    char *got  = NULL;
     size_t len = 0;
     WRPcode rv;
 
@@ -491,7 +491,7 @@ static void test_wrp_to_string()
 
         if (0 != memcmp(test.string, got, exp_len)) {
             printf("Expected:\n%s\nGot:\n%.*s\n",
-                   test.string, (int)len, got);
+                   test.string, (int) len, got);
 
             CU_FAIL("Strings don't match.");
 
@@ -527,7 +527,7 @@ static void add_suites(CU_pSuite *suite)
 /*----------------------------------------------------------------------------*/
 int main(void)
 {
-    unsigned rv = 1;
+    unsigned rv     = 1;
     CU_pSuite suite = NULL;
 
     if (CUE_SUCCESS == CU_initialize_registry()) {

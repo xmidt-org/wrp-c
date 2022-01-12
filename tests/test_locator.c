@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Comcast Cable Communications Management, LLC
+ * SPDX-FileCopyrightText: 2021-2022 Comcast Cable Communications Management, LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,12 +37,12 @@ void test(WRPcode rv, const char *in, const char *exp)
         CU_ASSERT_FATAL(NULL != out);
 
         if (strlen(exp) != len) {
-            printf("Got:\n%.*s\nExpected:\n%s\n", (int)len, out, exp);
+            printf("Got:\n%.*s\nExpected:\n%s\n", (int) len, out, exp);
         }
         CU_ASSERT_FATAL(strlen(exp) == len);
 
         if (memcmp(exp, out, len)) {
-            printf("Got:\n%.*s\nExpected:\n%s\n", (int)len, out, exp);
+            printf("Got:\n%.*s\nExpected:\n%s\n", (int) len, out, exp);
             printf("Got:\n");
             xxd(out, len, stdout);
             printf("Expected:\n");
@@ -56,6 +56,7 @@ void test(WRPcode rv, const char *in, const char *exp)
 
 void test_00(void)
 {
+    // clang-format off
     struct test_vector {
         WRPcode rv;
         const char *in;
@@ -110,10 +111,11 @@ void test_00(void)
                              "    .app       = ''\n"
                              "}\n" },
         { WRPE_NO_AUTHORITY, "mac:/", NULL },
-        { WRPE_NO_SCHEME, ":/", NULL },
-        { WRPE_NO_SCHEME, ":foo/fo", NULL },
+        { WRPE_NO_SCHEME,    ":/", NULL },
+        { WRPE_NO_SCHEME,    ":foo/fo", NULL },
         { WRPE_NO_AUTHORITY, "sfoo/fo", NULL },
     };
+    // clang-format on
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(struct test_vector); i++) {
         test(tests[i].rv, tests[i].in, tests[i].exp);
@@ -158,7 +160,7 @@ void add_suites(CU_pSuite *suite)
 /*----------------------------------------------------------------------------*/
 int main(void)
 {
-    unsigned rv = 1;
+    unsigned rv     = 1;
     CU_pSuite suite = NULL;
 
     if (CUE_SUCCESS == CU_initialize_registry()) {

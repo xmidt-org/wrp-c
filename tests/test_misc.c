@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Comcast Cable Communications Management, LLC
+ * SPDX-FileCopyrightText: 2021-2022 Comcast Cable Communications Management, LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,14 +38,14 @@ void test_02(void)
 {
     CU_ASSERT(WRPE_MSG_TOO_BIG == map_mpack_err(mpack_error_too_big));
     CU_ASSERT(WRPE_OUT_OF_MEMORY == map_mpack_err(mpack_error_memory));
-    CU_ASSERT(WRPE_OTHER_ERROR == map_mpack_err((mpack_error_t)100));
+    CU_ASSERT(WRPE_OTHER_ERROR == map_mpack_err((mpack_error_t) 100));
 }
 
 void test_03(void)
 {
     wrp_msg_t msg;
     uint8_t *buf = NULL;
-    size_t len = 0;
+    size_t len   = 0;
 
     CU_ASSERT(WRPE_INVALID_ARGS == wrp_to_msgpack(NULL, NULL, NULL));
     CU_ASSERT(WRPE_INVALID_ARGS == wrp_to_msgpack(&msg, NULL, NULL));
@@ -67,7 +67,7 @@ void add_suites(CU_pSuite *suite)
 /*----------------------------------------------------------------------------*/
 int main(void)
 {
-    unsigned rv = 1;
+    unsigned rv     = 1;
     CU_pSuite suite = NULL;
 
     if (CUE_SUCCESS == CU_initialize_registry()) {

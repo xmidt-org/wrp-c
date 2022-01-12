@@ -1,4 +1,4 @@
-/* SPDX-FileCopyrightText: 2021 Comcast Cable Communications Management, LLC */
+/* SPDX-FileCopyrightText: 2021-2022 Comcast Cable Communications Management, LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 #ifndef __CONSTANTS_H__
 #define __CONSTANTS_H__
@@ -29,4 +29,3 @@ extern const struct wrp_token WRP_TRANS_ID;
 extern const struct wrp_token WRP_URL_____;
 
 #endif
-

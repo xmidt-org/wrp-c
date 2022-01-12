@@ -1,4 +1,4 @@
-/* SPDX-FileCopyrightText: 2021 Comcast Cable Communications Management, LLC */
+/* SPDX-FileCopyrightText: 2021-2022 Comcast Cable Communications Management, LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #ifndef __INTERNAL_H__
@@ -14,8 +14,8 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-#define REQUIRED 0
-#define OPTIONAL 1
+#define REQUIRED           0
+#define OPTIONAL           1
 #define INTERNAL_SIGNATURE 0x777270
 
 /*----------------------------------------------------------------------------*/

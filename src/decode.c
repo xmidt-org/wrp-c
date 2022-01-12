@@ -1,4 +1,4 @@
-/* SPDX-FileCopyrightText: 2021 Comcast Cable Communications Management, LLC */
+/* SPDX-FileCopyrightText: 2021-2022 Comcast Cable Communications Management, LLC */
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <stddef.h>
@@ -23,7 +23,7 @@ static void get_msg_type(mpack_node_t root, enum wrp_msg_type *t)
     if (mpack_ok != mpack_node_error(val)) {
         mpack_node_flag_error(root, mpack_error_data);
     } else {
-        *t = (enum wrp_msg_type)type;
+        *t = (enum wrp_msg_type) type;
     }
 }
 
@@ -55,7 +55,7 @@ static void dec_str__(mpack_node_t root, int flags, const struct wrp_token *toke
 
     val = get_node(root, flags, token);
     if (is_valid_node(val)) {
-        s->s = mpack_node_str(val);
+        s->s   = mpack_node_str(val);
         s->len = mpack_node_strlen(val);
     }
 }
@@ -66,12 +66,12 @@ static void dec_int__(mpack_node_t root, int flags, const struct wrp_token *toke
 {
     mpack_node_t val;
 
-    i->num = NULL;
+    i->num             = NULL;
     i->__internal_only = 0;
-    val = get_node(root, flags, token);
+    val                = get_node(root, flags, token);
     if (is_valid_node(val)) {
         i->__internal_only = mpack_node_int(val);
-        i->num = &i->__internal_only;
+        i->num             = &i->__internal_only;
     }
 }
 
@@ -83,8 +83,8 @@ static void dec_blob_(mpack_node_t root, int flags, const struct wrp_token *toke
 
     val = get_node(root, flags, token);
     if (is_valid_node(val)) {
-        blob->data = (const uint8_t *)mpack_node_bin_data(val);
-        blob->len = mpack_node_bin_size(val);
+        blob->data = (const uint8_t *) mpack_node_bin_data(val);
+        blob->len  = mpack_node_bin_size(val);
     }
 }
 
@@ -113,8 +113,8 @@ static void dec_slist(mpack_node_t root, int flags, const struct wrp_token *toke
         for (size_t i = 0; i < l->count; i++) {
             mpack_node_t val;
 
-            val = mpack_node_array_at(list, i);
-            l->list[i].s = mpack_node_str(val);
+            val            = mpack_node_array_at(list, i);
+            l->list[i].s   = mpack_node_str(val);
             l->list[i].len = mpack_node_strlen(val);
         }
     }
@@ -146,11 +146,11 @@ static void dec_nvpl_(mpack_node_t root, int flags, const struct wrp_token *toke
             mpack_node_t n;
             mpack_node_t v;
 
-            n = mpack_node_map_key_at(map, i);
-            v = mpack_node_map_value_at(map, i);
-            l->list[i].name.s = mpack_node_str(n);
-            l->list[i].name.len = mpack_node_strlen(n);
-            l->list[i].value.s = NULL;
+            n                    = mpack_node_map_key_at(map, i);
+            v                    = mpack_node_map_value_at(map, i);
+            l->list[i].name.s    = mpack_node_str(n);
+            l->list[i].name.len  = mpack_node_strlen(n);
+            l->list[i].value.s   = NULL;
             l->list[i].value.len = 0;
             if (!mpack_node_is_nil(v)) {
                 l->list[i].value.len = mpack_node_strlen(v);
@@ -176,68 +176,68 @@ static void decode_root(struct wrp_internal *p)
     }
 
     switch (p->msg.msg_type) {
-    case WRP_MSG_TYPE__AUTH:
-        dec_int__(root, REQUIRED, &WRP_STATUS__, &p->msg.u.auth.status);
-        break;
+        case WRP_MSG_TYPE__AUTH:
+            dec_int__(root, REQUIRED, &WRP_STATUS__, &p->msg.u.auth.status);
+            break;
 
-    case WRP_MSG_TYPE__REQ:
-        dec_str__(root, REQUIRED, &WRP_SOURCE__, &p->msg.u.req.source);
-        dec_str__(root, REQUIRED, &WRP_DEST____, &p->msg.u.req.dest);
-        dec_str__(root, REQUIRED, &WRP_TRANS_ID, &p->msg.u.req.trans_id);
-        dec_str__(root, OPTIONAL, &WRP_CT______, &p->msg.u.req.content_type);
-        dec_str__(root, OPTIONAL, &WRP_ACCEPT__, &p->msg.u.req.accept);
-        dec_int__(root, OPTIONAL, &WRP_RDR_____, &p->msg.u.req.rdr);
-        dec_int__(root, OPTIONAL, &WRP_STATUS__, &p->msg.u.req.status);
-        dec_blob_(root, OPTIONAL, &WRP_PAYLOAD_, &p->msg.u.req.payload);
-        dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.req.partner_ids, &p->partner_ids);
-        dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.req.metadata, &p->metadata);
-        dec_slist(root, OPTIONAL, &WRP_HEADERS_, &p->msg.u.req.headers, &p->headers);
-        dec_str__(root, OPTIONAL, &WRP_MSG_ID__, &p->msg.u.req.msg_id);
-        dec_str__(root, OPTIONAL, &WRP_SESS_ID_, &p->msg.u.req.session_id);
-        break;
+        case WRP_MSG_TYPE__REQ:
+            dec_str__(root, REQUIRED, &WRP_SOURCE__, &p->msg.u.req.source);
+            dec_str__(root, REQUIRED, &WRP_DEST____, &p->msg.u.req.dest);
+            dec_str__(root, REQUIRED, &WRP_TRANS_ID, &p->msg.u.req.trans_id);
+            dec_str__(root, OPTIONAL, &WRP_CT______, &p->msg.u.req.content_type);
+            dec_str__(root, OPTIONAL, &WRP_ACCEPT__, &p->msg.u.req.accept);
+            dec_int__(root, OPTIONAL, &WRP_RDR_____, &p->msg.u.req.rdr);
+            dec_int__(root, OPTIONAL, &WRP_STATUS__, &p->msg.u.req.status);
+            dec_blob_(root, OPTIONAL, &WRP_PAYLOAD_, &p->msg.u.req.payload);
+            dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.req.partner_ids, &p->partner_ids);
+            dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.req.metadata, &p->metadata);
+            dec_slist(root, OPTIONAL, &WRP_HEADERS_, &p->msg.u.req.headers, &p->headers);
+            dec_str__(root, OPTIONAL, &WRP_MSG_ID__, &p->msg.u.req.msg_id);
+            dec_str__(root, OPTIONAL, &WRP_SESS_ID_, &p->msg.u.req.session_id);
+            break;
 
-    case WRP_MSG_TYPE__EVENT:
-        dec_str__(root, REQUIRED, &WRP_SOURCE__, &p->msg.u.event.source);
-        dec_str__(root, REQUIRED, &WRP_DEST____, &p->msg.u.event.dest);
-        dec_str__(root, OPTIONAL, &WRP_CT______, &p->msg.u.event.content_type);
-        dec_blob_(root, OPTIONAL, &WRP_PAYLOAD_, &p->msg.u.event.payload);
-        dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.event.partner_ids, &p->partner_ids);
-        dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.event.metadata, &p->metadata);
-        dec_slist(root, OPTIONAL, &WRP_HEADERS_, &p->msg.u.event.headers, &p->headers);
-        dec_str__(root, OPTIONAL, &WRP_MSG_ID__, &p->msg.u.event.msg_id);
-        dec_str__(root, OPTIONAL, &WRP_SESS_ID_, &p->msg.u.event.session_id);
-        break;
+        case WRP_MSG_TYPE__EVENT:
+            dec_str__(root, REQUIRED, &WRP_SOURCE__, &p->msg.u.event.source);
+            dec_str__(root, REQUIRED, &WRP_DEST____, &p->msg.u.event.dest);
+            dec_str__(root, OPTIONAL, &WRP_CT______, &p->msg.u.event.content_type);
+            dec_blob_(root, OPTIONAL, &WRP_PAYLOAD_, &p->msg.u.event.payload);
+            dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.event.partner_ids, &p->partner_ids);
+            dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.event.metadata, &p->metadata);
+            dec_slist(root, OPTIONAL, &WRP_HEADERS_, &p->msg.u.event.headers, &p->headers);
+            dec_str__(root, OPTIONAL, &WRP_MSG_ID__, &p->msg.u.event.msg_id);
+            dec_str__(root, OPTIONAL, &WRP_SESS_ID_, &p->msg.u.event.session_id);
+            break;
 
-    case WRP_MSG_TYPE__CREATE:
-    case WRP_MSG_TYPE__RETRIEVE:
-    case WRP_MSG_TYPE__UPDATE:
-    case WRP_MSG_TYPE__DELETE:
-        dec_str__(root, REQUIRED, &WRP_SOURCE__, &p->msg.u.crud.source);
-        dec_str__(root, REQUIRED, &WRP_DEST____, &p->msg.u.crud.dest);
-        dec_str__(root, REQUIRED, &WRP_TRANS_ID, &p->msg.u.crud.trans_id);
-        dec_str__(root, OPTIONAL, &WRP_CT______, &p->msg.u.crud.content_type);
-        dec_str__(root, OPTIONAL, &WRP_ACCEPT__, &p->msg.u.crud.accept);
-        dec_str__(root, OPTIONAL, &WRP_PATH____, &p->msg.u.crud.path);
-        dec_int__(root, OPTIONAL, &WRP_RDR_____, &p->msg.u.crud.rdr);
-        dec_int__(root, OPTIONAL, &WRP_STATUS__, &p->msg.u.crud.status);
-        dec_blob_(root, OPTIONAL, &WRP_PAYLOAD_, &p->msg.u.crud.payload);
-        dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.crud.partner_ids, &p->partner_ids);
-        dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.crud.metadata, &p->metadata);
-        dec_slist(root, OPTIONAL, &WRP_HEADERS_, &p->msg.u.crud.headers, &p->headers);
-        dec_str__(root, OPTIONAL, &WRP_MSG_ID__, &p->msg.u.crud.msg_id);
-        dec_str__(root, OPTIONAL, &WRP_SESS_ID_, &p->msg.u.crud.session_id);
-        break;
+        case WRP_MSG_TYPE__CREATE:
+        case WRP_MSG_TYPE__RETRIEVE:
+        case WRP_MSG_TYPE__UPDATE:
+        case WRP_MSG_TYPE__DELETE:
+            dec_str__(root, REQUIRED, &WRP_SOURCE__, &p->msg.u.crud.source);
+            dec_str__(root, REQUIRED, &WRP_DEST____, &p->msg.u.crud.dest);
+            dec_str__(root, REQUIRED, &WRP_TRANS_ID, &p->msg.u.crud.trans_id);
+            dec_str__(root, OPTIONAL, &WRP_CT______, &p->msg.u.crud.content_type);
+            dec_str__(root, OPTIONAL, &WRP_ACCEPT__, &p->msg.u.crud.accept);
+            dec_str__(root, OPTIONAL, &WRP_PATH____, &p->msg.u.crud.path);
+            dec_int__(root, OPTIONAL, &WRP_RDR_____, &p->msg.u.crud.rdr);
+            dec_int__(root, OPTIONAL, &WRP_STATUS__, &p->msg.u.crud.status);
+            dec_blob_(root, OPTIONAL, &WRP_PAYLOAD_, &p->msg.u.crud.payload);
+            dec_slist(root, OPTIONAL, &WRP_PARTNERS, &p->msg.u.crud.partner_ids, &p->partner_ids);
+            dec_nvpl_(root, OPTIONAL, &WRP_METADATA, &p->msg.u.crud.metadata, &p->metadata);
+            dec_slist(root, OPTIONAL, &WRP_HEADERS_, &p->msg.u.crud.headers, &p->headers);
+            dec_str__(root, OPTIONAL, &WRP_MSG_ID__, &p->msg.u.crud.msg_id);
+            dec_str__(root, OPTIONAL, &WRP_SESS_ID_, &p->msg.u.crud.session_id);
+            break;
 
-    case WRP_MSG_TYPE__SVC_REG:
-        dec_str__(root, REQUIRED, &WRP_SN______, &p->msg.u.reg.service_name);
-        dec_str__(root, REQUIRED, &WRP_URL_____, &p->msg.u.reg.url);
-        break;
+        case WRP_MSG_TYPE__SVC_REG:
+            dec_str__(root, REQUIRED, &WRP_SN______, &p->msg.u.reg.service_name);
+            dec_str__(root, REQUIRED, &WRP_URL_____, &p->msg.u.reg.url);
+            break;
 
-    case WRP_MSG_TYPE__SVC_ALIVE:
-        break;
+        case WRP_MSG_TYPE__SVC_ALIVE:
+            break;
 
-    default:
-        mpack_node_flag_error(root, mpack_error_data);
+        default:
+            mpack_node_flag_error(root, mpack_error_data);
     }
 }
 
@@ -274,7 +274,8 @@ WRPcode wrp_from_msgpack(const void *data, size_t len, wrp_msg_t **msg)
         mpack_tree_destroy(&p->tree);
         free(p);
     } else {
-        p->msg.__internal_only = (void *)p;
+        p->msg.__internal_only = (void *) p;
+
         *msg = &p->msg;
     }
 
@@ -290,7 +291,7 @@ WRPcode wrp_destroy(wrp_msg_t *msg)
         return WRPE_OK;
     }
 
-    p = (struct wrp_internal *)msg->__internal_only;
+    p = (struct wrp_internal *) msg->__internal_only;
     if (!p || (INTERNAL_SIGNATURE != p->sig)) {
         return WRPE_NOT_FROM_WRPC;
     }
