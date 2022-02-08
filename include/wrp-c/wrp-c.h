@@ -134,7 +134,9 @@ struct wrp_event_msg {
     struct wrp_string       msg_id;         /* Optional */
     struct wrp_string_list  partner_ids;    /* Optional */
     struct wrp_blob         payload;        /* Optional */
+    struct wrp_int          rdr;            /* Optional */
     struct wrp_string       session_id;     /* Optional */
+    struct wrp_string       trans_id;       /* Optional */
 };
 
 struct wrp_crud_msg {
