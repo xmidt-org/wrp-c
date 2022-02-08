@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
+# SPDX-License-Identifier: Apache-2.0
+[wrap-git]
+directory = rbus 
+
+url = https://github.com/rdkcmf/rbus.git
+revision = rdk-next
+patch_directory = rbus
+
+[provide]
+librbus = librbus_dep

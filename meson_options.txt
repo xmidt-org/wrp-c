@@ -1,0 +1,12 @@
+# -*- mode: meson -*-
+# SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+####################################################
+# Under each section keep the options alphabetized #
+####################################################
+
+# Build configuration options
+#-------------------------------------------------------------------------------
+option('rbus-support', type: 'boolean', value: 'true',
+       description: 'build the rbus compatability code')

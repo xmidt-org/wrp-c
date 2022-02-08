@@ -1,12 +1,12 @@
 # Meson build file
 #
-# SPDX-FileCopyrightText: 2021 Comcast Cable Communications Management, LLC
+# SPDX-FileCopyrightText: 2021-2022 Comcast Cable Communications Management, LLC
 # SPDX-License-Identifier: Apache-2.0
 
 project('wrp-c', 'c',
         version: '2.0.0',
         license: ['Apache-2.0'],
-        default_options: ['c_std=c99',
+        default_options: ['c_std=c11',
                           'b_coverage=true'])
 
 if not meson.is_subproject()
@@ -33,9 +33,14 @@ subdir('include/'+meson.project_name())
 ludocode_mpack_dep = dependency('mpack', version: '>=1.0',
                                 fallback: ['ludocode-mpack', 'ludocode_mpack_dep'],
                                 )
-cutils_dep = dependency('cutils', version: '>=1.0.0')
+cutils_dep  = dependency('cutils', version: '>=1.0.0')
 
 all_deps = [ludocode_mpack_dep, cutils_dep]
+
+if get_option('rbus-support')
+  librbus_dep = dependency('librbus')
+  all_deps += [librbus_dep]
+endif
 
 ################################################################################
 # Define the libraries
@@ -43,7 +48,7 @@ all_deps = [ludocode_mpack_dep, cutils_dep]
 
 inc = include_directories([inc_base])
 
-install_headers([inc_base+'/wrp-c.h', ver_h], subdir: meson.project_name())
+headers = [inc_base+'/wrp-c.h', ver_h]
 
 sources = [ 'src/constants.c',
             'src/decode.c',
@@ -51,6 +56,13 @@ sources = [ 'src/constants.c',
             'src/internal.c',
             'src/locator.c',
             'src/string.c']
+
+if get_option('rbus-support')
+  sources += [ 'src/rbus.c' ]
+  headers += [ inc_base+'/rbus.h' ]
+endif
+
+install_headers(headers, subdir: meson.project_name())
 
 libwrpc = library(meson.project_name(),
                   sources,
