@@ -110,12 +110,14 @@ if not meson.is_subproject()
                     link_with: libwrpc))
   endforeach
 
-  add_test_setup('valgrind',
-                 is_default: true,
-                 exe_wrapper: [ 'valgrind',
-                                '--leak-check=full',
-                                '--error-exitcode=1' ],
-                 timeout_multiplier: 2)
+  if host_machine.system().contains('linux')
+    add_test_setup('valgrind',
+                  is_default: true,
+                  exe_wrapper: [ 'valgrind',
+                                 '--leak-check=full',
+                                 '--error-exitcode=1' ],
+                  timeout_multiplier: 2)
+  endif
 endif
 
 ################################################################################
