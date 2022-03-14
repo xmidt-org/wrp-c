@@ -468,6 +468,7 @@ const struct test_vectors test[] = {
         .in.u.event.content_type = "application/json",
         .in.u.event.partner_ids = NULL,
         .in.u.event.headers = NULL,
+	.in.u.event.qos = 90,
         .in.u.event.payload = "123",
         .in.u.event.payload_size = 3,
 
@@ -478,13 +479,14 @@ const struct test_vectors test[] = {
         "    .dest             = dest-address\n"
         "    .partner_ids      = ''\n"
         "    .headers          = ''\n"
+	"    .qos              = 90\n"
         "    .content_type     = application/json\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 94,
+        .msgpack_size = 99,
         .msgpack = {
-            0x85,  /* 5 name value pairs */
+            0x86,  /* 6 name value pairs */
 
             /* msg_type -> 4 */
             0xa8,  /* "msg_type" */
@@ -502,7 +504,12 @@ const struct test_vectors test[] = {
             'd', 'e', 's', 't',
             0xac,   /* dest-address */
             'd', 'e', 's', 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
-            
+      
+	    /* qos -> 90 */
+            0xa3,  /* qos */
+            'q', 'o', 's',
+            0x5a,  /* 90 */
+	    
             /* content_type -> application/json */
             0xac,   /* content_type */
             'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
@@ -525,6 +532,7 @@ const struct test_vectors test[] = {
         .in.u.event.content_type = "application/json",
         .in.u.event.partner_ids = &partner_ids,
         .in.u.event.headers = &headers,
+	.in.u.event.qos = 125,
         .in.u.event.payload = "123",
         .in.u.event.payload_size = 3,
 
@@ -535,13 +543,14 @@ const struct test_vectors test[] = {
         "    .dest             = dest-address\n"
         "    .partner_ids      = 'Partner 1, Partner 2'\n"
         "    .headers          = 'Header 1, Header 2'\n"
+	"    .qos              = 125\n" 
         "    .content_type     = application/json\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 154,
+        .msgpack_size = 159,
         .msgpack = {
-            0x87,  /* 7 name value pairs */
+            0x88,  /* 8 name value pairs */
 
             /* msg_type -> 4 */
             0xa8,  /* "msg_type" */
@@ -558,7 +567,7 @@ const struct test_vectors test[] = {
             0xa4,   /* dest */
             'd', 'e', 's', 't',
             0xac,   /* dest-address */
-            'd', 'e', 's', 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
+            'd', 'e', 's', 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',  
 
             0xab,   /* partner_ids -> Array[2] */
             'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
@@ -575,6 +584,11 @@ const struct test_vectors test[] = {
             'H', 'e', 'a', 'd', 'e', 'r', ' ', '1',
             0xa8,
             'H', 'e', 'a', 'd', 'e', 'r', ' ', '2',
+
+            /* qos -> 125 */
+            0xa3,  /* qos */
+            'q', 'o', 's',
+            0x7d,  /* 125 */	    
 
             /* content_type -> application/json */
             0xac,   /* content_type */
@@ -853,7 +867,7 @@ void test_all()
         }
 
         /* Testing wrp_struct_to() --> bytes. */
-        size = wrp_struct_to( &test[i].in, WRP_BYTES, &bytes );
+	size = wrp_struct_to( &test[i].in, WRP_BYTES, &bytes );
         validate_to_bytes( test[i].msgpack, test[i].msgpack_size, bytes, size );
 
         if( 0 < size ) {
@@ -965,6 +979,7 @@ void test_encode_decode()
                                 .u.event.content_type = "application/json",
                                 .u.event.partner_ids = &partner_ids,
                                 .u.event.headers = &headers,
+				.u.event.qos = 77,
                                 .u.event.payload = "0123456789",
                                 .u.event.payload_size = 10
                               };
@@ -992,7 +1007,7 @@ void test_encode_decode()
     // msgpck decode
     rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
     free( bytes );
-    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( rv, size );    	    
     CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
     CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
     CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
@@ -1078,7 +1093,8 @@ void test_encode_decode()
         CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
         CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
-
+        CU_ASSERT_EQUAL( message->u.event.qos, event_msg->u.event.qos );
+	 
         if( NULL != event_msg->u.event.headers ) {
             size_t n = 0;
 
@@ -1103,6 +1119,7 @@ void test_encode_decode()
     WRP_DEBUG("decoded msgType:%d\n", event_msg->msg_type );
     WRP_DEBUG("decoded source:%s\n", event_msg->u.event.source );
     WRP_DEBUG("decoded dest:%s\n", event_msg->u.event.dest );
+    WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
     WRP_DEBUG("decoded content_type:%s\n", event_msg->u.event.content_type );
     WRP_DEBUG("decoded payload:%s\n", ( char* )event_msg->u.event.payload );
     WRP_DEBUG("message->u.event.payload_size %zu\n", message->u.event.payload_size );
@@ -1125,7 +1142,9 @@ void test_encode_decode()
         CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
         CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
-
+        CU_ASSERT_EQUAL( message->u.event.qos, event_msg->u.event.qos );
+	WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );	
+	  
         if( NULL != event_msg->u.event.headers ) {
             size_t n = 0;
 
@@ -1698,6 +1717,7 @@ void test_crud_message()
     eventMsg.u.event.source = "mac:format/iot" ;
     eventMsg.u.event.dest = "dns:scytale.webpa.comcast.net/iot" ;
     eventMsg.u.event.headers = NULL ;
+    eventMsg.u.event.qos = 87 ;
     eventMsg.u.event.content_type = "application/json" ;
     eventMsg.u.event.metadata = NULL ;
     eventMsg.u.event.payload = "0123456789";
@@ -1715,11 +1735,14 @@ void test_crud_message()
         CU_ASSERT_STRING_EQUAL( message->u.event.dest, eventMsg.u.event.dest );
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, eventMsg.u.event.payload );
         CU_ASSERT_EQUAL( message->u.event.payload_size, eventMsg.u.event.payload_size );
+	CU_ASSERT_EQUAL( message->u.event.qos, eventMsg.u.event.qos );
         WRP_DEBUG("decoded event source:%s\n", message->u.event.source );
         WRP_DEBUG("decoded event dest:%s\n", message->u.event.dest );
         WRP_DEBUG("decoded event content_type:%s\n", message->u.event.content_type );
         WRP_DEBUG("decoded event payload:%s\n", ( char * ) message->u.event.payload );
         WRP_DEBUG("decoded event payload_size:%zu\n", message->u.event.payload_size );
+	WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, eventMsg.u.event.qos );
+	
         size = wrp_pack_metadata( &metapack , &metadataPack );
 
         if( size > 0 ) {

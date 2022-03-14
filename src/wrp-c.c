@@ -59,6 +59,7 @@ struct req_res_t {
     char* dest ;
     char* transaction_uuid;
     partners_t *partner_ids ;
+    int qos;
     headers_t *headers ;
     void *payload ;
     size_t payload_size;
@@ -98,6 +99,7 @@ static const struct wrp_token WRP_METADATA      = { .name = "metadata", .length 
 static const struct wrp_token WRP_RDR           = { .name = "rdr", .length = sizeof( "rdr" ) - 1 };
 static const struct wrp_token WRP_PATH          = { .name = "path", .length = sizeof( "path" ) - 1 };
 static const struct wrp_token WRP_PARTNER_IDS   = { .name = "partner_ids", .length = sizeof( "partner_ids" ) - 1 };
+static const struct wrp_token WRP_QOS           = { .name = "qos", .length = sizeof( "qos" ) - 1 };
 static const int WRP_MAP_SIZE                   = 4; // mandatory msg_type,source,dest,payload
 
 
@@ -594,7 +596,8 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 		        encode->headers = event->headers;
 		        encode->metadata = event->metadata;
 		        encode->partner_ids = event->partner_ids;
-		        encode->msgType = msg->msg_type;
+			encode->qos = event->qos;
+			encode->msgType = msg->msg_type;
 		        rv = __wrp_pack_structure( encode, bytes );
 		        break;
 		    case WRP_MSG_TYPE__SVC_REGISTRATION:
@@ -851,6 +854,7 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
                             "    .dest             = %s\n"
                             "    .partner_ids      = %s\n"
                             "    .headers          = %s\n"
+			    "    .qos              = %d\n" 
                             "    .content_type     = %s\n"
                             "    .payload_size     = %zd\n"
                             "}\n";
@@ -861,16 +865,14 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
     headers = __get_header_string( event->headers );
     partner_ids = __get_partner_ids_string( event->partner_ids );
     
-    length = snprintf( NULL, 0, event_fmt, event->source, event->dest, partner_ids,
-                       headers, event->content_type, event->payload_size );
+    length = snprintf( NULL, 0, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->content_type, event->payload_size );
 
     if( NULL != bytes ) {
         char *data;
         data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
 
         if( NULL != data ) {
-            sprintf( data, event_fmt, event->source, event->dest, partner_ids, headers, event->content_type,
-                     event->payload_size );
+            sprintf( data, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->content_type, event->payload_size );
             data[length] = '\0';
             *bytes = data;
         } else {
@@ -1141,6 +1143,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
         wrp_map_size++;
     }
 
+
     switch( encodeReqtmp->msgType ) {
         case WRP_MSG_TYPE__AUTH:
             wrp_map_size = 2;//Hardcoded. Pack for msgType and status alone for auth msg
@@ -1171,9 +1174,12 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
             break;
         case WRP_MSG_TYPE__EVENT:
+	    wrp_map_size += 1;
             msgpack_pack_map( &pk, wrp_map_size );
             //Pack msgType,source,dest,headers,metadata,partner_ids
             mapCommonString( &pk, encodeReqtmp );
+	    __msgpack_pack_string( &pk, WRP_QOS.name, WRP_QOS.length );
+	    msgpack_pack_int( &pk, encodeReqtmp->qos );  
             __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
@@ -1419,7 +1425,9 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
 		                        tmpdecodeReq->statusValue = ValueType.via.i64;
 		                    } else if( strcmp( keyName, WRP_RDR.name ) == 0 ) {
 		                        tmpdecodeReq->rdr = ValueType.via.i64;
-		                    }
+		                    }  else if( strcmp( keyName, WRP_QOS.name ) == 0 ) {
+                                        tmpdecodeReq->qos = ValueType.via.i64;
+                                    }
 		                }
 		                break;
 		                case MSGPACK_OBJECT_BOOLEAN: {
@@ -1903,6 +1911,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.event.payload_size = decodeReq->payload_size;
                         msg->u.event.headers = decodeReq->headers;
                         msg->u.event.partner_ids = decodeReq->partner_ids;
+			msg->u.event.qos = decodeReq->qos;
                         *msg_ptr = msg;
                         free( decodeReq );
                         return length;

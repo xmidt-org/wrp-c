@@ -117,6 +117,7 @@ struct wrp_event_msg {
     char *source;
     char *dest;
     partners_t *partner_ids;
+    int qos;
     headers_t *headers;                         /* NULL terminated list */
     data_t *metadata;
     void *payload;
