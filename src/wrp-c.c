@@ -270,6 +270,7 @@ void wrp_free_struct( wrp_msg_t *msg )
             free( msg->u.event.source );
             free( msg->u.event.dest );
             free( msg->u.event.payload );
+	    free( msg->u.event.transaction_uuid );
             if(NULL != msg->u.event.content_type)
             {
                 free(msg->u.event.content_type);
@@ -588,7 +589,6 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 		        encode->source = event->source;
 		        encode->dest = event->dest;
 		        encode->content_type = event->content_type;
-		        encode->transaction_uuid = NULL;
 		        encode->include_spans = false;
 		        encode->spans.spans = NULL;
 		        encode->payload = event->payload;//void
@@ -596,7 +596,12 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 		        encode->headers = event->headers;
 		        encode->metadata = event->metadata;
 		        encode->partner_ids = event->partner_ids;
-			encode->qos = event->qos;
+			if( event->qos ) {
+				encode->qos = event->qos;
+			}	
+			if( event->transaction_uuid ) {
+				encode->transaction_uuid = event->transaction_uuid;
+			}	
 			encode->msgType = msg->msg_type;
 		        rv = __wrp_pack_structure( encode, bytes );
 		        break;
@@ -855,6 +860,7 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
                             "    .partner_ids      = %s\n"
                             "    .headers          = %s\n"
 			    "    .qos              = %d\n" 
+			    "    .transaction_uuid = %s\n"
                             "    .content_type     = %s\n"
                             "    .payload_size     = %zd\n"
                             "}\n";
@@ -865,14 +871,14 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
     headers = __get_header_string( event->headers );
     partner_ids = __get_partner_ids_string( event->partner_ids );
     
-    length = snprintf( NULL, 0, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->content_type, event->payload_size );
+    length = snprintf( NULL, 0, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->transaction_uuid, event->content_type, event->payload_size );
 
     if( NULL != bytes ) {
         char *data;
         data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
 
         if( NULL != data ) {
-            sprintf( data, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->content_type, event->payload_size );
+            sprintf( data, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->transaction_uuid, event->content_type, event->payload_size );
             data[length] = '\0';
             *bytes = data;
         } else {
@@ -1114,6 +1120,10 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
     if( encodeReqtmp->transaction_uuid ) {
         wrp_map_size++;
     }
+
+    if( encodeReqtmp->qos ) {
+	    wrp_map_size++;
+    }	    
     
     if( encodeReqtmp->content_type ) {
         wrp_map_size++;
@@ -1174,12 +1184,16 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
             break;
         case WRP_MSG_TYPE__EVENT:
-	    wrp_map_size += 1;
             msgpack_pack_map( &pk, wrp_map_size );
             //Pack msgType,source,dest,headers,metadata,partner_ids
             mapCommonString( &pk, encodeReqtmp );
-	    __msgpack_pack_string( &pk, WRP_QOS.name, WRP_QOS.length );
-	    msgpack_pack_int( &pk, encodeReqtmp->qos );  
+	    if( encodeReqtmp->qos ) {
+	    	__msgpack_pack_string( &pk, WRP_QOS.name, WRP_QOS.length );
+	    	msgpack_pack_int( &pk, encodeReqtmp->qos );  
+	    }
+	    if( encodeReqtmp->transaction_uuid ) {
+	    	__msgpack_pack_string_nvp( &pk, &WRP_TRANS_ID, encodeReqtmp->transaction_uuid );
+	    }	
             __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
@@ -1900,7 +1914,7 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.req.partner_ids = decodeReq->partner_ids;
                         *msg_ptr = msg;
                         free( decodeReq );
-                        return length;
+                         return length;
                     case WRP_MSG_TYPE__EVENT:
                         msg->msg_type = decodeReq->msgType;
                         msg->u.event.source = decodeReq->source;
@@ -1911,7 +1925,12 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.event.payload_size = decodeReq->payload_size;
                         msg->u.event.headers = decodeReq->headers;
                         msg->u.event.partner_ids = decodeReq->partner_ids;
-			msg->u.event.qos = decodeReq->qos;
+			if( decodeReq->qos ) {
+				msg->u.event.qos = decodeReq->qos;
+			}	
+			if( decodeReq->transaction_uuid ) {
+				msg->u.event.transaction_uuid = decodeReq->transaction_uuid;
+		        }		
                         *msg_ptr = msg;
                         free( decodeReq );
                         return length;
