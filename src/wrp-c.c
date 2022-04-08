@@ -601,6 +601,10 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 			}	
 			if( event->transaction_uuid ) {
 				encode->transaction_uuid = event->transaction_uuid;
+			}
+			else
+			{
+				encode->transaction_uuid = NULL;
 			}	
 			encode->msgType = msg->msg_type;
 		        rv = __wrp_pack_structure( encode, bytes );
@@ -1117,7 +1121,7 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
     msgpack_packer_init( &pk, &sbuf, msgpack_sbuffer_write );
 
     // Change wrp_map_size value depending on if optional fields spans and headers,metadata,content_type,accept crud payload are present
-    if( encodeReqtmp->transaction_uuid ) {
+    if( encodeReqtmp->transaction_uuid != NULL) {
         wrp_map_size++;
     }
 
@@ -1191,9 +1195,9 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
 	    	__msgpack_pack_string( &pk, WRP_QOS.name, WRP_QOS.length );
 	    	msgpack_pack_int( &pk, encodeReqtmp->qos );  
 	    }
-	    if( encodeReqtmp->transaction_uuid ) {
+	    if( encodeReqtmp->transaction_uuid != NULL) {
 	    	__msgpack_pack_string_nvp( &pk, &WRP_TRANS_ID, encodeReqtmp->transaction_uuid );
-	    }	
+	    }
             __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
