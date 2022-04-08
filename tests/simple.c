@@ -468,6 +468,8 @@ const struct test_vectors test[] = {
         .in.u.event.content_type = "application/json",
         .in.u.event.partner_ids = NULL,
         .in.u.event.headers = NULL,
+	.in.u.event.qos = 90,
+	.in.u.event.transaction_uuid = "c05ee5e1-70be-444c-a156-097c767ad8ab",
         .in.u.event.payload = "123",
         .in.u.event.payload_size = 3,
 
@@ -478,13 +480,15 @@ const struct test_vectors test[] = {
         "    .dest             = dest-address\n"
         "    .partner_ids      = ''\n"
         "    .headers          = ''\n"
+	"    .qos              = 90\n"
+	"    .transaction_uuid = c05ee5e1-70be-444c-a156-097c767ad8ab\n"
         "    .content_type     = application/json\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 94,
+        .msgpack_size = 154,
         .msgpack = {
-            0x85,  /* 5 name value pairs */
+            0x87,  /* 7 name value pairs */
 
             /* msg_type -> 4 */
             0xa8,  /* "msg_type" */
@@ -502,7 +506,22 @@ const struct test_vectors test[] = {
             'd', 'e', 's', 't',
             0xac,   /* dest-address */
             'd', 'e', 's', 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
-            
+      
+	    /* qos -> 90 */
+            0xa3,  /* qos */
+            'q', 'o', 's',
+            0x5a,  /* 90 */
+
+            /* transaction_uuid -> c05ee5e1-70be-444c-a156-097c767ad8ab */
+            0xb0,   /* transaction_uuid */
+            't', 'r', 'a', 'n', 's', 'a', 'c', 't', 'i', 'o', 'n', '_', 'u', 'u', 'i', 'd',
+            0xd9, 0x24, /* c05ee5e1-70be-444c-a156-097c767ad8ab */
+            'c', '0', '5', 'e', 'e', '5', 'e', '1', '-',
+            '7', '0', 'b', 'e', '-',
+            '4', '4', '4', 'c', '-',
+            'a', '1', '5', '6', '-',
+            '0', '9', '7', 'c', '7', '6', '7', 'a', 'd', '8', 'a', 'b',
+
             /* content_type -> application/json */
             0xac,   /* content_type */
             'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
@@ -525,6 +544,8 @@ const struct test_vectors test[] = {
         .in.u.event.content_type = "application/json",
         .in.u.event.partner_ids = &partner_ids,
         .in.u.event.headers = &headers,
+	.in.u.event.qos = 125,
+	.in.u.event.transaction_uuid = "c06ee5e1-70be-444c-a156-097c767ad8ac",
         .in.u.event.payload = "123",
         .in.u.event.payload_size = 3,
 
@@ -535,13 +556,106 @@ const struct test_vectors test[] = {
         "    .dest             = dest-address\n"
         "    .partner_ids      = 'Partner 1, Partner 2'\n"
         "    .headers          = 'Header 1, Header 2'\n"
+	"    .qos              = 125\n" 
+	"    .transaction_uuid = c06ee5e1-70be-444c-a156-097c767ad8ac\n"
         "    .content_type     = application/json\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 154,
+        .msgpack_size = 214,
         .msgpack = {
-            0x87,  /* 7 name value pairs */
+            0x89,  /* 9 name value pairs */
+
+            /* msg_type -> 4 */
+            0xa8,  /* "msg_type" */
+            'm', 's', 'g', '_', 't', 'y', 'p', 'e',
+            0x04,  /* 4 */
+
+            /* source -> source-address */
+            0xa6,   /* source */
+            's', 'o', 'u', 'r', 'c', 'e',
+            0xae,   /* source-address */
+            's', 'o', 'u', 'r', 'c', 'e', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
+
+            /* dest -> dest-address */
+            0xa4,   /* dest */
+            'd', 'e', 's', 't',
+            0xac,   /* dest-address */
+            'd', 'e', 's', 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',  
+
+            0xab,   /* partner_ids -> Array[2] */
+            'p', 'a', 'r', 't', 'n', 'e', 'r', '_', 'i', 'd', 's',
+            0x92,
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '1',
+            0xa9,
+            'P', 'a', 'r', 't', 'n', 'e', 'r', ' ', '2',
+
+            0xa7,   /* headers -> Array[2] */
+            'h', 'e', 'a', 'd', 'e', 'r', 's',
+            0x92,
+            0xa8,
+            'H', 'e', 'a', 'd', 'e', 'r', ' ', '1',
+            0xa8,
+            'H', 'e', 'a', 'd', 'e', 'r', ' ', '2',
+
+            /* qos -> 125 */
+            0xa3,  /* qos */
+            'q', 'o', 's',
+            0x7d,  /* 125 */	    
+
+            /* transaction_uuid -> c06ee5e1-70be-444c-a156-097c767ad8ac */
+            0xb0,   /* transaction_uuid */
+            't', 'r', 'a', 'n', 's', 'a', 'c', 't', 'i', 'o', 'n', '_', 'u', 'u', 'i', 'd',
+            0xd9, 0x24, /* c06ee5e1-70be-444c-a156-097c767ad8ac */
+            'c', '0', '6', 'e', 'e', '5', 'e', '1', '-',
+            '7', '0', 'b', 'e', '-',
+            '4', '4', '4', 'c', '-',
+            'a', '1', '5', '6', '-',
+            '0', '9', '7', 'c', '7', '6', '7', 'a', 'd', '8', 'a', 'c',	    
+
+            /* content_type -> application/json */
+            0xac,   /* content_type */
+            'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
+            0xb0,   /* application/json */
+            'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
+
+            /* payload -> data */
+            0xa7,   /* payload */
+            'p', 'a', 'y', 'l', 'o', 'a', 'd',
+            0xc4, 0x03, /* Binary message, length 3 */
+            0x31, 0x32, 0x33,
+        },
+    },
+
+    /*--------------------------------------------------------------------*/
+    {/* Index 7 */
+        .in.msg_type = WRP_MSG_TYPE__EVENT,
+        .in.u.event.source = "source-address",
+        .in.u.event.dest = "dest-address",
+        .in.u.event.content_type = "application/json",
+        .in.u.event.partner_ids = &partner_ids,
+        .in.u.event.headers = &headers,
+        .in.u.event.qos = 75,
+        .in.u.event.payload = "123",
+        .in.u.event.payload_size = 3,
+
+        .string_size = 0,
+        .string =
+        "wrp_event_msg {\n"
+        "    .source           = source-address\n"
+        "    .dest             = dest-address\n"
+        "    .partner_ids      = 'Partner 1, Partner 2'\n"
+        "    .headers          = 'Header 1, Header 2'\n"
+        "    .qos              = 75\n"
+        "    .transaction_uuid = (null)\n"
+        "    .content_type     = application/json\n"
+        "    .payload_size     = 3\n"
+        "}\n",
+
+        .msgpack_size = 159,
+        .msgpack = {
+            0x88,  /* 8 name value pairs */
 
             /* msg_type -> 4 */
             0xa8,  /* "msg_type" */
@@ -576,6 +690,11 @@ const struct test_vectors test[] = {
             0xa8,
             'H', 'e', 'a', 'd', 'e', 'r', ' ', '2',
 
+            /* qos -> 75 */
+            0xa3,  /* qos */
+            'q', 'o', 's',
+            0x4b,  /* 75 */
+
             /* content_type -> application/json */
             0xac,   /* content_type */
             'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
@@ -591,7 +710,8 @@ const struct test_vectors test[] = {
     },
 
     /*--------------------------------------------------------------------*/
-    {/* Index 7 */
+    
+    {/* Index 8 */
         .in.msg_type = WRP_MSG_TYPE__SVC_ALIVE,
 
         .string_size = 0,
@@ -853,7 +973,7 @@ void test_all()
         }
 
         /* Testing wrp_struct_to() --> bytes. */
-        size = wrp_struct_to( &test[i].in, WRP_BYTES, &bytes );
+	size = wrp_struct_to( &test[i].in, WRP_BYTES, &bytes );
         validate_to_bytes( test[i].msgpack, test[i].msgpack_size, bytes, size );
 
         if( 0 < size ) {
@@ -965,9 +1085,41 @@ void test_encode_decode()
                                 .u.event.content_type = "application/json",
                                 .u.event.partner_ids = &partner_ids,
                                 .u.event.headers = &headers,
+				.u.event.qos = 77,
+				.u.event.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8ad",
                                 .u.event.payload = "0123456789",
                                 .u.event.payload_size = 10
                               };
+    const wrp_msg_t event_m1 = { .msg_type = WRP_MSG_TYPE__EVENT,
+                                .u.event.source = "source-address",
+                                .u.event.dest = "dest-address",
+                                .u.event.content_type = "application/json",
+                                .u.event.partner_ids = &partner_ids,
+                                .u.event.headers = &headers,
+                                .u.event.payload = "0123456789",
+                                .u.event.payload_size = 10
+                              };
+    const wrp_msg_t event_m2 = { .msg_type = WRP_MSG_TYPE__EVENT,
+                                .u.event.source = "source-address",
+                                .u.event.dest = "dest-address",
+                                .u.event.content_type = "application/json",
+                                .u.event.partner_ids = &partner_ids,
+                                .u.event.headers = &headers,
+                                .u.event.qos = 88,
+                                .u.event.payload = "0123456789",
+                                .u.event.payload_size = 10
+                              };
+    const wrp_msg_t event_m3 = { .msg_type = WRP_MSG_TYPE__EVENT,
+                                .u.event.source = "source-address",
+                                .u.event.dest = "dest-address",
+                                .u.event.content_type = "application/json",
+                                .u.event.partner_ids = &partner_ids,
+                                .u.event.headers = &headers,
+                                .u.event.transaction_uuid = "c10ee5e1-70be-444c-a156-097c767ad8ag",
+                                .u.event.payload = "0123456789",
+                                .u.event.payload_size = 10
+                              };
+    
     const wrp_msg_t msg2 = { .msg_type = WRP_MSG_TYPE__REQ,
                              .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
                              .u.req.source = "source-address",
@@ -992,7 +1144,7 @@ void test_encode_decode()
     // msgpck decode
     rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
     free( bytes );
-    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( rv, size );    	    
     CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
     CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
     CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
@@ -1078,7 +1230,9 @@ void test_encode_decode()
         CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
         CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
-
+        CU_ASSERT_EQUAL( message->u.event.qos, event_msg->u.event.qos );
+	CU_ASSERT_STRING_EQUAL( message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+	 
         if( NULL != event_msg->u.event.headers ) {
             size_t n = 0;
 
@@ -1103,10 +1257,111 @@ void test_encode_decode()
     WRP_DEBUG("decoded msgType:%d\n", event_msg->msg_type );
     WRP_DEBUG("decoded source:%s\n", event_msg->u.event.source );
     WRP_DEBUG("decoded dest:%s\n", event_msg->u.event.dest );
+    WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
+    WRP_INFO("encoded  transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
     WRP_DEBUG("decoded content_type:%s\n", event_msg->u.event.content_type );
     WRP_DEBUG("decoded payload:%s\n", ( char* )event_msg->u.event.payload );
     WRP_DEBUG("message->u.event.payload_size %zu\n", message->u.event.payload_size );
     wrp_free_struct( message );
+
+        // msgpack encode
+    event_msg = &test[6].in;
+    size = wrp_struct_to( event_msg, WRP_BYTES, &bytes );
+    free( bytes );
+    base64_size = wrp_struct_to( event_msg, WRP_BASE64, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, base64_size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, base64_size, WRP_BASE64, &message );
+    free( bytes );
+
+    if( 0 < rv ) {
+        CU_ASSERT_EQUAL( rv, size );
+        CU_ASSERT_EQUAL( message->u.event.payload_size, event_msg->u.event.payload_size );
+        CU_ASSERT_EQUAL( message->msg_type, event_msg->msg_type );
+        CU_ASSERT_STRING_EQUAL( message->u.event.source, event_msg->u.event.source );
+        CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
+        CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
+        CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
+        CU_ASSERT_EQUAL( message->u.event.qos, event_msg->u.event.qos );
+        CU_ASSERT_STRING_EQUAL( message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+
+        if( NULL != event_msg->u.event.headers ) {
+            size_t n = 0;
+
+            while( n < event_msg->u.event.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( message->u.event.headers->headers[n],
+                                        event_msg->u.event.headers->headers[n] );
+                n++;
+            }
+        }
+
+        if( NULL != event_msg->u.event.partner_ids ) {
+            size_t i = 0;
+
+            while( i < event_msg->u.event.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( message->u.event.partner_ids->partner_ids[i],
+                                        event_msg->u.event.partner_ids->partner_ids[i] );
+                i++;
+            }
+        }
+    }
+
+    WRP_DEBUG("decoded msgType:%d\n", event_msg->msg_type );
+    WRP_DEBUG("decoded source:%s\n", event_msg->u.event.source );
+    WRP_DEBUG("decoded dest:%s\n", event_msg->u.event.dest );
+    WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
+    WRP_INFO("encoded transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+    WRP_DEBUG("decoded content_type:%s\n", event_msg->u.event.content_type );
+    WRP_DEBUG("decoded payload:%s\n", ( char* )event_msg->u.event.payload );
+    WRP_DEBUG("message->u.event.payload_size %zu\n", message->u.event.payload_size );
+    wrp_free_struct( message );
+
+    //msgpack encode
+    event_msg = &test[7].in;
+    size = wrp_struct_to( event_msg, WRP_BYTES, &bytes );
+    free( bytes );
+    base64_size = wrp_struct_to( event_msg, WRP_BASE64, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, base64_size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, base64_size, WRP_BASE64, &message );
+    free( bytes );
+
+    if( 0 < rv ) {
+        CU_ASSERT_EQUAL( rv, size );
+        CU_ASSERT_EQUAL( message->msg_type, event_msg->msg_type );
+        CU_ASSERT_STRING_EQUAL( message->u.event.source, event_msg->u.event.source );
+        CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
+        CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
+        CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
+        CU_ASSERT_EQUAL( message->u.event.qos, event_msg->u.event.qos );
+        WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
+
+        if( NULL != event_msg->u.event.headers ) {
+            size_t n = 0;
+
+            while( n < event_msg->u.event.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( message->u.event.headers->headers[n],
+                                        event_msg->u.event.headers->headers[n] );
+                n++;
+            }
+        }
+
+        if( NULL != event_msg->u.event.partner_ids ) {
+            size_t i = 0;
+
+            while( i < event_msg->u.event.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( message->u.event.partner_ids->partner_ids[i],
+                                        event_msg->u.event.partner_ids->partner_ids[i] );
+                i++;
+            }
+        }
+    }
+
+    wrp_free_struct( message );
+    
+
     // msgpack encode
     event_msg = &event_m;
     size = wrp_struct_to( event_msg, WRP_BYTES, &bytes );
@@ -1125,7 +1380,11 @@ void test_encode_decode()
         CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
         CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
-
+        CU_ASSERT_EQUAL( message->u.event.qos, event_msg->u.event.qos );
+	CU_ASSERT_STRING_EQUAL( message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+	WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
+	WRP_INFO("encoded transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+	  
         if( NULL != event_msg->u.event.headers ) {
             size_t n = 0;
 
@@ -1148,6 +1407,137 @@ void test_encode_decode()
     }
 
     wrp_free_struct( message );
+
+       // msgpack encode
+    event_msg = &event_m1;
+    size = wrp_struct_to( event_msg, WRP_BYTES, &bytes );
+    free( bytes );
+    base64_size = wrp_struct_to( event_msg, WRP_BASE64, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, base64_size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, base64_size, WRP_BASE64, &message );
+    free( bytes );
+
+    if( 0 < rv ) {
+        CU_ASSERT_EQUAL( rv, size );
+        CU_ASSERT_EQUAL( message->msg_type, event_msg->msg_type );
+        CU_ASSERT_STRING_EQUAL( message->u.event.source, event_msg->u.event.source );
+        CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
+        CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
+        CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
+
+       if( NULL != event_msg->u.event.headers ) {
+            size_t n = 0;
+
+            while( n < event_msg->u.event.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( message->u.event.headers->headers[n],
+                                        event_msg->u.event.headers->headers[n] );
+                n++;
+            }
+        }
+
+        if( NULL != event_msg->u.event.partner_ids ) {
+            size_t i = 0;
+
+            while( i < event_msg->u.event.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( message->u.event.partner_ids->partner_ids[i],
+                                        event_msg->u.event.partner_ids->partner_ids[i] );
+                i++;
+            }
+        }
+    }
+
+    wrp_free_struct( message );
+
+    //msgpack encode
+    event_msg = &event_m2;
+    size = wrp_struct_to( event_msg, WRP_BYTES, &bytes );
+    free( bytes );
+    base64_size = wrp_struct_to( event_msg, WRP_BASE64, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, base64_size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, base64_size, WRP_BASE64, &message );
+    free( bytes );
+
+    if( 0 < rv ) {
+        CU_ASSERT_EQUAL( rv, size );
+        CU_ASSERT_EQUAL( message->msg_type, event_msg->msg_type );
+        CU_ASSERT_STRING_EQUAL( message->u.event.source, event_msg->u.event.source );
+        CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
+        CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
+        CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
+        CU_ASSERT_EQUAL( message->u.event.qos, event_msg->u.event.qos );
+        WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
+
+        if( NULL != event_msg->u.event.headers ) {
+            size_t n = 0;
+
+            while( n < event_msg->u.event.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( message->u.event.headers->headers[n],
+                                        event_msg->u.event.headers->headers[n] );
+                n++;
+            }
+        }
+
+        if( NULL != event_msg->u.event.partner_ids ) {
+            size_t i = 0;
+
+            while( i < event_msg->u.event.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( message->u.event.partner_ids->partner_ids[i],
+                                        event_msg->u.event.partner_ids->partner_ids[i] );
+                i++;
+            }
+        }
+    }
+
+    wrp_free_struct( message );
+
+    //msgpack encode
+    event_msg = &event_m3;
+    size = wrp_struct_to( event_msg, WRP_BYTES, &bytes );
+    free( bytes );
+    base64_size = wrp_struct_to( event_msg, WRP_BASE64, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, base64_size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, base64_size, WRP_BASE64, &message );
+    free( bytes );
+
+    if( 0 < rv ) {
+        CU_ASSERT_EQUAL( rv, size );
+        CU_ASSERT_EQUAL( message->msg_type, event_msg->msg_type );
+        CU_ASSERT_STRING_EQUAL( message->u.event.source, event_msg->u.event.source );
+        CU_ASSERT_STRING_EQUAL( message->u.event.dest, event_msg->u.event.dest );
+        CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
+        CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
+        CU_ASSERT_STRING_EQUAL( message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+        WRP_INFO("encoded transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+
+        if( NULL != event_msg->u.event.headers ) {
+            size_t n = 0;
+
+            while( n < event_msg->u.event.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( message->u.event.headers->headers[n],
+                                        event_msg->u.event.headers->headers[n] );
+                n++;
+            }
+        }
+
+        if( NULL != event_msg->u.event.partner_ids ) {
+            size_t i = 0;
+
+            while( i < event_msg->u.event.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( message->u.event.partner_ids->partner_ids[i],
+                                        event_msg->u.event.partner_ids->partner_ids[i] );
+                i++;
+            }
+        }
+    }
+
+    wrp_free_struct( message );
+
     // msgpack encode
     size = wrp_struct_to( &msg2, WRP_BYTES, &bytes );
     /* print the encoded message */
@@ -1698,6 +2088,8 @@ void test_crud_message()
     eventMsg.u.event.source = "mac:format/iot" ;
     eventMsg.u.event.dest = "dns:scytale.webpa.comcast.net/iot" ;
     eventMsg.u.event.headers = NULL ;
+    eventMsg.u.event.qos = 87 ;
+    eventMsg.u.event.transaction_uuid = "c08ee5e1-70be-444c-a156-097c767ad8ae",
     eventMsg.u.event.content_type = "application/json" ;
     eventMsg.u.event.metadata = NULL ;
     eventMsg.u.event.payload = "0123456789";
@@ -1715,11 +2107,16 @@ void test_crud_message()
         CU_ASSERT_STRING_EQUAL( message->u.event.dest, eventMsg.u.event.dest );
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, eventMsg.u.event.payload );
         CU_ASSERT_EQUAL( message->u.event.payload_size, eventMsg.u.event.payload_size );
+	CU_ASSERT_EQUAL( message->u.event.qos, eventMsg.u.event.qos );
+	CU_ASSERT_STRING_EQUAL( message->u.event.transaction_uuid , eventMsg.u.event.transaction_uuid  );
         WRP_DEBUG("decoded event source:%s\n", message->u.event.source );
         WRP_DEBUG("decoded event dest:%s\n", message->u.event.dest );
         WRP_DEBUG("decoded event content_type:%s\n", message->u.event.content_type );
         WRP_DEBUG("decoded event payload:%s\n", ( char * ) message->u.event.payload );
         WRP_DEBUG("decoded event payload_size:%zu\n", message->u.event.payload_size );
+	WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, eventMsg.u.event.qos );
+	WRP_INFO("encoded transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, eventMsg.u.event.transaction_uuid );
+	
         size = wrp_pack_metadata( &metapack , &metadataPack );
 
         if( size > 0 ) {
