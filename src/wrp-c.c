@@ -68,6 +68,7 @@ struct req_res_t {
     data_t *metadata;
     int status;
     int rdr;
+    char* session_id;
     char *path;
     char *service_name;
     char *url;
@@ -100,6 +101,7 @@ static const struct wrp_token WRP_RDR           = { .name = "rdr", .length = siz
 static const struct wrp_token WRP_PATH          = { .name = "path", .length = sizeof( "path" ) - 1 };
 static const struct wrp_token WRP_PARTNER_IDS   = { .name = "partner_ids", .length = sizeof( "partner_ids" ) - 1 };
 static const struct wrp_token WRP_QOS           = { .name = "qos", .length = sizeof( "qos" ) - 1 };
+static const struct wrp_token WRP_SESSION_ID      = { .name = "session_id", .length = sizeof( "session_id" ) - 1 };
 static const int WRP_MAP_SIZE                   = 4; // mandatory msg_type,source,dest,payload
 
 
@@ -271,6 +273,7 @@ void wrp_free_struct( wrp_msg_t *msg )
             free( msg->u.event.dest );
             free( msg->u.event.payload );
 	    free( msg->u.event.transaction_uuid );
+	    free( msg->u.event.session_id );
             if(NULL != msg->u.event.content_type)
             {
                 free(msg->u.event.content_type);
@@ -582,6 +585,12 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 		        encode->headers = req->headers;
 		        encode->metadata = req->metadata;
 		        encode->partner_ids = req->partner_ids;
+			if( req->qos ) {
+                                encode->qos = req->qos;
+                        }
+			if( req->rdr ) {
+				encode->rdr = req->rdr;
+			}	
 		        encode->msgType = msg->msg_type;
 		        rv = __wrp_pack_structure( encode, bytes );
 		        break;
@@ -605,7 +614,17 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 			else
 			{
 				encode->transaction_uuid = NULL;
-			}	
+			}
+			if( event->rdr ) {
+                                encode->rdr = event->rdr;
+                        }
+			if( event->session_id ) {
+                                encode->session_id = event->session_id;
+                        }
+                        else
+                        {
+                                encode->session_id = NULL;
+                        }
 			encode->msgType = msg->msg_type;
 		        rv = __wrp_pack_structure( encode, bytes );
 		        break;
@@ -638,6 +657,9 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 		        encode->path = crud->path;
 		        encode->status = crud->status;
 		        encode->rdr = crud->rdr;
+			if( crud->qos ) {
+                                encode->qos = crud->qos;
+                        }
 		        rv = __wrp_pack_structure( encode, bytes );
 		        break;
 		    case WRP_MSG_TYPE__SVC_ALIVE:
@@ -801,6 +823,8 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
                           "    .accept           = %s\n"
                           "    .include_spans    = %s\n"
                           "    .spans            = %s\n"
+			  "    .qos              = %d\n"
+			  "    .rdr              = %d\n"
                           "    .payload_size     = %zd\n"
                           "}\n";
     size_t length;
@@ -814,7 +838,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
     length = snprintf( NULL, 0, req_fmt, req->transaction_uuid, req->source,
                        req->dest, partner_ids, headers, req->content_type,
                        req->accept, ( req->include_spans ? "true" : "false" ),
-                       spans, req->payload_size );
+                       spans, req->qos, req->rdr, req->payload_size );
 
     if( NULL != bytes ) {
         char *data;
@@ -824,7 +848,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
             sprintf( data, req_fmt, req->transaction_uuid, req->source,
                      req->dest, partner_ids, headers, req->content_type,
                      req->accept, ( req->include_spans ? "true" : "false" ),
-                     spans, req->payload_size );
+                     spans, req->qos, req->rdr, req->payload_size );
             data[length] = '\0';
             *bytes = data;
         } else {
@@ -867,6 +891,8 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
 			    "    .transaction_uuid = %s\n"
                             "    .content_type     = %s\n"
                             "    .payload_size     = %zd\n"
+			    "    .session_id       = %s\n" 
+			    "    .rdr              = %d\n"
                             "}\n";
     size_t length;
     char *headers;
@@ -875,14 +901,14 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
     headers = __get_header_string( event->headers );
     partner_ids = __get_partner_ids_string( event->partner_ids );
     
-    length = snprintf( NULL, 0, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->transaction_uuid, event->content_type, event->payload_size );
+    length = snprintf( NULL, 0, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->transaction_uuid, event->content_type, event->payload_size, event->session_id, event->rdr );
 
     if( NULL != bytes ) {
         char *data;
         data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
 
         if( NULL != data ) {
-            sprintf( data, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->transaction_uuid, event->content_type, event->payload_size );
+            sprintf( data, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->transaction_uuid, event->content_type, event->payload_size, event->session_id, event->rdr );
             data[length] = '\0';
             *bytes = data;
         } else {
@@ -1128,6 +1154,10 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
     if( encodeReqtmp->qos ) {
 	    wrp_map_size++;
     }	    
+
+    if( encodeReqtmp->session_id != NULL) {
+        wrp_map_size++;
+    }
     
     if( encodeReqtmp->content_type ) {
         wrp_map_size++;
@@ -1168,6 +1198,9 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             msgpack_pack_int( &pk, encodeReqtmp->statusValue );
             break;
         case WRP_MSG_TYPE__REQ:
+	    if( encodeReqtmp->rdr ) {
+                wrp_map_size++; //rdr
+            }
             msgpack_pack_map( &pk, wrp_map_size );
             //Pack msgType,source,dest,headers,metadata,partner_ids
             mapCommonString( &pk, encodeReqtmp );
@@ -1183,11 +1216,22 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             }
 
             __msgpack_spans( &pk, &encodeReqtmp->spans );
+	    if( encodeReqtmp->qos ) {
+                __msgpack_pack_string( &pk, WRP_QOS.name, WRP_QOS.length );
+                msgpack_pack_int( &pk, encodeReqtmp->qos );
+            }
+	    if( encodeReqtmp->rdr ) {
+                __msgpack_pack_string( &pk, WRP_RDR.name, WRP_RDR.length );
+                msgpack_pack_int( &pk, encodeReqtmp->rdr );
+            }
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
             msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
             break;
         case WRP_MSG_TYPE__EVENT:
+	    if( encodeReqtmp->rdr ) {
+                wrp_map_size++; //rdr
+            }
             msgpack_pack_map( &pk, wrp_map_size );
             //Pack msgType,source,dest,headers,metadata,partner_ids
             mapCommonString( &pk, encodeReqtmp );
@@ -1202,6 +1246,13 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
             msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
+	    if( encodeReqtmp->session_id != NULL) {
+                __msgpack_pack_string_nvp( &pk, &WRP_SESSION_ID, encodeReqtmp->session_id );
+            }
+	    if( encodeReqtmp->rdr ) {
+                __msgpack_pack_string( &pk, WRP_RDR.name, WRP_RDR.length );
+                msgpack_pack_int( &pk, encodeReqtmp->rdr );
+            }
             break;
         case WRP_MSG_TYPE__SVC_REGISTRATION:
             wrp_map_size = 3;//Hardcoded.Pack service name and url only
@@ -1259,6 +1310,11 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             if( encodeReqtmp->rdr >= 0 ) {
                 __msgpack_pack_string( &pk, WRP_RDR.name, WRP_RDR.length );
                 msgpack_pack_int( &pk, encodeReqtmp->rdr );
+            }
+
+	    if( encodeReqtmp->qos ) {
+                __msgpack_pack_string( &pk, WRP_QOS.name, WRP_QOS.length );
+                msgpack_pack_int( &pk, encodeReqtmp->qos );
             }
 
             if( encodeReqtmp->path != NULL ) {
@@ -1421,6 +1477,7 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
     char *headers = NULL;
     char *partnerID = NULL;
 	char *accept = NULL;
+    char *session_id = NULL;	
     struct req_res_t *tmpdecodeReq = *decodeReq;
     msgpack_object_kv* p = deserialized.via.map.ptr;
 
@@ -1496,6 +1553,18 @@ static void decodeRequest( msgpack_object deserialized, struct req_res_t **decod
 				                    	tmpdecodeReq->transaction_uuid = NULL;
 				                    }
 				                }
+						else if( strcmp( keyName, WRP_SESSION_ID.name ) == 0 )
+                                                {
+                                                    session_id = strdup(StringValue);
+                                                    if(session_id)
+                                                    {
+                                                        tmpdecodeReq->session_id = session_id;
+                                                    }
+                                                    else
+                                                    {
+                                                        tmpdecodeReq->session_id = NULL;
+                                                    }
+                                                }
 				                else if( strcmp( keyName, WRP_SERVICE_NAME.name ) == 0 )
 				                {
 				                    service_name = strdup(StringValue);
@@ -1916,6 +1985,12 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.req.payload = decodeReq->payload;
                         msg->u.req.payload_size = decodeReq->payload_size;
                         msg->u.req.partner_ids = decodeReq->partner_ids;
+			if( decodeReq->qos ) {
+                                msg->u.req.qos = decodeReq->qos;
+                        }
+			if( decodeReq->rdr ) {
+                                msg->u.req.rdr = decodeReq->rdr;
+                        }
                         *msg_ptr = msg;
                         free( decodeReq );
                          return length;
@@ -1934,7 +2009,13 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 			}	
 			if( decodeReq->transaction_uuid ) {
 				msg->u.event.transaction_uuid = decodeReq->transaction_uuid;
-		        }		
+		        }	
+			if( decodeReq->rdr ) {
+                                msg->u.event.rdr = decodeReq->rdr;
+                        }
+			if( decodeReq->session_id ) {
+                                msg->u.event.session_id = decodeReq->session_id;
+                        }
                         *msg_ptr = msg;
                         free( decodeReq );
                         return length;
@@ -1974,6 +2055,9 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.crud.payload = decodeReq->payload;
                         msg->u.crud.payload_size = decodeReq->payload_size;
                         msg->u.crud.path = decodeReq->path;
+			if( decodeReq->qos ) {
+                                msg->u.crud.qos = decodeReq->qos;
+                        }
                         free( decodeReq );
                         *msg_ptr = msg;
                         return length;

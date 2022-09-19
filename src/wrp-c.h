@@ -108,6 +108,8 @@ struct wrp_req_msg {
     data_t *metadata;
     bool include_spans;
     struct money_trace_spans spans;
+    int qos;
+    int rdr;
     void *payload;
     size_t payload_size;
 };
@@ -123,6 +125,8 @@ struct wrp_event_msg {
     data_t *metadata;
     void *payload;
     size_t payload_size;
+    char *session_id;
+    int rdr;
 };
 
 struct wrp_crud_msg {
@@ -138,6 +142,7 @@ struct wrp_crud_msg {
     struct money_trace_spans spans;
     int status;
     int rdr;
+    int qos;
     char *path;
     void *payload;
     size_t payload_size;

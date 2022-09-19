@@ -99,6 +99,8 @@ const struct test_vectors test[] = {
         .in.u.req.include_spans = false,
         .in.u.req.spans.spans = NULL,
         .in.u.req.spans.count = 0,
+	.in.u.req.qos = 57,
+	.in.u.req.rdr = 68,
         .in.u.req.payload = "123",
         .in.u.req.payload_size = 3,
 
@@ -114,12 +116,14 @@ const struct test_vectors test[] = {
         "    .accept           = (null)\n"
         "    .include_spans    = false\n"
         "    .spans            = ''\n"
+	"    .qos              = 57\n"
+	"    .rdr              = 68\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 149,
+        .msgpack_size = 159,
         .msgpack = {
-            0x86,  /* 6 name value pairs */
+            0x88,  /* 8 name value pairs */
 
             /* msg_type -> 3 */
             0xa8,  /* "msg_type" */
@@ -153,6 +157,16 @@ const struct test_vectors test[] = {
             'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
             0xb0,   /* application/json */
             'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
+
+            /* qos -> 57 */
+            0xa3,  /* qos */
+            'q', 'o', 's',
+            0x39,  /* 57 */
+
+            /* rdr -> 68 */
+            0xa3,  /* rdr */
+            'r', 'd', 'r',
+            0x44,  /* 68 */	    
 
             /* payload -> data */
             0xa7,   /* payload */
@@ -189,6 +203,8 @@ const struct test_vectors test[] = {
         "    .accept           = (null)\n"
         "    .include_spans    = true\n"
         "    .spans            = ''\n"
+	"    .qos              = 0\n"
+	"    .rdr              = 0\n"
         "    .payload_size     = 3\n"
         "}\n",
 
@@ -287,6 +303,8 @@ const struct test_vectors test[] = {
         "    .accept           = json\n"
         "    .include_spans    = false\n"
         "    .spans            = ''\n"
+	"    .qos              = 0\n"
+	"    .rdr              = 0\n"
         "    .payload_size     = 3\n"
         "}\n",
 
@@ -386,6 +404,8 @@ const struct test_vectors test[] = {
         "    .include_spans    = false\n"
         "    .spans            = \n"
         "        hop-1: 123000044 - 11\n"
+	"    .qos              = 0\n"
+	"    .rdr              = 0\n"
         "    .payload_size     = 3\n"
         "}\n",
 
@@ -472,6 +492,8 @@ const struct test_vectors test[] = {
 	.in.u.event.transaction_uuid = "c05ee5e1-70be-444c-a156-097c767ad8ab",
         .in.u.event.payload = "123",
         .in.u.event.payload_size = 3,
+	.in.u.event.session_id = "c05ee5e1-70be-444c-a156-097c767ad8si",
+	.in.u.event.rdr = 10,
 
         .string_size = 0,
         .string =
@@ -484,11 +506,13 @@ const struct test_vectors test[] = {
 	"    .transaction_uuid = c05ee5e1-70be-444c-a156-097c767ad8ab\n"
         "    .content_type     = application/json\n"
         "    .payload_size     = 3\n"
+	"    .session_id       = c05ee5e1-70be-444c-a156-097c767ad8si\n"
+	"    .rdr              = 10\n" 
         "}\n",
 
-        .msgpack_size = 154,
+        .msgpack_size = 208,
         .msgpack = {
-            0x87,  /* 7 name value pairs */
+            0x89,  /* 9 name value pairs */
 
             /* msg_type -> 4 */
             0xa8,  /* "msg_type" */
@@ -533,6 +557,21 @@ const struct test_vectors test[] = {
             'p', 'a', 'y', 'l', 'o', 'a', 'd',
             0xc4, 0x03, /* Binary message, length 3 */
             0x31, 0x32, 0x33,
+
+            /* session_id -> c05ee5e1-70be-444c-a156-097c767ad8si */
+            0xaa,   /* session_id */
+            's', 'e', 's', 's', 'i', 'o', 'n', '_', 'i', 'd',
+            0xd9, 0x24, /* c05ee5e1-70be-444c-a156-097c767ad8si */
+            'c', '0', '5', 'e', 'e', '5', 'e', '1', '-',
+            '7', '0', 'b', 'e', '-',
+            '4', '4', '4', 'c', '-',
+            'a', '1', '5', '6', '-',
+            '0', '9', '7', 'c', '7', '6', '7', 'a', 'd', '8', 's', 'i',
+
+            /* rdr -> 10 */
+            0xa3,  /* rdr */
+            'r', 'd', 'r',
+            0x0a,  /* 10 */	    
         },
     },
 
@@ -560,6 +599,8 @@ const struct test_vectors test[] = {
 	"    .transaction_uuid = c06ee5e1-70be-444c-a156-097c767ad8ac\n"
         "    .content_type     = application/json\n"
         "    .payload_size     = 3\n"
+	"    .session_id       = (null)\n"
+	"    .rdr              = 0\n"
         "}\n",
 
         .msgpack_size = 214,
@@ -639,6 +680,7 @@ const struct test_vectors test[] = {
         .in.u.event.qos = 75,
         .in.u.event.payload = "123",
         .in.u.event.payload_size = 3,
+	.in.u.event.rdr = 60,
 
         .string_size = 0,
         .string =
@@ -651,11 +693,13 @@ const struct test_vectors test[] = {
         "    .transaction_uuid = (null)\n"
         "    .content_type     = application/json\n"
         "    .payload_size     = 3\n"
+	"    .session_id       = (null)\n"
+	"    .rdr              = 60\n"
         "}\n",
 
-        .msgpack_size = 159,
+        .msgpack_size = 164,
         .msgpack = {
-            0x88,  /* 8 name value pairs */
+            0x89,  /* 9 name value pairs */
 
             /* msg_type -> 4 */
             0xa8,  /* "msg_type" */
@@ -706,6 +750,11 @@ const struct test_vectors test[] = {
             'p', 'a', 'y', 'l', 'o', 'a', 'd',
             0xc4, 0x03, /* Binary message, length 3 */
             0x31, 0x32, 0x33,
+
+            /* rdr -> 60 */
+            0xa3,  /* rdr */
+            'r', 'd', 'r',
+            0x3c,  /* 60 */	    
         },
     },
 
@@ -1079,6 +1128,49 @@ void test_encode_decode()
                             .u.req.payload = "123",
                             .u.req.payload_size = 3
                           };
+    const wrp_msg_t msg1 = { .msg_type = WRP_MSG_TYPE__REQ,
+                            .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+                            .u.req.content_type = "application/json",
+                            .u.req.source = "source-address",
+                            .u.req.dest = "dest-address",
+                            .u.req.partner_ids = &partner_ids,
+                            .u.req.headers = &headers,
+                            .u.req.include_spans = false,
+                            .u.req.spans.spans = NULL,
+                            .u.req.spans.count = 0,
+                            .u.req.qos = 47,
+                            .u.req.payload = "123",
+                            .u.req.payload_size = 3
+                          };    
+    const wrp_msg_t msg3 = { .msg_type = WRP_MSG_TYPE__REQ,
+                            .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+                            .u.req.content_type = "application/json",
+                            .u.req.source = "source-address",
+                            .u.req.dest = "dest-address",
+                            .u.req.partner_ids = &partner_ids,
+                            .u.req.headers = &headers,
+                            .u.req.include_spans = false,
+                            .u.req.spans.spans = NULL,
+                            .u.req.spans.count = 0,
+                            .u.req.rdr = 74,
+                            .u.req.payload = "123",
+                            .u.req.payload_size = 3
+                          };
+    const wrp_msg_t msg4 = { .msg_type = WRP_MSG_TYPE__REQ,
+                            .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+                            .u.req.content_type = "application/json",
+                            .u.req.source = "source-address",
+                            .u.req.dest = "dest-address",
+                            .u.req.partner_ids = &partner_ids,
+                            .u.req.headers = &headers,
+                            .u.req.include_spans = false,
+                            .u.req.spans.spans = NULL,
+                            .u.req.spans.count = 0,
+                            .u.req.qos = 82,
+			    .u.req.rdr = 53,
+                            .u.req.payload = "123",
+                            .u.req.payload_size = 3
+                          };    
     const wrp_msg_t event_m = { .msg_type = WRP_MSG_TYPE__EVENT,
                                 .u.event.source = "source-address",
                                 .u.event.dest = "dest-address",
@@ -1088,7 +1180,9 @@ void test_encode_decode()
 				.u.event.qos = 77,
 				.u.event.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8ad",
                                 .u.event.payload = "0123456789",
-                                .u.event.payload_size = 10
+                                .u.event.payload_size = 10,
+				.u.event.session_id = "b08765434667-789u-7890-09786gy",
+				.u.event.rdr = 86
                               };
     const wrp_msg_t event_m1 = { .msg_type = WRP_MSG_TYPE__EVENT,
                                 .u.event.source = "source-address",
@@ -1107,7 +1201,8 @@ void test_encode_decode()
                                 .u.event.headers = &headers,
                                 .u.event.qos = 88,
                                 .u.event.payload = "0123456789",
-                                .u.event.payload_size = 10
+                                .u.event.payload_size = 10,
+				.u.event.session_id = "b30ee5e1-70be-444c-a156-097c767ad8ai"
                               };
     const wrp_msg_t event_m3 = { .msg_type = WRP_MSG_TYPE__EVENT,
                                 .u.event.source = "source-address",
@@ -1117,7 +1212,8 @@ void test_encode_decode()
                                 .u.event.headers = &headers,
                                 .u.event.transaction_uuid = "c10ee5e1-70be-444c-a156-097c767ad8ag",
                                 .u.event.payload = "0123456789",
-                                .u.event.payload_size = 10
+                                .u.event.payload_size = 10,
+				.u.event.rdr = 54
                               };
     
     const wrp_msg_t msg2 = { .msg_type = WRP_MSG_TYPE__REQ,
@@ -1211,6 +1307,248 @@ void test_encode_decode()
     WRP_DEBUG("decoded content_type:%s\n", message->u.req.content_type );
     WRP_DEBUG("decoded payload:%s\n", ( char* )message->u.req.payload );
     wrp_free_struct( message );
+
+    // msgpack encode
+    size = wrp_struct_to( &msg1, WRP_BYTES, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( message->msg_type, msg1.msg_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.source, msg1.u.req.source );
+    CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg1.u.req.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg1.u.req.content_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg1.u.req.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg1.u.req.payload );
+    CU_ASSERT_EQUAL( message->u.req.qos, msg1.u.req.qos );
+
+    if( NULL != msg1.u.req.headers ) {
+        size_t n = 0;
+        WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.req.headers->count );
+
+        if( NULL != msg1.u.req.headers ) {
+            while( n < msg1.u.req.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( msg1.u.req.headers->headers[n],
+                                        message->u.req.headers->headers[n] );
+                n++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
+    if( NULL != msg1.u.req.partner_ids ) {
+        size_t i = 0;
+        WRP_DEBUG("partner_ids count returned is %d\n", ( int ) message->u.req.partner_ids->count );
+
+        if( NULL != msg1.u.req.partner_ids ) {
+            while( i < msg1.u.req.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( msg1.u.req.partner_ids->partner_ids[i],
+                                        message->u.req.partner_ids->partner_ids[i] );
+                i++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
+    WRP_DEBUG("decoded msgType:%d\n", message->msg_type );
+    WRP_DEBUG("decoded source:%s\n", message->u.req.source );
+    WRP_DEBUG("decoded dest:%s\n", message->u.req.dest );
+    WRP_DEBUG("decoded content_type:%s\n", message->u.req.content_type );
+    WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
+    WRP_DEBUG("decoded payload:%s\n", ( char* )message->u.req.payload );
+    WRP_INFO("Request Message - encoded qos: %d decoded qos: %d\n", msg1.u.req.qos, message->u.req.qos);
+    wrp_free_struct( message );
+    WRP_DEBUG("Encode-Decode for BASE64\n" );
+    // msgpack encode
+    base64_size = wrp_struct_to( &msg1, WRP_BASE64, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, base64_size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, base64_size, WRP_BASE64, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( message->msg_type, msg1.msg_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.source, msg1.u.req.source );
+    CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg1.u.req.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg1.u.req.content_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg1.u.req.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg1.u.req.payload );
+    CU_ASSERT_EQUAL( message->u.req.qos, msg1.u.req.qos );
+    WRP_DEBUG("decoded msgType:%d\n", message->msg_type );
+    WRP_DEBUG("decoded source:%s\n", message->u.req.source );
+    WRP_DEBUG("decoded dest:%s\n", message->u.req.dest );
+    WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
+    WRP_DEBUG("decoded content_type:%s\n", message->u.req.content_type );
+    WRP_DEBUG("decoded payload:%s\n", ( char* )message->u.req.payload );
+    WRP_INFO("Request Message - encoded qos: %d decoded qos: %d\n", msg1.u.req.qos, message->u.req.qos);
+    wrp_free_struct( message );
+
+    // msgpack encode
+    size = wrp_struct_to( &msg3, WRP_BYTES, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( message->msg_type, msg3.msg_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.source, msg3.u.req.source );
+    CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg3.u.req.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg3.u.req.content_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg3.u.req.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg3.u.req.payload );
+    CU_ASSERT_EQUAL( message->u.req.rdr, msg3.u.req.rdr );
+
+    if( NULL != msg3.u.req.headers ) {
+        size_t n = 0;
+        WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.req.headers->count );
+
+        if( NULL != msg3.u.req.headers ) {
+            while( n < msg3.u.req.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( msg3.u.req.headers->headers[n],
+                                        message->u.req.headers->headers[n] );
+                n++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
+    if( NULL != msg3.u.req.partner_ids ) {
+        size_t i = 0;
+        WRP_DEBUG("partner_ids count returned is %d\n", ( int ) message->u.req.partner_ids->count );
+
+        if( NULL != msg3.u.req.partner_ids ) {
+            while( i < msg3.u.req.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( msg3.u.req.partner_ids->partner_ids[i],
+                                        message->u.req.partner_ids->partner_ids[i] );
+                i++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
+    WRP_DEBUG("decoded msgType:%d\n", message->msg_type );
+    WRP_DEBUG("decoded source:%s\n", message->u.req.source );
+    WRP_DEBUG("decoded dest:%s\n", message->u.req.dest );
+    WRP_DEBUG("decoded content_type:%s\n", message->u.req.content_type );
+    WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
+    WRP_DEBUG("decoded payload:%s\n", ( char* )message->u.req.payload );
+    WRP_INFO("Request Message - encoded rdr: %d decoded rdr: %d\n", msg3.u.req.rdr, message->u.req.rdr );
+    wrp_free_struct( message );
+    WRP_DEBUG("Encode-Decode for BASE64\n" );
+    // msgpack encode
+    base64_size = wrp_struct_to( &msg3, WRP_BASE64, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, base64_size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, base64_size, WRP_BASE64, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( message->msg_type, msg3.msg_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.source, msg3.u.req.source );
+    CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg3.u.req.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg3.u.req.content_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg3.u.req.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg3.u.req.payload );
+    CU_ASSERT_EQUAL( message->u.req.rdr, msg3.u.req.rdr );
+    WRP_DEBUG("decoded msgType:%d\n", message->msg_type );
+    WRP_DEBUG("decoded source:%s\n", message->u.req.source );
+    WRP_DEBUG("decoded dest:%s\n", message->u.req.dest );
+    WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
+    WRP_DEBUG("decoded content_type:%s\n", message->u.req.content_type );
+    WRP_DEBUG("decoded payload:%s\n", ( char* )message->u.req.payload );
+    WRP_INFO("Request Message - encoded rdr: %d decoded rdr: %d\n", msg3.u.req.rdr, message->u.req.rdr);
+    wrp_free_struct( message );    
+
+    // msgpack encode
+    size = wrp_struct_to( &msg4, WRP_BYTES, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( message->msg_type, msg4.msg_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.source, msg4.u.req.source );
+    CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg4.u.req.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg4.u.req.content_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg4.u.req.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg4.u.req.payload );
+    CU_ASSERT_EQUAL( message->u.req.qos, msg4.u.req.qos );
+    CU_ASSERT_EQUAL( message->u.req.rdr, msg4.u.req.rdr );
+
+    if( NULL != msg4.u.req.headers ) {
+        size_t n = 0;
+        WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.req.headers->count );
+
+        if( NULL != msg4.u.req.headers ) {
+            while( n < msg4.u.req.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( msg4.u.req.headers->headers[n],
+                                        message->u.req.headers->headers[n] );
+                n++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
+    if( NULL != msg4.u.req.partner_ids ) {
+        size_t i = 0;
+        WRP_DEBUG("partner_ids count returned is %d\n", ( int ) message->u.req.partner_ids->count );
+
+        if( NULL != msg4.u.req.partner_ids ) {
+            while( i < msg4.u.req.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( msg4.u.req.partner_ids->partner_ids[i],
+                                        message->u.req.partner_ids->partner_ids[i] );
+                i++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
+    WRP_DEBUG("decoded msgType:%d\n", message->msg_type );
+    WRP_DEBUG("decoded source:%s\n", message->u.req.source );
+    WRP_DEBUG("decoded dest:%s\n", message->u.req.dest );
+    WRP_DEBUG("decoded content_type:%s\n", message->u.req.content_type );
+    WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
+    WRP_DEBUG("decoded payload:%s\n", ( char* )message->u.req.payload );
+    WRP_INFO("Request Message - encoded qos: %d decoded qos: %d\n", msg4.u.req.qos, message->u.req.qos );
+    WRP_INFO("Request Message - encoded rdr: %d decoded rdr: %d\n", msg4.u.req.rdr, message->u.req.rdr );
+    wrp_free_struct( message );
+    WRP_DEBUG("Encode-Decode for BASE64\n" );
+    // msgpack encode
+    base64_size = wrp_struct_to( &msg4, WRP_BASE64, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, base64_size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, base64_size, WRP_BASE64, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( message->msg_type, msg4.msg_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.source, msg4.u.req.source );
+    CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg4.u.req.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg4.u.req.content_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg4.u.req.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg4.u.req.payload );
+    CU_ASSERT_EQUAL( message->u.req.qos, msg4.u.req.qos );
+    CU_ASSERT_EQUAL( message->u.req.rdr, msg4.u.req.rdr );
+    WRP_DEBUG("decoded msgType:%d\n", message->msg_type );
+    WRP_DEBUG("decoded source:%s\n", message->u.req.source );
+    WRP_DEBUG("decoded dest:%s\n", message->u.req.dest );
+    WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
+    WRP_DEBUG("decoded content_type:%s\n", message->u.req.content_type );
+    WRP_DEBUG("decoded payload:%s\n", ( char* )message->u.req.payload );
+    WRP_INFO("Request Message - encoded qos: %d decoded qos: %d\n", msg4.u.req.qos, message->u.req.qos );
+    WRP_INFO("Request Message - encoded rdr: %d decoded rdr: %d\n", msg4.u.req.rdr, message->u.req.rdr );
+    wrp_free_struct( message );    
+
     // msgpack encode
     const wrp_msg_t *event_msg = &test[5].in;
     size = wrp_struct_to( event_msg, WRP_BYTES, &bytes );
@@ -1232,6 +1570,8 @@ void test_encode_decode()
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
         CU_ASSERT_EQUAL( message->u.event.qos, event_msg->u.event.qos );
 	CU_ASSERT_STRING_EQUAL( message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+	CU_ASSERT_STRING_EQUAL( message->u.event.session_id, event_msg->u.event.session_id );
+	CU_ASSERT_EQUAL( message->u.event.rdr, event_msg->u.event.rdr );
 	 
         if( NULL != event_msg->u.event.headers ) {
             size_t n = 0;
@@ -1257,11 +1597,13 @@ void test_encode_decode()
     WRP_DEBUG("decoded msgType:%d\n", event_msg->msg_type );
     WRP_DEBUG("decoded source:%s\n", event_msg->u.event.source );
     WRP_DEBUG("decoded dest:%s\n", event_msg->u.event.dest );
-    WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
-    WRP_INFO("encoded  transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+    WRP_INFO("Event Message - encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
+    WRP_INFO("Event Message - encoded  transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
     WRP_DEBUG("decoded content_type:%s\n", event_msg->u.event.content_type );
     WRP_DEBUG("decoded payload:%s\n", ( char* )event_msg->u.event.payload );
     WRP_DEBUG("message->u.event.payload_size %zu\n", message->u.event.payload_size );
+    WRP_INFO("Event Message - encoded  session_uid:%s decoded session_id:%s\n", message->u.event.session_id, event_msg->u.event.session_id );
+    WRP_INFO("Event Message - encoded rdr:%d decoded rdr:%d\n", message->u.event.rdr, event_msg->u.event.rdr );
     wrp_free_struct( message );
 
         // msgpack encode
@@ -1310,8 +1652,8 @@ void test_encode_decode()
     WRP_DEBUG("decoded msgType:%d\n", event_msg->msg_type );
     WRP_DEBUG("decoded source:%s\n", event_msg->u.event.source );
     WRP_DEBUG("decoded dest:%s\n", event_msg->u.event.dest );
-    WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
-    WRP_INFO("encoded transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+    WRP_INFO("Event Message - encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
+    WRP_INFO("Event Message - encoded transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
     WRP_DEBUG("decoded content_type:%s\n", event_msg->u.event.content_type );
     WRP_DEBUG("decoded payload:%s\n", ( char* )event_msg->u.event.payload );
     WRP_DEBUG("message->u.event.payload_size %zu\n", message->u.event.payload_size );
@@ -1336,8 +1678,9 @@ void test_encode_decode()
         CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
         CU_ASSERT_EQUAL( message->u.event.qos, event_msg->u.event.qos );
-        WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
-
+	CU_ASSERT_EQUAL( message->u.event.rdr, event_msg->u.event.rdr );
+        WRP_INFO("Event message - encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
+        WRP_INFO("Event Message - encoded rdr:%d decoded rdr:%d\n", message->u.event.rdr, event_msg->u.event.rdr );
         if( NULL != event_msg->u.event.headers ) {
             size_t n = 0;
 
@@ -1382,8 +1725,12 @@ void test_encode_decode()
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
         CU_ASSERT_EQUAL( message->u.event.qos, event_msg->u.event.qos );
 	CU_ASSERT_STRING_EQUAL( message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
-	WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
-	WRP_INFO("encoded transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+	CU_ASSERT_STRING_EQUAL( message->u.event.session_id, event_msg->u.event.session_id );
+	CU_ASSERT_EQUAL( message->u.event.rdr, event_msg->u.event.rdr );
+	WRP_INFO("Event Message - encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
+	WRP_INFO("Event Message - encoded transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+	WRP_INFO("Event Message - encoded session_id:%s decoded session_id:%s\n", message->u.event.session_id, event_msg->u.event.session_id );
+	WRP_INFO("Event Message - encoded rdr:%d decoded rdr:%d\n", message->u.event.rdr, event_msg->u.event.rdr );
 	  
         if( NULL != event_msg->u.event.headers ) {
             size_t n = 0;
@@ -1469,7 +1816,9 @@ void test_encode_decode()
         CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
         CU_ASSERT_EQUAL( message->u.event.qos, event_msg->u.event.qos );
-        WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
+	CU_ASSERT_STRING_EQUAL( message->u.event.session_id, event_msg->u.event.session_id );
+        WRP_INFO("Event Message - encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
+	WRP_INFO("Event Message - encoded session_id:%s decoded session_id:%s\n", message->u.event.session_id, event_msg->u.event.session_id );
 
         if( NULL != event_msg->u.event.headers ) {
             size_t n = 0;
@@ -1513,7 +1862,9 @@ void test_encode_decode()
         CU_ASSERT_STRING_EQUAL( message->u.event.content_type, event_msg->u.event.content_type );
         CU_ASSERT_STRING_EQUAL( message->u.event.payload, event_msg->u.event.payload );
         CU_ASSERT_STRING_EQUAL( message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
-        WRP_INFO("encoded transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+	CU_ASSERT_EQUAL( message->u.event.rdr, event_msg->u.event.rdr );
+        WRP_INFO("Event Message - encoded transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
+        WRP_INFO("Event Message - encoded rdr:%d decoded rdr:%d\n", message->u.event.rdr, event_msg->u.event.rdr );
 
         if( NULL != event_msg->u.event.headers ) {
             size_t n = 0;
@@ -1630,6 +1981,24 @@ void test_crud_message()
         .u.crud.payload = createPayload,
         .u.crud.payload_size = sizeof(createPayload)
     };
+    const wrp_msg_t create1 = {
+        .msg_type = WRP_MSG_TYPE__CREATE,
+        .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+        .u.crud.source = "source-address",
+        .u.crud.dest = "dest-address",
+        .u.crud.partner_ids = &single_partner_ids,
+        .u.crud.headers = &single_headers,
+        .u.crud.metadata = NULL,
+        .u.crud.include_spans = false,
+        .u.crud.spans.spans = NULL,
+        .u.crud.spans.count = 0,
+        .u.crud.status = 1,
+        .u.crud.rdr = 0,
+	.u.crud.qos = 11,
+        .u.crud.path = "/Harvester",
+        .u.crud.payload = createPayload,
+        .u.crud.payload_size = sizeof(createPayload)
+    };    
     const wrp_msg_t retreive = {
         .msg_type = WRP_MSG_TYPE__RETREIVE,
         .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
@@ -1647,6 +2016,24 @@ void test_crud_message()
         .u.crud.payload = NULL,
         .u.crud.payload_size = 0
     };
+    const wrp_msg_t retreive1 = {
+        .msg_type = WRP_MSG_TYPE__RETREIVE,
+        .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+        .u.crud.source = "source-address",
+        .u.crud.dest = "dest-address",
+        .u.crud.partner_ids = &partner_ids,
+        .u.crud.headers = &headers,
+        .u.crud.metadata = &meta_data,
+        .u.crud.include_spans = false,
+        .u.crud.spans.spans = ( struct money_trace_span* ) crud_spans,
+        .u.crud.spans.count = sizeof( crud_spans ) / sizeof( struct money_trace_span ),
+        .u.crud.status = 1,
+        .u.crud.rdr = 0,
+	.u.crud.qos = 22,
+        .u.crud.path = "/IOT",
+        .u.crud.payload = NULL,
+        .u.crud.payload_size = 0
+    };    
     const wrp_msg_t update = {
         .msg_type = WRP_MSG_TYPE__UPDATE,
         .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
@@ -1664,6 +2051,24 @@ void test_crud_message()
         .u.crud.payload = updatePayload,
         .u.crud.payload_size = sizeof(updatePayload)
     };
+     const wrp_msg_t update1 = {
+        .msg_type = WRP_MSG_TYPE__UPDATE,
+        .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+        .u.crud.source = "source-address",
+        .u.crud.dest = "dest-address",
+        .u.crud.partner_ids = NULL,
+        .u.crud.headers = NULL,
+        .u.crud.metadata = NULL,
+        .u.crud.include_spans = false,
+        .u.crud.spans.spans = ( struct money_trace_span* ) spans,
+        .u.crud.spans.count = sizeof( spans ) / sizeof( struct money_trace_span ),
+        .u.crud.status = 0,
+        .u.crud.rdr = 0,
+	.u.crud.qos = 33,
+        .u.crud.path = "/Harvester",
+        .u.crud.payload = updatePayload,
+        .u.crud.payload_size = sizeof(updatePayload)
+    };   
     const wrp_msg_t delete = {
         .msg_type = WRP_MSG_TYPE__DELETE,
         .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
@@ -1681,6 +2086,24 @@ void test_crud_message()
         .u.crud.payload = NULL,
         .u.crud.payload_size = 0
     };
+    const wrp_msg_t delete1 = {
+        .msg_type = WRP_MSG_TYPE__DELETE,
+        .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+        .u.crud.source = "source-address",
+        .u.crud.dest = "dest-address",
+        .u.crud.partner_ids = NULL,
+        .u.crud.headers = NULL,
+        .u.crud.metadata = NULL,
+        .u.crud.include_spans = false,
+        .u.crud.spans.spans = NULL,
+        .u.crud.spans.count = 0,
+        .u.crud.status = 1,
+        .u.crud.rdr = 0,
+	.u.crud.qos = 44,
+        .u.crud.path = "/IOT",
+        .u.crud.payload = NULL,
+        .u.crud.payload_size = 0
+    };    
     const wrp_msg_t meta_payload = {
         .msg_type = WRP_MSG_TYPE__UPDATE,
         .u.crud.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
@@ -1769,6 +2192,79 @@ void test_crud_message()
     WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
     WRP_DEBUG("decoded path %s\n", message->u.crud.path );
     wrp_free_struct( message );
+
+        // msgpack encode for CRUD
+    size = wrp_struct_to( &create1, WRP_BYTES, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( message->msg_type, create1.msg_type );
+    CU_ASSERT_EQUAL( message->u.crud.status, create1.u.crud.status );
+    CU_ASSERT_EQUAL( message->u.crud.rdr, create1.u.crud.rdr );
+    CU_ASSERT_EQUAL( message->u.crud.qos, create1.u.crud.qos );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.source, create1.u.crud.source );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.dest, create1.u.crud.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, create1.u.crud.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.path, create1.u.crud.path );
+
+    if( message->u.crud.payload != NULL )
+    {
+            CU_ASSERT_EQUAL( create1.u.crud.payload_size, message->u.crud.payload_size);
+            CU_ASSERT_EQUAL( 0, memcmp(create1.u.crud.payload, message->u.crud.payload, create.u.crud.payload_size) );
+            WRP_INFO("Crud payload : %s\n",message->u.crud.payload);
+    }
+    if( message->u.crud.metadata != NULL ) {
+        size_t n = 0;
+
+        while( n < message->u.crud.metadata->count ) {
+            CU_ASSERT_STRING_EQUAL( create1.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
+            CU_ASSERT_STRING_EQUAL( create1.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
+            WRP_INFO("Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
+            n++;
+        }
+    }
+
+    if( NULL != message->u.crud.partner_ids ) {
+        size_t i = 0;
+        WRP_DEBUG("partner_ids count returned is %d\n", ( int ) message->u.crud.partner_ids->count );
+
+        if( NULL != message->u.crud.partner_ids ) {
+            while( i < message->u.crud.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( create1.u.crud.partner_ids->partner_ids[i],
+                                        message->u.crud.partner_ids->partner_ids[i] );
+                i++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
+    if( NULL != message->u.crud.headers ) {
+        size_t n = 0;
+        WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.crud.headers->count );
+
+        if( NULL != message->u.crud.headers ) {
+            while( n < message->u.crud.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( create1.u.crud.headers->headers[n],
+                                        message->u.crud.headers->headers[n] );
+                n++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
+    WRP_DEBUG("decoded msgType:%d\n", message->msg_type );
+    WRP_DEBUG("decoded source:%s\n", message->u.crud.source );
+    WRP_DEBUG("decoded dest:%s\n", message->u.crud.dest );
+    WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    WRP_DEBUG("decoded path %s\n", message->u.crud.path );
+    WRP_INFO("CURD CREAT - encoded qos:%d decoded qos:%d\n", create1.u.crud.qos, message->u.crud.qos);
+    wrp_free_struct( message );
+
     WRP_DEBUG("      **************** CRUD retreive*****************     \n" );
     // msgpack encode for CRUD
     size = wrp_struct_to( &retreive, WRP_BYTES, &bytes );
@@ -1841,6 +2337,81 @@ void test_crud_message()
     WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
     WRP_DEBUG("decoded path:%s\n", message->u.crud.path );
     wrp_free_struct( message );
+
+        // msgpack encode for CRUD
+    size = wrp_struct_to( &retreive1, WRP_BYTES, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( message->msg_type, retreive1.msg_type );
+    CU_ASSERT_EQUAL( message->u.crud.status, retreive1.u.crud.status );
+    CU_ASSERT_EQUAL( message->u.crud.rdr, retreive1.u.crud.rdr );
+    CU_ASSERT_EQUAL( message->u.crud.qos, retreive1.u.crud.qos );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.source, retreive1.u.crud.source );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.dest, retreive1.u.crud.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, retreive1.u.crud.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.path, retreive1.u.crud.path );
+
+     if( message->u.crud.payload != NULL )
+     {
+        CU_ASSERT_STRING_EQUAL( retreive1.u.crud.payload, message->u.crud.payload);
+        WRP_INFO("Crud payload : %s\n",message->u.crud.payload);
+     }
+    if( message->u.crud.metadata != NULL ) {
+        size_t n = 0;
+
+        while( n < message->u.crud.metadata->count ) {
+            CU_ASSERT_STRING_EQUAL( retreive1.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
+            CU_ASSERT_STRING_EQUAL( retreive1.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
+            WRP_INFO("Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
+            n++;
+        }
+    }
+    else
+    {
+        WRP_ERROR("retrieve metadata is NULL.Please fix it\n");
+    }
+    if( NULL != message->u.crud.partner_ids ) {
+        size_t i = 0;
+        WRP_INFO("partner_ids count returned is %d\n", ( int ) message->u.crud.partner_ids->count );
+
+        if( NULL != message->u.crud.partner_ids ) {
+            while( i < message->u.crud.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( retreive1.u.crud.partner_ids->partner_ids[i],
+                                        message->u.crud.partner_ids->partner_ids[i] );
+                i++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
+    if( NULL != message->u.crud.headers ) {
+        size_t n = 0;
+        WRP_INFO("headers count returned is %d\n", ( int ) message->u.crud.headers->count );
+
+        if( NULL != message->u.crud.headers ) {
+            while( n < message->u.crud.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( retreive1.u.crud.headers->headers[n],
+                                        message->u.crud.headers->headers[n] );
+                n++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
+    WRP_DEBUG("decoded msgType:%d\n", message->msg_type );
+    WRP_DEBUG("decoded source:%s\n", message->u.crud.source );
+    WRP_DEBUG("decoded dest:%s\n", message->u.crud.dest );
+    WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    WRP_DEBUG("decoded path:%s\n", message->u.crud.path );
+    WRP_INFO("CURD RETRIVE - encoded qos:%d decoded qos:%d\n", retreive1.u.crud.qos, message->u.crud.qos);
+    wrp_free_struct( message );
+
     WRP_DEBUG("     **************** CRUD Update*****************     \n" );
     // msgpack encode for CRUD
     size = wrp_struct_to( &update, WRP_BYTES, &bytes );
@@ -1905,6 +2476,73 @@ void test_crud_message()
     WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
     WRP_DEBUG("decoded path:%s\n", message->u.crud.path );
     wrp_free_struct( message );
+
+        // msgpack encode for CRUD
+    size = wrp_struct_to( &update1, WRP_BYTES, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( message->msg_type, update1.msg_type );
+    CU_ASSERT_EQUAL( message->u.crud.status, update1.u.crud.status );
+    CU_ASSERT_EQUAL( message->u.crud.rdr, update1.u.crud.rdr );
+    CU_ASSERT_EQUAL( message->u.crud.qos, update1.u.crud.qos );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.source, update1.u.crud.source );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.dest, update1.u.crud.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, update1.u.crud.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.path, update1.u.crud.path );
+
+    CU_ASSERT_BYTES_EQUAL( message->u.crud.payload, message->u.crud.payload_size,
+                           update1.u.crud.payload, update1.u.crud.payload_size );
+    if( message->u.crud.metadata != NULL ) {
+        size_t n = 0;
+
+        while( n < message->u.crud.metadata->count ) {
+            CU_ASSERT_STRING_EQUAL( update1.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
+            CU_ASSERT_STRING_EQUAL( update1.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
+            WRP_INFO("Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
+            n++;
+        }
+    }
+    if( NULL != message->u.crud.partner_ids ) {
+        size_t i = 0;
+        WRP_DEBUG("partner_ids count returned is %d\n", ( int ) message->u.crud.partner_ids->count );
+
+        if( (NULL != message->u.crud.partner_ids) && (NULL != message->u.crud.partner_ids) ) {
+            while( i < message->u.crud.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( update1.u.crud.partner_ids->partner_ids[i],
+                                        message->u.crud.partner_ids->partner_ids[i] );
+                i++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+    if( NULL != message->u.crud.headers ) {
+        size_t n = 0;
+        WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.crud.headers->count );
+
+        if( (NULL != message->u.crud.headers) && (NULL != update1.u.crud.headers) ) {
+            while( n < message->u.crud.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( update1.u.crud.headers->headers[n],
+                                        message->u.crud.headers->headers[n] );
+                n++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
+    WRP_DEBUG("decoded msgType:%d\n", message->msg_type );
+    WRP_DEBUG("decoded source:%s\n", message->u.crud.source );
+    WRP_DEBUG("decoded dest:%s\n", message->u.crud.dest );
+    WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    WRP_DEBUG("decoded path:%s\n", message->u.crud.path );
+    WRP_INFO("CURD UPDATE - encoded qos:%d decoded qos:%d\n", update1.u.crud.qos, message->u.crud.qos);
+    wrp_free_struct( message );
+
     WRP_DEBUG("     **************** CRUD Delete*****************     \n" );
     // msgpack encode for CRUD
     size = wrp_struct_to( &delete, WRP_BYTES, &bytes );
@@ -1971,6 +2609,75 @@ void test_crud_message()
     WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
     WRP_DEBUG("decoded path:%s\n", message->u.crud.path );
     wrp_free_struct( message );
+
+        // msgpack encode for CRUD
+    size = wrp_struct_to( &delete1, WRP_BYTES, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( message->msg_type, delete1.msg_type );
+    CU_ASSERT_EQUAL( message->u.crud.status, delete1.u.crud.status );
+    CU_ASSERT_EQUAL( message->u.crud.rdr, delete1.u.crud.rdr );
+    CU_ASSERT_EQUAL( message->u.crud.qos, delete1.u.crud.qos );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.source, delete1.u.crud.source );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.dest, delete1.u.crud.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, delete1.u.crud.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.crud.path, delete1.u.crud.path );
+    if( message->u.crud.payload != NULL )
+    {
+        CU_ASSERT_STRING_EQUAL( delete1.u.crud.payload, message->u.crud.payload);
+        WRP_INFO("Crud payload : %s\n",message->u.crud.payload);
+    }
+    if( message->u.crud.metadata != NULL ) {
+        size_t n = 0;
+
+        while( n < message->u.crud.metadata->count ) {
+            CU_ASSERT_STRING_EQUAL( delete1.u.crud.metadata->data_items[n].name, message->u.crud.metadata->data_items[n].name );
+            CU_ASSERT_STRING_EQUAL( delete1.u.crud.metadata->data_items[n].value, message->u.crud.metadata->data_items[n].value );
+            WRP_INFO("Delete Metadata Key value pair: %s = %s\n",message->u.crud.metadata->data_items[n].name,message->u.crud.metadata->data_items[n].value);
+            n++;
+        }
+    }
+    if( NULL != message->u.crud.partner_ids ) {
+        size_t i = 0;
+        WRP_DEBUG("partner_ids count returned is %d\n", ( int ) message->u.crud.partner_ids->count );
+
+        if( NULL != message->u.crud.partner_ids ) {
+            while( i < message->u.crud.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( delete1.u.crud.partner_ids->partner_ids[i],
+                                        message->u.crud.partner_ids->partner_ids[i] );
+                i++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+    if( NULL != message->u.crud.headers ) {
+        size_t n = 0;
+        WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.crud.headers->count );
+
+        if( NULL != message->u.crud.headers ) {
+            while( n < message->u.crud.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( delete1.u.crud.headers->headers[n],
+                                        message->u.crud.headers->headers[n] );
+                n++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
+    WRP_DEBUG("decoded msgType:%d\n", message->msg_type );
+    WRP_DEBUG("decoded source:%s\n", message->u.crud.source );
+    WRP_DEBUG("decoded dest:%s\n", message->u.crud.dest );
+    WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
+    WRP_DEBUG("decoded path:%s\n", message->u.crud.path );
+    WRP_INFO("CURD DELETE - encoded qos:%d decoded qos:%d\n", delete1.u.crud.qos, message->u.crud.qos );
+    wrp_free_struct( message );
+
     WRP_DEBUG("     **************** Metadata *****************     \n" );
     // msgpack encode for METADATA
     size = wrp_struct_to( &meta_payload, WRP_BYTES, &bytes );
@@ -2089,7 +2796,9 @@ void test_crud_message()
     eventMsg.u.event.dest = "dns:scytale.webpa.comcast.net/iot" ;
     eventMsg.u.event.headers = NULL ;
     eventMsg.u.event.qos = 87 ;
-    eventMsg.u.event.transaction_uuid = "c08ee5e1-70be-444c-a156-097c767ad8ae",
+    eventMsg.u.event.rdr = 55;
+    eventMsg.u.event.transaction_uuid = "c08ee5e1-70be-444c-a156-097c767ad8ae";
+    eventMsg.u.event.session_id = "c08ee5e1-70be-444c-a156-097c767ad8sd";    
     eventMsg.u.event.content_type = "application/json" ;
     eventMsg.u.event.metadata = NULL ;
     eventMsg.u.event.payload = "0123456789";
@@ -2109,13 +2818,17 @@ void test_crud_message()
         CU_ASSERT_EQUAL( message->u.event.payload_size, eventMsg.u.event.payload_size );
 	CU_ASSERT_EQUAL( message->u.event.qos, eventMsg.u.event.qos );
 	CU_ASSERT_STRING_EQUAL( message->u.event.transaction_uuid , eventMsg.u.event.transaction_uuid  );
+	CU_ASSERT_STRING_EQUAL( message->u.event.session_id , eventMsg.u.event.session_id  );
+	CU_ASSERT_EQUAL( message->u.event.rdr, eventMsg.u.event.rdr );
         WRP_DEBUG("decoded event source:%s\n", message->u.event.source );
         WRP_DEBUG("decoded event dest:%s\n", message->u.event.dest );
         WRP_DEBUG("decoded event content_type:%s\n", message->u.event.content_type );
         WRP_DEBUG("decoded event payload:%s\n", ( char * ) message->u.event.payload );
         WRP_DEBUG("decoded event payload_size:%zu\n", message->u.event.payload_size );
-	WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, eventMsg.u.event.qos );
-	WRP_INFO("encoded transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, eventMsg.u.event.transaction_uuid );
+	WRP_INFO("Meta Data - encoded qos:%d decoded qos:%d\n", message->u.event.qos, eventMsg.u.event.qos );
+	WRP_INFO("Meta Data - encoded transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, eventMsg.u.event.transaction_uuid );
+	WRP_INFO("Meta Data - encoded session_id:%s decoded session_id:%s\n", message->u.event.session_id, eventMsg.u.event.session_id );
+	WRP_INFO("Meta Data - encoded rdr:%d decoded rdr:%d\n", message->u.event.rdr, eventMsg.u.event.rdr );
 	
         size = wrp_pack_metadata( &metapack , &metadataPack );
 
