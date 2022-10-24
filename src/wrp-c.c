@@ -2180,8 +2180,10 @@ static int alterMap( char * buf )
 
 size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encodedSize, void *metadataPack, size_t metadataSize )
 {
-    //Allocate size for final buffer
-    *appendData = ( void * )malloc( sizeof( char * ) * ( encodedSize + metadataSize ) );
+    if(metadataSize > 0 && NULL != metadataPack)
+    {
+        //Allocate size for final buffer
+        *appendData = ( void * )malloc( sizeof( char * ) * ( encodedSize + metadataSize ) );
 	if(*appendData != NULL)
 	{
 		memcpy( *appendData, encodedBuffer, encodedSize );
@@ -2199,6 +2201,10 @@ size_t appendEncodedData( void **appendData, void *encodedBuffer, size_t encoded
 	{
 		WRP_ERROR("Memory allocation failed\n" );
 	}
+    }
+    else
+	WRP_ERROR("metadataPack is NULL or empty\n" );
+
     return -1;
 }
 
